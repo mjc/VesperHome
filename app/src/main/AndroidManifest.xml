@@ -54,6 +54,10 @@
         <activity
             android:name=".applications.HiddenAppsActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".applications.CategoryManagementActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

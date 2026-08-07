@@ -23,7 +23,9 @@ class HiddenAppsActivity : AppCompatActivity() {
         val container = (application as LtvLauncherApplication).container
         LauncherViewModel.factory(
             container.applicationRepository,
-            container.appPreferencesRepository
+            container.appPreferencesRepository,
+            container.categoryRepository,
+            container.homeRepository
         )
     }
 
@@ -75,6 +77,8 @@ class HiddenAppsActivity : AppCompatActivity() {
                         val message = when (event) {
                             LauncherEvent.LaunchFailed -> R.string.launch_failed
                             LauncherEvent.PreferenceUpdateFailed -> R.string.preference_update_failed
+                            LauncherEvent.CategoryUpdateFailed -> R.string.category_update_failed
+                            is LauncherEvent.OpenIntent -> return@collect
                         }
                         Toast.makeText(this@HiddenAppsActivity, message, Toast.LENGTH_SHORT).show()
                     }

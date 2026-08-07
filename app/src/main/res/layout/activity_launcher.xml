@@ -38,11 +38,65 @@
             android:clipChildren="false"
             android:orientation="vertical">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="56dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/home_status_background"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/homeStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_status_checking"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                    android:textColor="@color/text_primary" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/setDefaultLauncher"
+                        android:layout_width="wrap_content"
+                        android:layout_height="52dp"
+                        android:backgroundTint="@color/action_button_background"
+                        android:text="@string/set_default_launcher"
+                        android:textColor="@color/action_button_text"
+                        android:visibility="gone"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/openSystemSettings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="12dp"
+                        android:backgroundTint="@color/action_button_background"
+                        android:text="@string/system_settings"
+                        android:textColor="@color/action_button_text"
+                        app:cornerRadius="10dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
             <com.sergioasenjo.ltvlauncher.applications.AppRowView
                 android:id="@+id/favoriteRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/categoryRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:orientation="vertical" />
 
             <com.sergioasenjo.ltvlauncher.applications.AppRowView
                 android:id="@+id/tvRow"
@@ -54,16 +108,33 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/manageHiddenApps"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
-                android:backgroundTint="@color/action_button_background"
-                android:text="@string/manage_hidden_apps"
-                android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/manageCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:backgroundTint="@color/action_button_background"
+                    android:text="@string/manage_categories"
+                    android:textColor="@color/action_button_text"
+                    app:cornerRadius="10dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/manageHiddenApps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="12dp"
+                    android:backgroundTint="@color/action_button_background"
+                    android:text="@string/manage_hidden_apps"
+                    android:textColor="@color/action_button_text"
+                    app:cornerRadius="10dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

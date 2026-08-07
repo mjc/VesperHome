@@ -13,8 +13,31 @@
     <string name="hidden_apps">Hidden Apps</string>
     <string name="hidden_apps_description">Select an application to restore it to the launcher.</string>
     <string name="no_hidden_apps">There are no hidden applications.</string>
+    <string name="home_status_checking">Checking the default Home application…</string>
+    <string name="home_status_default">LTvLauncher is the default Home application.</string>
+    <string name="home_status_not_default">LTvLauncher is not the default Home application.</string>
+    <string name="set_default_launcher">Set as default Home</string>
+    <string name="system_settings">System settings</string>
+    <string name="settings_open_failed">The requested settings screen is not available on this device.</string>
+    <string name="manage_categories">Manage categories</string>
+    <string name="categories">Categories</string>
+    <string name="categories_description">Create categories, then add applications from their long-press menu.</string>
+    <string name="create_category">Create category</string>
+    <string name="rename_category">Rename category</string>
+    <string name="delete_category">Delete category</string>
+    <string name="delete_category_confirmation">Delete %1$s? Applications will remain installed.</string>
+    <string name="category_name">Category name</string>
+    <string name="category_name_required">Enter a category name.</string>
+    <string name="no_categories">There are no custom categories.</string>
+    <string name="category_update_failed">The launcher could not save the category change. Category names must be unique.</string>
+    <string name="add_to_category">Add to %1$s</string>
+    <string name="remove_from_category">Remove from %1$s</string>
     <plurals name="application_count">
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>
+    </plurals>
+    <plurals name="category_application_count">
+        <item quantity="one">%1$s, %2$d app</item>
+        <item quantity="other">%1$s, %2$d apps</item>
     </plurals>
 </resources>
