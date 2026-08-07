@@ -18,9 +18,10 @@ import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.applications.AppAdapter
 import com.sergioasenjo.ltvlauncher.applications.AppRowView
-import com.sergioasenjo.ltvlauncher.applications.CategoryManagementActivity
 import com.sergioasenjo.ltvlauncher.applications.HiddenAppsActivity
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
+import com.sergioasenjo.ltvlauncher.categories.CategoryManagementActivity
+import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
 import kotlinx.coroutines.launch
 
@@ -37,8 +38,7 @@ class LauncherActivity : AppCompatActivity() {
     private val viewModel: LauncherViewModel by viewModels {
         val container = (application as LtvLauncherApplication).container
         LauncherViewModel.factory(
-            container.applicationRepository,
-            container.appPreferencesRepository,
+            container.managedApplicationsRepository,
             container.categoryRepository,
             container.homeRepository
         )
@@ -200,7 +200,7 @@ class LauncherActivity : AppCompatActivity() {
             getString(R.string.hide_app) to { viewModel.setHidden(app, true) }
         )
         viewModel.uiState.value.categories.forEach { category ->
-            val included = category.apps.any { it.componentName == app.componentName }
+            val included = category.apps.any { it.packageName == app.packageName }
             val label = if (included) {
                 getString(R.string.remove_from_category, category.name)
             } else {

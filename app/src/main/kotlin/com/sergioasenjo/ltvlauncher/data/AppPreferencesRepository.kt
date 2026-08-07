@@ -7,17 +7,14 @@ import kotlinx.coroutines.flow.map
 class AppPreferencesRepository(private val appPreferenceDao: AppPreferenceDao) {
     fun observePreferences(): Flow<Map<String, AppPreferenceEntity>> =
         appPreferenceDao.observeAll().map { preferences ->
-            preferences.associateBy(AppPreferenceEntity::componentName)
+            preferences.associateBy { it.componentName.substringBefore('/') }
         }
 
     suspend fun setFavorite(app: LauncherApp, isFavorite: Boolean) {
-        appPreferenceDao.setFavorite(app.preferenceKey, isFavorite)
+        appPreferenceDao.setFavorite(app.packageName, isFavorite)
     }
 
     suspend fun setHidden(app: LauncherApp, isHidden: Boolean) {
-        appPreferenceDao.setHidden(app.preferenceKey, isHidden)
+        appPreferenceDao.setHidden(app.packageName, isHidden)
     }
-
-    private val LauncherApp.preferenceKey: String
-        get() = componentName.flattenToString()
 }

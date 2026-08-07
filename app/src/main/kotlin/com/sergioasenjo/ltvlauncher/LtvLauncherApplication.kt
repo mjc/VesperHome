@@ -3,6 +3,7 @@ package com.sergioasenjo.ltvlauncher
 import android.app.Application
 import androidx.room.Room
 import com.sergioasenjo.ltvlauncher.applications.ApplicationRepository
+import com.sergioasenjo.ltvlauncher.applications.ManagedApplicationsRepository
 import com.sergioasenjo.ltvlauncher.applications.PlatformApplicationRepository
 import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
@@ -25,6 +26,7 @@ class AppContainer(application: Application) {
 
     val applicationRepository: ApplicationRepository = PlatformApplicationRepository(application)
     val appPreferencesRepository = AppPreferencesRepository(database.appPreferenceDao())
+    val managedApplicationsRepository = ManagedApplicationsRepository(applicationRepository, appPreferencesRepository)
     val categoryRepository = CategoryRepository(database.categoryDao())
     val homeRepository: HomeRepository = PlatformHomeRepository(application)
 }

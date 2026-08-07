@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.sergioasenjo.ltvlauncher.applications.ApplicationRepository
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
-import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
+import com.sergioasenjo.ltvlauncher.applications.ManagedApplicationsRepository
+import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
 import kotlinx.coroutines.CancellationException
@@ -31,8 +31,6 @@ data class LauncherUiState(
     val loading: Boolean = true
 )
 
-data class LauncherCategory(val id: Long, val name: String, val apps: List<LauncherApp>)
-
 sealed interface LauncherEvent {
     data object LaunchFailed : LauncherEvent
     data object PreferenceUpdateFailed : LauncherEvent
@@ -41,8 +39,7 @@ sealed interface LauncherEvent {
 }
 
 class LauncherViewModel(
-    private val applicationRepository: ApplicationRepository,
-    private val appPreferencesRepository: AppPreferencesRepository,
+    private val managedApplicationsRepository: ManagedApplicationsRepository,
     private val categoryRepository: CategoryRepository,
     private val homeRepository: HomeRepository
 ) : ViewModel() {
@@ -51,25 +48,16 @@ class LauncherViewModel(
     private val isDefaultLauncher = MutableStateFlow<Boolean?>(null)
 
     private val appState = combine(
-        applicationRepository.observeApplications(),
-        appPreferencesRepository.observePreferences(),
+        managedApplicationsRepository.observeApplications(),
         categoryRepository.observeCategories()
-    ) { apps, preferences, categoryDefinitions ->
-        val enrichedApps = apps.map { app ->
-            val preference = preferences[app.componentName.flattenToString()]
-            app.copy(
-                isFavorite = preference?.isFavorite == true,
-                isHidden = preference?.isHidden == true,
-                manualOrder = preference?.manualOrder
-            )
-        }
-        val appsByKey = enrichedApps.associateBy { it.componentName.flattenToString() }
-        val visibleApps = enrichedApps.filterNot(LauncherApp::isHidden)
+    ) { apps, categoryDefinitions ->
+        val appsByKey = apps.associateBy(LauncherApp::packageName)
+        val visibleApps = apps.filterNot(LauncherApp::isHidden)
         LauncherUiState(
             favoriteApps = visibleApps.filter(LauncherApp::isFavorite).sortedForDisplay(),
             tvApps = visibleApps.filter(LauncherApp::isTvApp).sortedForDisplay(),
             nonTvApps = visibleApps.filterNot(LauncherApp::isTvApp).sortedForDisplay(),
-            hiddenApps = enrichedApps.filter(LauncherApp::isHidden).sortedForDisplay(),
+            hiddenApps = apps.filter(LauncherApp::isHidden).sortedForDisplay(),
             categories = categoryDefinitions.map { definition ->
                 LauncherCategory(
                     id = definition.id,
@@ -91,7 +79,7 @@ class LauncherViewModel(
     )
 
     fun launch(app: LauncherApp) {
-        if (!applicationRepository.launch(app.componentName, app.user)) {
+        if (!managedApplicationsRepository.launch(app)) {
             viewModelScope.launch { _events.send(LauncherEvent.LaunchFailed) }
         }
     }
@@ -110,13 +98,13 @@ class LauncherViewModel(
 
     fun toggleFavorite(app: LauncherApp) {
         updatePreference {
-            appPreferencesRepository.setFavorite(app, !app.isFavorite)
+            managedApplicationsRepository.setFavorite(app, !app.isFavorite)
         }
     }
 
     fun setHidden(app: LauncherApp, hidden: Boolean) {
         updatePreference {
-            appPreferencesRepository.setHidden(app, hidden)
+            managedApplicationsRepository.setHidden(app, hidden)
         }
     }
 
@@ -169,15 +157,13 @@ class LauncherViewModel(
 
     companion object {
         fun factory(
-            applicationRepository: ApplicationRepository,
-            appPreferencesRepository: AppPreferencesRepository,
+            managedApplicationsRepository: ManagedApplicationsRepository,
             categoryRepository: CategoryRepository,
             homeRepository: HomeRepository
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 LauncherViewModel(
-                    applicationRepository,
-                    appPreferencesRepository,
+                    managedApplicationsRepository,
                     categoryRepository,
                     homeRepository
                 )

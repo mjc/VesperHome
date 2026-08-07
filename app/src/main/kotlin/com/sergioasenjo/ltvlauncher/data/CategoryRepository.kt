@@ -19,16 +19,18 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
                 position = category.position,
                 appKeys = membershipsByCategory[category.categoryId]
                     .orEmpty()
-                    .map(CategoryAppEntity::componentName)
+                    .map { it.componentName.substringBefore('/') }
             )
         }
     }
 
     suspend fun createCategory(name: String) {
+        validateName(name, excludedCategoryId = 0)
         categoryDao.createCategory(name)
     }
 
     suspend fun renameCategory(categoryId: Long, name: String) {
+        validateName(name, excludedCategoryId = categoryId)
         categoryDao.renameCategory(categoryId, name)
     }
 
@@ -37,13 +39,19 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
     }
 
     suspend fun addApp(categoryId: Long, app: LauncherApp) {
-        categoryDao.addApp(categoryId, app.preferenceKey)
+        categoryDao.addApp(categoryId, app.packageName)
     }
 
     suspend fun removeApp(categoryId: Long, app: LauncherApp) {
-        categoryDao.deleteMembership(categoryId, app.preferenceKey)
+        categoryDao.deleteMembership(categoryId, app.packageName)
     }
 
-    private val LauncherApp.preferenceKey: String
-        get() = componentName.flattenToString()
+    private suspend fun validateName(name: String, excludedCategoryId: Long) {
+        require(name.isNotBlank() && name.lowercase() !in RESERVED_CATEGORY_NAMES)
+        require(!categoryDao.categoryNameExists(name, excludedCategoryId))
+    }
+
+    private companion object {
+        val RESERVED_CATEGORY_NAMES = setOf("favorites", "tv apps", "non-tv apps")
+    }
 }

@@ -1,34 +1,28 @@
-package com.sergioasenjo.ltvlauncher.applications
+package com.sergioasenjo.ltvlauncher.categories
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ActivityCategoryManagementBinding
-import com.sergioasenjo.ltvlauncher.databinding.ItemCategoryManagementBinding
-import com.sergioasenjo.ltvlauncher.launcher.LauncherCategory
-import com.sergioasenjo.ltvlauncher.launcher.LauncherEvent
-import com.sergioasenjo.ltvlauncher.launcher.LauncherViewModel
 import kotlinx.coroutines.launch
 
 class CategoryManagementActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCategoryManagementBinding
-    private val viewModel: LauncherViewModel by viewModels {
+    private val viewModel: CategoryManagementViewModel by viewModels {
         val container = (application as LtvLauncherApplication).container
-        LauncherViewModel.factory(
-            container.applicationRepository,
-            container.appPreferencesRepository,
+        CategoryManagementViewModel.factory(
             container.categoryRepository,
-            container.homeRepository
+            container.managedApplicationsRepository
         )
     }
 
@@ -37,62 +31,38 @@ class CategoryManagementActivity : AppCompatActivity() {
         binding = ActivityCategoryManagementBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val categoryAdapter = CategoryManagementAdapter(::showCategoryActions)
+        binding.categories.apply {
+            layoutManager = LinearLayoutManager(this@CategoryManagementActivity)
+            adapter = categoryAdapter
+            itemAnimator = null
+        }
         binding.createCategory.setOnClickListener {
-            showNameDialog(R.string.create_category) { viewModel.createCategory(it) }
+            showNameDialog(R.string.create_category, save = viewModel::createCategory)
         }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.uiState.collect { state -> renderCategories(state.categories) }
-                }
-                launch {
-                    viewModel.events.collect { event ->
-                        when (event) {
-                            LauncherEvent.CategoryUpdateFailed -> showMessage(R.string.category_update_failed)
-                            LauncherEvent.LaunchFailed -> showMessage(R.string.launch_failed)
-                            LauncherEvent.PreferenceUpdateFailed -> showMessage(R.string.preference_update_failed)
-                            is LauncherEvent.OpenIntent -> Unit
+                    viewModel.uiState.collect { state ->
+                        binding.emptyMessage.isVisible = !state.loading && state.categories.isEmpty()
+                        categoryAdapter.submitList(state.categories) {
+                            if (state.categories.isNotEmpty() && currentFocus == null) {
+                                binding.categories.findViewHolderForAdapterPosition(0)
+                                    ?.itemView
+                                    ?.requestFocus()
+                            }
                         }
                     }
                 }
+                launch {
+                    viewModel.failures.collect { showMessage(R.string.category_update_failed) }
+                }
             }
         }
     }
 
-    private fun renderCategories(categories: List<LauncherCategory>) {
-        val focusedCategoryId = binding.categoryContainer.findFocus()?.tag as? Long
-        binding.categoryContainer.removeAllViews()
-        binding.emptyMessage.visibility = if (categories.isEmpty()) View.VISIBLE else View.GONE
-
-        categories.forEach { category ->
-            val itemBinding = ItemCategoryManagementBinding.inflate(
-                LayoutInflater.from(this),
-                binding.categoryContainer,
-                false
-            )
-            itemBinding.category.apply {
-                tag = category.id
-                text = resources.getQuantityString(
-                    R.plurals.category_application_count,
-                    category.apps.size,
-                    category.name,
-                    category.apps.size
-                )
-                setOnClickListener { showCategoryActions(category) }
-            }
-            binding.categoryContainer.addView(itemBinding.root)
-        }
-
-        val focusTarget = binding.categoryContainer.findViewWithTag<View>(focusedCategoryId)
-            ?: binding.categoryContainer.getChildAt(0)
-            ?: binding.createCategory
-        if (currentFocus == null || focusedCategoryId != null) {
-            focusTarget.post { focusTarget.requestFocus() }
-        }
-    }
-
-    private fun showCategoryActions(category: LauncherCategory) {
+    private fun showCategoryActions(category: CategorySummary) {
         AlertDialog.Builder(this)
             .setTitle(category.name)
             .setItems(
@@ -130,7 +100,7 @@ class CategoryManagementActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun confirmDelete(category: LauncherCategory) {
+    private fun confirmDelete(category: CategorySummary) {
         AlertDialog.Builder(this)
             .setTitle(R.string.delete_category)
             .setMessage(getString(R.string.delete_category_confirmation, category.name))

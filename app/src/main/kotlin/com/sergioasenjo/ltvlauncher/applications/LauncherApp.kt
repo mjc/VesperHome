@@ -13,4 +13,7 @@ data class LauncherApp(
     val isFavorite: Boolean = false,
     val isHidden: Boolean = false,
     val manualOrder: Long? = null
-)
+) {
+    val packageName: String
+        get() = componentName.packageName
+}

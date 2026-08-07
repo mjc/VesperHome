@@ -16,7 +16,7 @@ class AppAdapter(private val onAppClick: (LauncherApp) -> Unit, private val onAp
 
     override fun getItemId(position: Int): Long {
         val app = getItem(position)
-        return (app.componentName.flattenToString().hashCode().toLong() shl 32) xor
+        return (app.packageName.hashCode().toLong() shl 32) xor
             app.user.hashCode().toLong()
     }
 
@@ -59,10 +59,10 @@ class AppAdapter(private val onAppClick: (LauncherApp) -> Unit, private val onAp
 
     private object AppDiffCallback : DiffUtil.ItemCallback<LauncherApp>() {
         override fun areItemsTheSame(oldItem: LauncherApp, newItem: LauncherApp): Boolean =
-            oldItem.componentName == newItem.componentName && oldItem.user == newItem.user
+            oldItem.packageName == newItem.packageName && oldItem.user == newItem.user
 
         override fun areContentsTheSame(oldItem: LauncherApp, newItem: LauncherApp): Boolean =
-            oldItem.componentName == newItem.componentName &&
+            oldItem.packageName == newItem.packageName &&
                 oldItem.label == newItem.label &&
                 oldItem.isFavorite == newItem.isFavorite &&
                 oldItem.isHidden == newItem.isHidden &&

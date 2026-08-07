@@ -21,14 +21,20 @@ interface CategoryDao {
     @Query("UPDATE categories SET name = :name WHERE category_id = :categoryId")
     suspend fun renameCategory(categoryId: Long, name: String)
 
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM categories " +
+            "WHERE name = :name COLLATE NOCASE AND category_id != :excludedCategoryId)"
+    )
+    suspend fun categoryNameExists(name: String, excludedCategoryId: Long): Boolean
+
     @Query("DELETE FROM categories WHERE category_id = :categoryId")
     suspend fun deleteCategory(categoryId: Long)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMembership(membership: CategoryAppEntity)
 
-    @Query("DELETE FROM category_apps WHERE category_id = :categoryId AND component_name = :componentName")
-    suspend fun deleteMembership(categoryId: Long, componentName: String)
+    @Query("DELETE FROM category_apps WHERE category_id = :categoryId AND component_name = :packageName")
+    suspend fun deleteMembership(categoryId: Long, packageName: String)
 
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM categories")
     suspend fun nextCategoryPosition(): Long
@@ -41,11 +47,11 @@ interface CategoryDao {
         insertCategory(CategoryEntity(name = name, position = nextCategoryPosition()))
 
     @Transaction
-    suspend fun addApp(categoryId: Long, componentName: String) {
+    suspend fun addApp(categoryId: Long, packageName: String) {
         insertMembership(
             CategoryAppEntity(
                 categoryId = categoryId,
-                componentName = componentName,
+                componentName = packageName,
                 position = nextAppPosition(categoryId)
             )
         )

@@ -15,30 +15,30 @@ interface AppPreferenceDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfMissing(preference: AppPreferenceEntity)
 
-    @Query("UPDATE app_preferences SET is_favorite = :isFavorite WHERE component_name = :componentName")
-    suspend fun updateFavorite(componentName: String, isFavorite: Boolean)
+    @Query("UPDATE app_preferences SET is_favorite = :isFavorite WHERE component_name = :packageName")
+    suspend fun updateFavorite(packageName: String, isFavorite: Boolean)
 
-    @Query("UPDATE app_preferences SET is_hidden = :isHidden WHERE component_name = :componentName")
-    suspend fun updateHidden(componentName: String, isHidden: Boolean)
+    @Query("UPDATE app_preferences SET is_hidden = :isHidden WHERE component_name = :packageName")
+    suspend fun updateHidden(packageName: String, isHidden: Boolean)
 
-    @Query("UPDATE app_preferences SET manual_order = :manualOrder WHERE component_name = :componentName")
-    suspend fun updateManualOrder(componentName: String, manualOrder: Long?)
+    @Query("UPDATE app_preferences SET manual_order = :manualOrder WHERE component_name = :packageName")
+    suspend fun updateManualOrder(packageName: String, manualOrder: Long?)
 
     @Transaction
-    suspend fun setFavorite(componentName: String, isFavorite: Boolean) {
-        insertIfMissing(AppPreferenceEntity(componentName))
-        updateFavorite(componentName, isFavorite)
+    suspend fun setFavorite(packageName: String, isFavorite: Boolean) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateFavorite(packageName, isFavorite)
     }
 
     @Transaction
-    suspend fun setHidden(componentName: String, isHidden: Boolean) {
-        insertIfMissing(AppPreferenceEntity(componentName))
-        updateHidden(componentName, isHidden)
+    suspend fun setHidden(packageName: String, isHidden: Boolean) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateHidden(packageName, isHidden)
     }
 
     @Transaction
-    suspend fun setManualOrder(componentName: String, manualOrder: Long?) {
-        insertIfMissing(AppPreferenceEntity(componentName))
-        updateManualOrder(componentName, manualOrder)
+    suspend fun setManualOrder(packageName: String, manualOrder: Long?) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateManualOrder(packageName, manualOrder)
     }
 }

@@ -29,7 +29,7 @@
     <string name="category_name">Category name</string>
     <string name="category_name_required">Enter a category name.</string>
     <string name="no_categories">There are no custom categories.</string>
-    <string name="category_update_failed">The launcher could not save the category change. Category names must be unique.</string>
+    <string name="category_update_failed">The launcher could not save the category change. Names must be unique and cannot use Favorites, TV Apps, or Non-TV Apps.</string>
     <string name="add_to_category">Add to %1$s</string>
     <string name="remove_from_category">Remove from %1$s</string>
     <plurals name="application_count">
