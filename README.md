@@ -1,34 +1,11 @@
 # LTvLauncher
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner_dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner_light.svg">
-  <img alt="LTvLauncher Banner" src=".github/assets/banner_light.svg">
-</picture>
-
-[![Version](https://raw.githubusercontent.com/LeanBitLab/LtvLauncher/master/.github/badges/version.svg)](https://github.com/LeanBitLab/LtvLauncher/releases/latest) [![Downloads](https://raw.githubusercontent.com/LeanBitLab/LtvLauncher/master/.github/badges/downloads.svg)](https://github.com/LeanBitLab/LtvLauncher/releases) [![Stars](https://raw.githubusercontent.com/LeanBitLab/LtvLauncher/master/.github/badges/stars.svg)](https://github.com/LeanBitLab/LtvLauncher/stargazers)
-
-
+> [!WARNING]
+> This project is a work in progress and is highly tailored to my personal setup and TV. Features, compatibility, and behavior may change without notice and are not guaranteed to work on other devices.
 
 **LTvLauncher** is a fork of [FLauncher](https://github.com/osrosal/flauncher) (originally by [etienn01](https://gitlab.com/flauncher/flauncher)) - an open-source alternative launcher for Android TV.
 
 This customized version introduces usability enhancements and some UX improvements by [LeanBitLab](https://github.com/LeanBitLab).
-
-<a href="https://github.com/LeanBitLab/LtvLauncher/releases/latest">
-  <img alt="Get it on GitHub" src=".github/assets/get_it_on_github.png" height="65">
-</a>
-<a href="https://apt.izzysoft.de/fdroid/index/apk/com.leanbitlab.ltvL">
-  <img alt="Get it on IzzyOnDroid" src=".github/assets/IzzyOnDroid.png" height="65">
-</a>
-<a href="https://go.aftvnews.com">
-  <img alt="Downloader Code: 7259827" src=".github/assets/get_it_on_downloader.png" height="65">
-</a>
-<a href="https://github.com/LeanBitLab/LtvLauncher/releases">
-  <img alt="Pre-release" src=".github/badges/prerelease.png" height="65">
-</a>
-
-
-
 
 ## Screenshots
 
@@ -153,9 +130,3 @@ Please note that changing wallpaper requires a file explorer to be installed on 
 
 ### LTvLauncher
 - Customizations by [LeanBitLab](https://github.com/LeanBitLab)
-
----
-
-## 🛡️ LeanBitLab Ecosystem
-
-Check out our other projects: 👉 [LeanBitLab Projects](https://github.com/LeanBitLab#-current-projects)

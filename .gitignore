@@ -46,7 +46,6 @@ key.properties
 
 # Local Tools, Libs & Scripts
 *.py
-!.github/scripts/**/*.py
 sqlite_lib/
 com.leanbitlab.ltvL.yml
 *.db
