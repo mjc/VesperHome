@@ -8,9 +8,14 @@ import com.sergioasenjo.ltvlauncher.applications.PlatformApplicationRepository
 import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.data.LauncherDatabase
+import com.sergioasenjo.ltvlauncher.music.JellyfinApiRepository
+import com.sergioasenjo.ltvlauncher.music.JellyfinDiscoveryRepository
+import com.sergioasenjo.ltvlauncher.music.JellyfinPreferencesRepository
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
 import com.sergioasenjo.ltvlauncher.platform.PlatformHomeRepository
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
+import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
 
 class LtvLauncherApplication : Application() {
     val container: AppContainer by lazy {
@@ -31,4 +36,9 @@ class AppContainer(application: Application) {
     val categoryRepository = CategoryRepository(database.categoryDao())
     val homeRepository: HomeRepository = PlatformHomeRepository(application)
     val launcherSettingsRepository = LauncherSettingsRepository(application)
+    private val json = Json { ignoreUnknownKeys = true }
+    private val httpClient = OkHttpClient()
+    val jellyfinPreferencesRepository = JellyfinPreferencesRepository(application)
+    val jellyfinDiscoveryRepository = JellyfinDiscoveryRepository(json)
+    val jellyfinApiRepository = JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository)
 }

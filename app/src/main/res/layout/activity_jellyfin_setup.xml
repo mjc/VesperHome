@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/launcher_background"
+    android:paddingStart="56dp"
+    android:paddingTop="44dp"
+    android:paddingEnd="56dp"
+    android:paddingBottom="44dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/jellyfin_setup"
+        android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
+        android:textColor="@color/text_primary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/jellyfin_setup_description"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_secondary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/connectManually"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/action_button_background"
+        android:text="@string/connect_jellyfin_url"
+        android:textColor="@color/action_button_text"
+        app:cornerRadius="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/description" />
+
+    <EditText
+        android:id="@+id/serverUrl"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/home_status_background"
+        android:hint="@string/jellyfin_server_url_hint"
+        android:imeOptions="actionDone"
+        android:inputType="textUri"
+        android:paddingHorizontal="14dp"
+        android:singleLine="true"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_secondary"
+        app:layout_constraintEnd_toStartOf="@id/connectManually"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/description" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/discover"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="@color/action_button_background"
+        android:text="@string/discover_jellyfin_servers"
+        android:textColor="@color/action_button_text"
+        app:cornerRadius="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/serverUrl" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginStart="12dp"
+        android:backgroundTint="@color/action_button_background"
+        android:text="@string/disconnect_jellyfin"
+        android:textColor="@color/action_button_text"
+        android:visibility="gone"
+        app:cornerRadius="10dp"
+        app:layout_constraintBottom_toBottomOf="@id/discover"
+        app:layout_constraintStart_toEndOf="@id/discover"
+        app:layout_constraintTop_toTopOf="@id/discover" />
+
+    <ProgressBar
+        android:id="@+id/progress"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="20dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/discover"
+        app:layout_constraintStart_toEndOf="@id/disconnect"
+        app:layout_constraintTop_toTopOf="@id/discover" />
+
+    <TextView
+        android:id="@+id/connectedStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textColor="@color/text_primary"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/discover" />
+
+    <TextView
+        android:id="@+id/quickConnectCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:letterSpacing="0.18"
+        android:textAppearance="@style/TextAppearance.Material3.DisplayLarge"
+        android:textColor="@color/accent"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/connectedStatus" />
+
+    <TextView
+        android:id="@+id/quickConnectInstructions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/quick_connect_instructions"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_secondary"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/quickConnectCode" />
+
+    <TextView
+        android:id="@+id/error"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_primary"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/quickConnectInstructions" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/servers"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/error" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

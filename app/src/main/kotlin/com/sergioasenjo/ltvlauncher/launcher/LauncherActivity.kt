@@ -29,6 +29,9 @@ import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
 import com.sergioasenjo.ltvlauncher.categories.LauncherSection
 import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
+import com.sergioasenjo.ltvlauncher.music.JellyfinMusicViewModel
+import com.sergioasenjo.ltvlauncher.music.JellyfinSetupActivity
+import com.sergioasenjo.ltvlauncher.music.renderJellyfinMusic
 import kotlin.math.ceil
 import kotlinx.coroutines.launch
 
@@ -53,6 +56,14 @@ class LauncherActivity : AppCompatActivity() {
             container.launcherSettingsRepository
         )
     }
+    private val musicViewModel: JellyfinMusicViewModel by viewModels {
+        val container = (application as LtvLauncherApplication).container
+        JellyfinMusicViewModel.factory(
+            application as LtvLauncherApplication,
+            container.jellyfinApiRepository,
+            container.jellyfinPreferencesRepository
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +84,11 @@ class LauncherActivity : AppCompatActivity() {
             startActivity(Intent(this, CategoryManagementActivity::class.java))
         }
         binding.sortApplications.setOnClickListener { showSortDialog() }
+        binding.setupJellyfin.setOnClickListener {
+            startActivity(Intent(this, JellyfinSetupActivity::class.java))
+        }
+        binding.musicPlayPause.setOnClickListener { musicViewModel.playPause() }
+        binding.musicNext.setOnClickListener { musicViewModel.next() }
         binding.setDefaultLauncher.setOnClickListener { viewModel.requestDefaultLauncher() }
         binding.openSystemSettings.setOnClickListener { viewModel.openSystemSettings() }
 
@@ -109,6 +125,9 @@ class LauncherActivity : AppCompatActivity() {
                 launch {
                     viewModel.events.collect(::handleEvent)
                 }
+                launch {
+                    musicViewModel.uiState.collect { binding.renderJellyfinMusic(this@LauncherActivity, it) }
+                }
             }
         }
     }
@@ -116,6 +135,11 @@ class LauncherActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshHomeStatus()
+    }
+
+    override fun onStop() {
+        musicViewModel.onHostStopped()
+        super.onStop()
     }
 
     private fun createAdapter(onManualOrderChanged: (List<LauncherApp>) -> Unit): AppAdapter =
