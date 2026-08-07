@@ -14,5 +14,7 @@ data class AppPreferenceEntity(
     @ColumnInfo(name = "is_hidden")
     val isHidden: Boolean = false,
     @ColumnInfo(name = "manual_order")
-    val manualOrder: Long? = null
+    val manualOrder: Long? = null,
+    @ColumnInfo(name = "last_used_at")
+    val lastUsedAt: Long? = null
 )

@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Space
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -12,24 +13,32 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.applications.AppAdapter
 import com.sergioasenjo.ltvlauncher.applications.AppRowView
+import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.applications.HiddenAppsActivity
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
+import com.sergioasenjo.ltvlauncher.categories.CategoryLayoutType
 import com.sergioasenjo.ltvlauncher.categories.CategoryManagementActivity
 import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
+import com.sergioasenjo.ltvlauncher.categories.LauncherSection
+import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
+import kotlin.math.ceil
 import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
     private data class CategoryRowUi(val view: AppRowView, val adapter: AppAdapter)
 
     private lateinit var binding: ActivityLauncherBinding
+    private val sectionViews = mutableMapOf<Long, View>()
     private val categoryRows = mutableMapOf<Long, CategoryRowUi>()
+    private val reorderableAdapters = mutableSetOf<AppAdapter>()
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -40,7 +49,8 @@ class LauncherActivity : AppCompatActivity() {
         LauncherViewModel.factory(
             container.managedApplicationsRepository,
             container.categoryRepository,
-            container.homeRepository
+            container.homeRepository,
+            container.launcherSettingsRepository
         )
     }
 
@@ -49,12 +59,12 @@ class LauncherActivity : AppCompatActivity() {
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val favoriteAppAdapter = AppAdapter(viewModel::launch, ::showAppActions)
-        val tvAppAdapter = AppAdapter(viewModel::launch, ::showAppActions)
-        val nonTvAppAdapter = AppAdapter(viewModel::launch, ::showAppActions)
-        configureRow(binding.favoriteRow, favoriteAppAdapter, R.string.favorites)
-        configureRow(binding.tvRow, tvAppAdapter, R.string.tv_apps)
-        configureRow(binding.nonTvRow, nonTvAppAdapter, R.string.non_tv_apps)
+        val favoriteAppAdapter = createAdapter(viewModel::setManualAppOrder)
+        val tvAppAdapter = createAdapter(viewModel::setManualAppOrder)
+        val nonTvAppAdapter = createAdapter(viewModel::setManualAppOrder)
+        configureRow(binding.favoriteRow, favoriteAppAdapter, getString(R.string.favorites))
+        configureRow(binding.tvRow, tvAppAdapter, getString(R.string.tv_apps))
+        configureRow(binding.nonTvRow, nonTvAppAdapter, getString(R.string.non_tv_apps))
 
         binding.manageHiddenApps.setOnClickListener {
             startActivity(Intent(this, HiddenAppsActivity::class.java))
@@ -62,6 +72,7 @@ class LauncherActivity : AppCompatActivity() {
         binding.manageCategories.setOnClickListener {
             startActivity(Intent(this, CategoryManagementActivity::class.java))
         }
+        binding.sortApplications.setOnClickListener { showSortDialog() }
         binding.setDefaultLauncher.setOnClickListener { viewModel.requestDefaultLauncher() }
         binding.openSystemSettings.setOnClickListener { viewModel.openSystemSettings() }
 
@@ -70,75 +81,33 @@ class LauncherActivity : AppCompatActivity() {
                 launch {
                     viewModel.uiState.collect { state ->
                         renderHomeStatus(state.isDefaultLauncher)
-                        binding.favoriteRow.visibility =
-                            if (state.favoriteApps.isEmpty()) View.GONE else View.VISIBLE
-                        binding.favoriteRow.appCount.text = appCount(state.favoriteApps.size)
-                        binding.tvRow.appCount.text = appCount(state.tvApps.size)
-                        binding.nonTvRow.appCount.text = appCount(state.nonTvApps.size)
-                        submitApps(
-                            binding.favoriteRow.apps,
-                            favoriteAppAdapter,
-                            state.favoriteApps,
-                            requestInitialFocus = !state.loading && state.isDefaultLauncher != false
-                        )
-                        val categoriesHaveApps = renderCategories(
-                            state.categories,
-                            requestInitialFocus = !state.loading &&
-                                state.isDefaultLauncher != false &&
-                                state.favoriteApps.isEmpty()
+                        renderBuiltInRows(state, favoriteAppAdapter, tvAppAdapter, nonTvAppAdapter)
+                        val sectionsHaveApps = renderSections(
+                            state.sections,
+                            requestInitialFocus = canRequestInitialFocus(state) && state.favoriteApps.isEmpty()
                         )
                         submitApps(
                             binding.tvRow.apps,
                             tvAppAdapter,
                             state.tvApps,
-                            requestInitialFocus = !state.loading &&
-                                state.isDefaultLauncher != false &&
-                                state.favoriteApps.isEmpty() &&
-                                !categoriesHaveApps
+                            canRequestInitialFocus(state) && state.favoriteApps.isEmpty() && !sectionsHaveApps
                         )
                         submitApps(
                             binding.nonTvRow.apps,
                             nonTvAppAdapter,
                             state.nonTvApps,
-                            requestInitialFocus = !state.loading &&
-                                state.isDefaultLauncher != false &&
+                            canRequestInitialFocus(state) &&
                                 state.favoriteApps.isEmpty() &&
-                                !categoriesHaveApps &&
+                                !sectionsHaveApps &&
                                 state.tvApps.isEmpty()
                         )
-                        if (!state.loading &&
-                            state.favoriteApps.isEmpty() &&
-                            state.tvApps.isEmpty() &&
-                            state.nonTvApps.isEmpty()
-                        ) {
+                        if (!state.loading && allAppRowsEmpty(state)) {
                             binding.manageHiddenApps.post { binding.manageHiddenApps.requestFocus() }
                         }
                     }
                 }
                 launch {
-                    viewModel.events.collect { event ->
-                        when (event) {
-                            LauncherEvent.LaunchFailed -> Toast.makeText(
-                                this@LauncherActivity,
-                                R.string.launch_failed,
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            LauncherEvent.PreferenceUpdateFailed -> Toast.makeText(
-                                this@LauncherActivity,
-                                R.string.preference_update_failed,
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            LauncherEvent.CategoryUpdateFailed -> Toast.makeText(
-                                this@LauncherActivity,
-                                R.string.category_update_failed,
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            is LauncherEvent.OpenIntent -> openIntent(event.intent)
-                        }
-                    }
+                    viewModel.events.collect(::handleEvent)
                 }
             }
         }
@@ -149,6 +118,40 @@ class LauncherActivity : AppCompatActivity() {
         viewModel.refreshHomeStatus()
     }
 
+    private fun createAdapter(onManualOrderChanged: (List<LauncherApp>) -> Unit): AppAdapter =
+        AppAdapter(viewModel::launch, ::showAppActions, onManualOrderChanged)
+
+    private fun renderBuiltInRows(
+        state: LauncherUiState,
+        favoriteAdapter: AppAdapter,
+        tvAdapter: AppAdapter,
+        nonTvAdapter: AppAdapter
+    ) {
+        binding.favoriteRow.visibility = if (state.favoriteApps.isEmpty()) View.GONE else View.VISIBLE
+        binding.favoriteRow.appCount.text = appCount(state.favoriteApps.size)
+        binding.tvRow.appCount.text = appCount(state.tvApps.size)
+        binding.nonTvRow.appCount.text = appCount(state.nonTvApps.size)
+        configureAppsLayout(
+            binding.favoriteRow,
+            favoriteAdapter,
+            CategoryLayoutType.ROW,
+            6,
+            130,
+            state.favoriteApps.size
+        )
+        configureAppsLayout(binding.tvRow, tvAdapter, CategoryLayoutType.ROW, 6, 130, state.tvApps.size)
+        configureAppsLayout(binding.nonTvRow, nonTvAdapter, CategoryLayoutType.ROW, 6, 130, state.nonTvApps.size)
+        listOf(favoriteAdapter, tvAdapter, nonTvAdapter).forEach { adapter ->
+            setReorderable(adapter, state.applicationSortMode == ApplicationSortMode.MANUAL)
+        }
+        submitApps(
+            binding.favoriteRow.apps,
+            favoriteAdapter,
+            state.favoriteApps,
+            canRequestInitialFocus(state)
+        )
+    }
+
     private fun renderHomeStatus(isDefaultLauncher: Boolean?) {
         binding.homeStatus.setText(
             when (isDefaultLauncher) {
@@ -157,10 +160,18 @@ class LauncherActivity : AppCompatActivity() {
                 false -> R.string.home_status_not_default
             }
         )
-        binding.setDefaultLauncher.visibility =
-            if (isDefaultLauncher == false) View.VISIBLE else View.GONE
+        binding.setDefaultLauncher.visibility = if (isDefaultLauncher == false) View.VISIBLE else View.GONE
         if (isDefaultLauncher == false && currentFocus == null) {
             binding.setDefaultLauncher.post { binding.setDefaultLauncher.requestFocus() }
+        }
+    }
+
+    private fun handleEvent(event: LauncherEvent) {
+        when (event) {
+            LauncherEvent.LaunchFailed -> showMessage(R.string.launch_failed)
+            LauncherEvent.PreferenceUpdateFailed -> showMessage(R.string.preference_update_failed)
+            LauncherEvent.CategoryUpdateFailed -> showMessage(R.string.category_update_failed)
+            is LauncherEvent.OpenIntent -> openIntent(event.intent)
         }
     }
 
@@ -168,37 +179,35 @@ class LauncherActivity : AppCompatActivity() {
         try {
             settingsLauncher.launch(intent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(this, R.string.settings_open_failed, Toast.LENGTH_SHORT).show()
+            showMessage(R.string.settings_open_failed)
         }
     }
 
-    private fun configureRow(appRow: AppRowView, appAdapter: AppAdapter, titleRes: Int) {
-        configureRow(appRow, appAdapter, getString(titleRes))
+    private fun showSortDialog() {
+        val modes = ApplicationSortMode.entries
+        AlertDialog.Builder(this)
+            .setTitle(R.string.sort_applications)
+            .setSingleChoiceItems(
+                modes.map { getString(it.labelRes) }.toTypedArray(),
+                modes.indexOf(viewModel.uiState.value.applicationSortMode)
+            ) { dialog, selection ->
+                viewModel.setApplicationSortMode(modes[selection])
+                dialog.dismiss()
+            }
+            .show()
     }
 
-    private fun configureRow(appRow: AppRowView, appAdapter: AppAdapter, title: String) {
-        appRow.title.text = title
-        appRow.apps.apply {
-            layoutManager = LinearLayoutManager(
-                this@LauncherActivity,
-                LinearLayoutManager.HORIZONTAL,
-                false
-            )
-            adapter = appAdapter
-            itemAnimator = null
-        }
-    }
-
-    private fun showAppActions(app: LauncherApp) {
-        val favoriteAction = if (app.isFavorite) {
-            R.string.remove_from_favorites
-        } else {
-            R.string.add_to_favorites
-        }
+    private fun showAppActions(app: LauncherApp, adapter: AppAdapter) {
+        val favoriteAction = if (app.isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites
         val actions = mutableListOf(
             getString(favoriteAction) to { viewModel.toggleFavorite(app) },
-            getString(R.string.hide_app) to { viewModel.setHidden(app, true) }
+            getString(R.string.hide_app) to { viewModel.setHidden(app, true) },
+            getString(R.string.application_info) to { viewModel.openApplicationDetails(app) },
+            getString(R.string.uninstall_application) to { viewModel.uninstall(app) }
         )
+        if (adapter in reorderableAdapters) {
+            actions += getString(R.string.reorder_application) to { adapter.startMoving(app) }
+        }
         viewModel.uiState.value.categories.forEach { category ->
             val included = category.apps.any { it.packageName == app.packageName }
             val label = if (included) {
@@ -206,44 +215,107 @@ class LauncherActivity : AppCompatActivity() {
             } else {
                 getString(R.string.add_to_category, category.name)
             }
-            actions += label to {
-                viewModel.setCategoryMembership(category, app, included = !included)
-            }
+            actions += label to { viewModel.setCategoryMembership(category, app, included = !included) }
         }
 
         AlertDialog.Builder(this)
             .setTitle(app.label)
-            .setItems(actions.map { it.first }.toTypedArray()) { _, action ->
-                actions[action].second()
-            }
+            .setItems(actions.map { it.first }.toTypedArray()) { _, action -> actions[action].second() }
             .show()
     }
 
-    private fun renderCategories(categories: List<LauncherCategory>, requestInitialFocus: Boolean): Boolean {
-        val categoryIds = categories.mapTo(mutableSetOf(), LauncherCategory::id)
-        categoryRows.keys.filterNot(categoryIds::contains).forEach { removedId ->
-            categoryRows.remove(removedId)?.let { binding.categoryRows.removeView(it.view) }
+    private fun configureRow(appRow: AppRowView, appAdapter: AppAdapter, title: String) {
+        appRow.title.text = title
+        appRow.apps.apply {
+            layoutManager = LinearLayoutManager(this@LauncherActivity, LinearLayoutManager.HORIZONTAL, false)
+            adapter = appAdapter
+            itemAnimator = null
+        }
+    }
+
+    private fun configureAppsLayout(
+        appRow: AppRowView,
+        adapter: AppAdapter,
+        layoutType: CategoryLayoutType,
+        columns: Int,
+        rowHeight: Int,
+        appCount: Int
+    ) {
+        val cardHeight = dp(rowHeight + 46)
+        val cardWidth: Int
+        val recyclerHeight: Int
+        if (layoutType == CategoryLayoutType.GRID) {
+            val availableWidth = resources.displayMetrics.widthPixels - dp(120)
+            cardWidth = (availableWidth / columns) - dp(16)
+            val gridCardHeight = (cardWidth * 0.72f).toInt().coerceAtLeast(dp(96))
+            adapter.setItemSize(cardWidth, gridCardHeight, columns)
+            appRow.apps.layoutManager = GridLayoutManager(this, columns)
+            recyclerHeight = ceil(appCount.toDouble() / columns).toInt() * (gridCardHeight + dp(16))
+        } else {
+            cardWidth = dp((rowHeight * 16 / 9) + 12)
+            adapter.setItemSize(cardWidth, cardHeight)
+            appRow.apps.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+            recyclerHeight = cardHeight + dp(14)
+        }
+        appRow.apps.layoutParams = appRow.apps.layoutParams.apply {
+            height = recyclerHeight.coerceAtLeast(dp(32))
+        }
+    }
+
+    private fun renderSections(sections: List<LauncherSection>, requestInitialFocus: Boolean): Boolean {
+        val sectionIds = sections.mapTo(mutableSetOf(), LauncherSection::stableId)
+        sectionViews.keys.filterNot(sectionIds::contains).forEach { removedId ->
+            sectionViews.remove(removedId)?.let(binding.categoryRows::removeView)
+            categoryRows.remove(removedId)
         }
 
         var focusRequested = false
-        categories.forEachIndexed { index, category ->
-            val row = categoryRows.getOrPut(category.id) {
-                val view = AppRowView(this)
-                val adapter = AppAdapter(viewModel::launch, ::showAppActions)
-                configureRow(view, adapter, category.name)
-                CategoryRowUi(view, adapter)
+        sections.forEachIndexed { index, section ->
+            val view = when (section) {
+                is LauncherCategory -> renderCategory(section, requestInitialFocus && !focusRequested).also {
+                    focusRequested = focusRequested || (requestInitialFocus && section.apps.isNotEmpty())
+                }
+
+                is LauncherSpacer -> sectionViews.getOrPut(section.stableId) { Space(this) }.apply {
+                    layoutParams = layoutParams?.apply { height = dp(section.height) }
+                        ?: android.widget.LinearLayout.LayoutParams(1, dp(section.height))
+                }
+
+                else -> error("Unsupported launcher section")
             }
-            row.view.title.text = category.name
-            row.view.appCount.text = appCount(category.apps.size)
-            if (binding.categoryRows.indexOfChild(row.view) != index) {
-                binding.categoryRows.removeView(row.view)
-                binding.categoryRows.addView(row.view, index)
+            sectionViews[section.stableId] = view
+            if (binding.categoryRows.indexOfChild(view) != index) {
+                binding.categoryRows.removeView(view)
+                binding.categoryRows.addView(view, index)
             }
-            val shouldRequestFocus = requestInitialFocus && !focusRequested && category.apps.isNotEmpty()
-            submitApps(row.view.apps, row.adapter, category.apps, shouldRequestFocus)
-            focusRequested = focusRequested || shouldRequestFocus
         }
-        return categories.any { it.apps.isNotEmpty() }
+        return sections.filterIsInstance<LauncherCategory>().any { it.apps.isNotEmpty() }
+    }
+
+    private fun renderCategory(category: LauncherCategory, requestInitialFocus: Boolean): AppRowView {
+        val row = categoryRows.getOrPut(category.stableId) {
+            val adapter = createAdapter { apps -> viewModel.setCategoryAppOrder(category.id, apps) }
+            val view = AppRowView(this)
+            configureRow(view, adapter, category.name)
+            CategoryRowUi(view, adapter)
+        }
+        row.view.title.text = category.name
+        row.view.appCount.text = appCount(category.apps.size)
+        configureAppsLayout(
+            row.view,
+            row.adapter,
+            category.layoutType,
+            category.gridColumns,
+            category.rowHeight,
+            category.apps.size
+        )
+        setReorderable(row.adapter, category.sortMode == ApplicationSortMode.MANUAL)
+        submitApps(row.view.apps, row.adapter, category.apps, requestInitialFocus)
+        return row.view
+    }
+
+    private fun setReorderable(adapter: AppAdapter, reorderable: Boolean) {
+        if (reorderable) reorderableAdapters += adapter else reorderableAdapters -= adapter
     }
 
     private fun submitApps(
@@ -256,15 +328,12 @@ class LauncherActivity : AppCompatActivity() {
         val focusedPosition = recyclerView.focusedChild?.let(recyclerView::getChildAdapterPosition)
             ?: RecyclerView.NO_POSITION
         val focusedApp = appAdapter.currentList.getOrNull(focusedPosition)
-
         appAdapter.submitList(apps) {
             if (apps.isEmpty()) return@submitList
-
             val targetPosition = focusedApp
-                ?.let { focused -> apps.indexOfFirst { it.componentName == focused.componentName } }
+                ?.let { focused -> apps.indexOfFirst { it.packageName == focused.packageName } }
                 ?.takeIf { it >= 0 }
                 ?: focusedPosition.coerceIn(0, apps.lastIndex)
-
             if (hadFocus || (requestInitialFocus && currentFocus == null)) {
                 requestFocus(recyclerView, targetPosition)
             }
@@ -278,5 +347,26 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    private fun canRequestInitialFocus(state: LauncherUiState): Boolean =
+        !state.loading && state.isDefaultLauncher != false
+
+    private fun allAppRowsEmpty(state: LauncherUiState): Boolean = state.favoriteApps.isEmpty() &&
+        state.tvApps.isEmpty() &&
+        state.nonTvApps.isEmpty() &&
+        state.categories.all { it.apps.isEmpty() }
+
+    private fun showMessage(messageRes: Int) {
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
+    }
+
     private fun appCount(count: Int): String = resources.getQuantityString(R.plurals.application_count, count, count)
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
+
+private val ApplicationSortMode.labelRes: Int
+    get() = when (this) {
+        ApplicationSortMode.MANUAL -> R.string.sort_manual
+        ApplicationSortMode.ALPHABETICAL -> R.string.sort_alphabetical
+        ApplicationSortMode.LAST_USED -> R.string.sort_last_used
+    }

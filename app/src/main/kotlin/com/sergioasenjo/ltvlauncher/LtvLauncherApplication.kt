@@ -10,6 +10,7 @@ import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.data.LauncherDatabase
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
 import com.sergioasenjo.ltvlauncher.platform.PlatformHomeRepository
+import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
 
 class LtvLauncherApplication : Application() {
     val container: AppContainer by lazy {
@@ -29,4 +30,5 @@ class AppContainer(application: Application) {
     val managedApplicationsRepository = ManagedApplicationsRepository(applicationRepository, appPreferencesRepository)
     val categoryRepository = CategoryRepository(database.categoryDao())
     val homeRepository: HomeRepository = PlatformHomeRepository(application)
+    val launcherSettingsRepository = LauncherSettingsRepository(application)
 }

@@ -8,49 +8,58 @@ import androidx.recyclerview.widget.RecyclerView
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ItemCategoryManagementBinding
 
-class CategoryManagementAdapter(private val onCategoryClick: (CategorySummary) -> Unit) :
-    ListAdapter<CategorySummary, CategoryManagementAdapter.CategoryViewHolder>(CategoryDiffCallback) {
+class CategoryManagementAdapter(private val onSectionClick: (SectionSummary) -> Unit) :
+    ListAdapter<SectionSummary, CategoryManagementAdapter.SectionViewHolder>(SectionDiffCallback) {
     init {
         setHasStableIds(true)
     }
 
-    override fun getItemId(position: Int): Long = getItem(position).id
+    override fun getItemId(position: Int): Long = getItem(position).stableId
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SectionViewHolder {
         val binding = ItemCategoryManagementBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return CategoryViewHolder(binding, onCategoryClick)
+        return SectionViewHolder(binding, onSectionClick)
     }
 
-    override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: SectionViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    class CategoryViewHolder(
+    class SectionViewHolder(
         private val binding: ItemCategoryManagementBinding,
-        onCategoryClick: (CategorySummary) -> Unit
+        onSectionClick: (SectionSummary) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
-        private var category: CategorySummary? = null
+        private var section: SectionSummary? = null
 
         init {
-            binding.category.setOnClickListener { category?.let(onCategoryClick) }
+            binding.category.setOnClickListener { section?.let(onSectionClick) }
         }
 
-        fun bind(category: CategorySummary) {
-            this.category = category
-            binding.category.text = binding.root.resources.getQuantityString(
-                R.plurals.category_application_count,
-                category.appCount,
-                category.name,
-                category.appCount
-            )
+        fun bind(section: SectionSummary) {
+            this.section = section
+            binding.category.text = when (section) {
+                is CategorySummary -> binding.root.resources.getQuantityString(
+                    R.plurals.category_application_count,
+                    section.appCount,
+                    section.name,
+                    section.appCount
+                )
+
+                is SpacerSummary -> binding.root.resources.getString(R.string.spacer_summary, section.height)
+
+                else -> error("Unsupported launcher section")
+            }
         }
     }
 
-    private object CategoryDiffCallback : DiffUtil.ItemCallback<CategorySummary>() {
-        override fun areItemsTheSame(oldItem: CategorySummary, newItem: CategorySummary): Boolean =
-            oldItem.id == newItem.id
+    private object SectionDiffCallback : DiffUtil.ItemCallback<SectionSummary>() {
+        override fun areItemsTheSame(oldItem: SectionSummary, newItem: SectionSummary): Boolean =
+            oldItem.stableId == newItem.stableId
 
-        override fun areContentsTheSame(oldItem: CategorySummary, newItem: CategorySummary): Boolean =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: SectionSummary, newItem: SectionSummary): Boolean = when {
+            oldItem is CategorySummary && newItem is CategorySummary -> oldItem == newItem
+            oldItem is SpacerSummary && newItem is SpacerSummary -> oldItem == newItem
+            else -> false
+        }
     }
 }

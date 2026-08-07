@@ -3,12 +3,15 @@ package com.sergioasenjo.ltvlauncher.applications
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
+import android.provider.Settings
 import android.util.Log
 import android.util.LruCache
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +27,10 @@ interface ApplicationRepository {
     fun observeApplications(): Flow<List<LauncherApp>>
 
     fun launch(componentName: ComponentName, user: UserHandle): Boolean
+
+    fun createApplicationDetailsIntent(packageName: String): Intent
+
+    fun createUninstallIntent(packageName: String): Intent
 }
 
 class PlatformApplicationRepository(context: Context) : ApplicationRepository {
@@ -83,6 +90,9 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
                     componentName = activity.componentName,
                     label = activity.label.toString(),
                     artwork = artwork,
+                    artworkVersion = runCatching {
+                        packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+                    }.getOrDefault(0L),
                     user = activity.user,
                     isTvApp = packageManager.getLeanbackLaunchIntentForPackage(
                         activity.componentName.packageName
@@ -103,6 +113,12 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
         Log.e(TAG, "Unable to launch $componentName", error)
         false
     }
+
+    override fun createApplicationDetailsIntent(packageName: String): Intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
+
+    override fun createUninstallIntent(packageName: String): Intent =
+        Intent(Intent.ACTION_DELETE, Uri.fromParts("package", packageName, null))
 
     private companion object {
         const val TAG = "ApplicationRepository"

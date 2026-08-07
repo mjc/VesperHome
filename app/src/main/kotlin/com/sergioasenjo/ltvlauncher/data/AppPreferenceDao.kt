@@ -24,6 +24,9 @@ interface AppPreferenceDao {
     @Query("UPDATE app_preferences SET manual_order = :manualOrder WHERE component_name = :packageName")
     suspend fun updateManualOrder(packageName: String, manualOrder: Long?)
 
+    @Query("UPDATE app_preferences SET last_used_at = :lastUsedAt WHERE component_name = :packageName")
+    suspend fun updateLastUsedAt(packageName: String, lastUsedAt: Long)
+
     @Transaction
     suspend fun setFavorite(packageName: String, isFavorite: Boolean) {
         insertIfMissing(AppPreferenceEntity(packageName))
@@ -40,5 +43,18 @@ interface AppPreferenceDao {
     suspend fun setManualOrder(packageName: String, manualOrder: Long?) {
         insertIfMissing(AppPreferenceEntity(packageName))
         updateManualOrder(packageName, manualOrder)
+    }
+
+    @Transaction
+    suspend fun setManualOrder(packageNames: List<String>) {
+        packageNames.forEachIndexed { index, packageName ->
+            setManualOrder(packageName, index.toLong())
+        }
+    }
+
+    @Transaction
+    suspend fun setLastUsedAt(packageName: String, lastUsedAt: Long) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateLastUsedAt(packageName, lastUsedAt)
     }
 }

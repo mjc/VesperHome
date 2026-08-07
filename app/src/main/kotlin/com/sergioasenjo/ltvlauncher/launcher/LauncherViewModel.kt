@@ -6,17 +6,22 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
 import com.sergioasenjo.ltvlauncher.applications.ManagedApplicationsRepository
+import com.sergioasenjo.ltvlauncher.applications.sortedForDisplay
 import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
+import com.sergioasenjo.ltvlauncher.categories.LauncherSection
+import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
+import com.sergioasenjo.ltvlauncher.data.LauncherCategoryDefinition
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
+import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -25,11 +30,14 @@ data class LauncherUiState(
     val favoriteApps: List<LauncherApp> = emptyList(),
     val tvApps: List<LauncherApp> = emptyList(),
     val nonTvApps: List<LauncherApp> = emptyList(),
-    val hiddenApps: List<LauncherApp> = emptyList(),
-    val categories: List<LauncherCategory> = emptyList(),
+    val sections: List<LauncherSection> = emptyList(),
+    val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
     val isDefaultLauncher: Boolean? = null,
     val loading: Boolean = true
-)
+) {
+    val categories: List<LauncherCategory>
+        get() = sections.filterIsInstance<LauncherCategory>()
+}
 
 sealed interface LauncherEvent {
     data object LaunchFailed : LauncherEvent
@@ -41,32 +49,32 @@ sealed interface LauncherEvent {
 class LauncherViewModel(
     private val managedApplicationsRepository: ManagedApplicationsRepository,
     private val categoryRepository: CategoryRepository,
-    private val homeRepository: HomeRepository
+    private val homeRepository: HomeRepository,
+    private val launcherSettingsRepository: LauncherSettingsRepository
 ) : ViewModel() {
-    private val _events = Channel<LauncherEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
+    private val eventsChannel = Channel<LauncherEvent>(Channel.BUFFERED)
+    val events = eventsChannel.receiveAsFlow()
     private val isDefaultLauncher = MutableStateFlow<Boolean?>(null)
 
     private val appState = combine(
         managedApplicationsRepository.observeApplications(),
-        categoryRepository.observeCategories()
-    ) { apps, categoryDefinitions ->
+        categoryRepository.observeSections(),
+        launcherSettingsRepository.applicationSortMode
+    ) { apps, sectionDefinitions, applicationSortMode ->
         val appsByKey = apps.associateBy(LauncherApp::packageName)
         val visibleApps = apps.filterNot(LauncherApp::isHidden)
         LauncherUiState(
-            favoriteApps = visibleApps.filter(LauncherApp::isFavorite).sortedForDisplay(),
-            tvApps = visibleApps.filter(LauncherApp::isTvApp).sortedForDisplay(),
-            nonTvApps = visibleApps.filterNot(LauncherApp::isTvApp).sortedForDisplay(),
-            hiddenApps = apps.filter(LauncherApp::isHidden).sortedForDisplay(),
-            categories = categoryDefinitions.map { definition ->
-                LauncherCategory(
-                    id = definition.id,
-                    name = definition.name,
-                    apps = definition.appKeys
-                        .mapNotNull(appsByKey::get)
-                        .filterNot(LauncherApp::isHidden)
-                )
+            favoriteApps = visibleApps.filter(LauncherApp::isFavorite).sortedForDisplay(applicationSortMode),
+            tvApps = visibleApps.filter(LauncherApp::isTvApp).sortedForDisplay(applicationSortMode),
+            nonTvApps = visibleApps.filterNot(LauncherApp::isTvApp).sortedForDisplay(applicationSortMode),
+            sections = sectionDefinitions.map { definition ->
+                when (definition) {
+                    is LauncherCategoryDefinition -> definition.toLauncherCategory(appsByKey)
+                    is LauncherSpacer -> definition
+                    else -> error("Unsupported launcher section")
+                }
             },
+            applicationSortMode = applicationSortMode,
             loading = false
         )
     }
@@ -79,9 +87,21 @@ class LauncherViewModel(
     )
 
     fun launch(app: LauncherApp) {
-        if (!managedApplicationsRepository.launch(app)) {
-            viewModelScope.launch { _events.send(LauncherEvent.LaunchFailed) }
+        if (managedApplicationsRepository.launch(app)) {
+            updatePreference { managedApplicationsRepository.recordLaunch(app) }
+        } else {
+            viewModelScope.launch { eventsChannel.send(LauncherEvent.LaunchFailed) }
         }
+    }
+
+    fun openApplicationDetails(app: LauncherApp) {
+        eventsChannel.trySend(
+            LauncherEvent.OpenIntent(managedApplicationsRepository.createApplicationDetailsIntent(app))
+        )
+    }
+
+    fun uninstall(app: LauncherApp) {
+        eventsChannel.trySend(LauncherEvent.OpenIntent(managedApplicationsRepository.createUninstallIntent(app)))
     }
 
     fun refreshHomeStatus() {
@@ -89,35 +109,19 @@ class LauncherViewModel(
     }
 
     fun requestDefaultLauncher() {
-        _events.trySend(LauncherEvent.OpenIntent(homeRepository.createDefaultLauncherIntent()))
+        eventsChannel.trySend(LauncherEvent.OpenIntent(homeRepository.createDefaultLauncherIntent()))
     }
 
     fun openSystemSettings() {
-        _events.trySend(LauncherEvent.OpenIntent(homeRepository.createSystemSettingsIntent()))
+        eventsChannel.trySend(LauncherEvent.OpenIntent(homeRepository.createSystemSettingsIntent()))
     }
 
     fun toggleFavorite(app: LauncherApp) {
-        updatePreference {
-            managedApplicationsRepository.setFavorite(app, !app.isFavorite)
-        }
+        updatePreference { managedApplicationsRepository.setFavorite(app, !app.isFavorite) }
     }
 
     fun setHidden(app: LauncherApp, hidden: Boolean) {
-        updatePreference {
-            managedApplicationsRepository.setHidden(app, hidden)
-        }
-    }
-
-    fun createCategory(name: String) {
-        updateCategory { categoryRepository.createCategory(name.trim()) }
-    }
-
-    fun renameCategory(categoryId: Long, name: String) {
-        updateCategory { categoryRepository.renameCategory(categoryId, name.trim()) }
-    }
-
-    fun deleteCategory(categoryId: Long) {
-        updateCategory { categoryRepository.deleteCategory(categoryId) }
+        updatePreference { managedApplicationsRepository.setHidden(app, hidden) }
     }
 
     fun setCategoryMembership(category: LauncherCategory, app: LauncherApp, included: Boolean) {
@@ -128,6 +132,18 @@ class LauncherViewModel(
                 categoryRepository.removeApp(category.id, app)
             }
         }
+    }
+
+    fun setApplicationSortMode(sortMode: ApplicationSortMode) {
+        updatePreference { launcherSettingsRepository.setApplicationSortMode(sortMode) }
+    }
+
+    fun setManualAppOrder(apps: List<LauncherApp>) {
+        updatePreference { managedApplicationsRepository.setManualOrder(apps) }
+    }
+
+    fun setCategoryAppOrder(categoryId: Long, apps: List<LauncherApp>) {
+        updateCategory { categoryRepository.setAppOrder(categoryId, apps) }
     }
 
     private fun updatePreference(update: suspend () -> Unit) {
@@ -145,27 +161,38 @@ class LauncherViewModel(
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                _events.send(failureEvent)
+                eventsChannel.send(failureEvent)
             }
         }
     }
 
-    private fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> = sortedWith(
-        compareBy<LauncherApp> { it.manualOrder ?: Long.MAX_VALUE }
-            .thenBy { it.label.lowercase() }
-    )
+    private fun LauncherCategoryDefinition.toLauncherCategory(appsByKey: Map<String, LauncherApp>): LauncherCategory {
+        val categoryApps = appKeys.mapNotNull(appsByKey::get).filterNot(LauncherApp::isHidden)
+        return LauncherCategory(
+            id = id,
+            name = name,
+            position = position,
+            sortMode = sortMode,
+            layoutType = layoutType,
+            gridColumns = gridColumns,
+            rowHeight = rowHeight,
+            apps = if (sortMode == ApplicationSortMode.MANUAL) categoryApps else categoryApps.sortedForDisplay(sortMode)
+        )
+    }
 
     companion object {
         fun factory(
             managedApplicationsRepository: ManagedApplicationsRepository,
             categoryRepository: CategoryRepository,
-            homeRepository: HomeRepository
+            homeRepository: HomeRepository,
+            launcherSettingsRepository: LauncherSettingsRepository
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 LauncherViewModel(
                     managedApplicationsRepository,
                     categoryRepository,
-                    homeRepository
+                    homeRepository,
+                    launcherSettingsRepository
                 )
             }
         }

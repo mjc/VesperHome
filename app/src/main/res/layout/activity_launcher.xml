@@ -125,6 +125,16 @@
                     app:cornerRadius="10dp" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sortApplications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="12dp"
+                    android:backgroundTint="@color/action_button_background"
+                    android:text="@string/sort_applications"
+                    android:textColor="@color/action_button_text"
+                    app:cornerRadius="10dp" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/manageHiddenApps"
                     android:layout_width="wrap_content"
                     android:layout_height="52dp"

@@ -1,0 +1,78 @@
+package com.sergioasenjo.ltvlauncher.categories
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
+import com.sergioasenjo.ltvlauncher.R
+import com.sergioasenjo.ltvlauncher.databinding.ActivityCategoryMembershipBinding
+import kotlinx.coroutines.launch
+
+class CategoryMembershipActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityCategoryMembershipBinding
+    private val categoryId: Long by lazy { intent.getLongExtra(EXTRA_CATEGORY_ID, 0) }
+    private val viewModel: CategoryMembershipViewModel by viewModels {
+        val container = (application as LtvLauncherApplication).container
+        CategoryMembershipViewModel.factory(
+            categoryId,
+            container.categoryRepository,
+            container.managedApplicationsRepository
+        )
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityCategoryMembershipBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.title.text = intent.getStringExtra(EXTRA_CATEGORY_NAME).orEmpty()
+
+        val membershipAdapter = CategoryMembershipAdapter(viewModel::toggle)
+        binding.apps.apply {
+            layoutManager = LinearLayoutManager(this@CategoryMembershipActivity)
+            adapter = membershipAdapter
+            itemAnimator = null
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding.emptyMessage.isVisible = !state.loading && state.apps.isEmpty()
+                        membershipAdapter.submitList(state.apps) {
+                            if (state.apps.isNotEmpty() && currentFocus == null) {
+                                binding.apps.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                            }
+                        }
+                    }
+                }
+                launch {
+                    viewModel.failures.collect {
+                        Toast.makeText(
+                            this@CategoryMembershipActivity,
+                            R.string.category_update_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val EXTRA_CATEGORY_ID = "category_id"
+        private const val EXTRA_CATEGORY_NAME = "category_name"
+
+        fun createIntent(context: Context, categoryId: Long, categoryName: String): Intent =
+            Intent(context, CategoryMembershipActivity::class.java)
+                .putExtra(EXTRA_CATEGORY_ID, categoryId)
+                .putExtra(EXTRA_CATEGORY_NAME, categoryName)
+    }
+}

@@ -1,5 +1,6 @@
 package com.sergioasenjo.ltvlauncher.applications
 
+import android.content.Intent
 import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -17,12 +18,18 @@ class ManagedApplicationsRepository(
             app.copy(
                 isFavorite = preference?.isFavorite == true,
                 isHidden = preference?.isHidden == true,
-                manualOrder = preference?.manualOrder
+                manualOrder = preference?.manualOrder,
+                lastUsedAt = preference?.lastUsedAt
             )
         }
     }
 
     fun launch(app: LauncherApp): Boolean = applicationRepository.launch(app.componentName, app.user)
+
+    fun createApplicationDetailsIntent(app: LauncherApp): Intent =
+        applicationRepository.createApplicationDetailsIntent(app.packageName)
+
+    fun createUninstallIntent(app: LauncherApp): Intent = applicationRepository.createUninstallIntent(app.packageName)
 
     suspend fun setFavorite(app: LauncherApp, isFavorite: Boolean) {
         appPreferencesRepository.setFavorite(app, isFavorite)
@@ -30,5 +37,13 @@ class ManagedApplicationsRepository(
 
     suspend fun setHidden(app: LauncherApp, isHidden: Boolean) {
         appPreferencesRepository.setHidden(app, isHidden)
+    }
+
+    suspend fun setManualOrder(apps: List<LauncherApp>) {
+        appPreferencesRepository.setManualOrder(apps)
+    }
+
+    suspend fun recordLaunch(app: LauncherApp) {
+        appPreferencesRepository.recordLaunch(app)
     }
 }

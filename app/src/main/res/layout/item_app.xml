@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="244dp"
-    android:layout_height="176dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
     android:background="@drawable/app_card_background"
     android:clickable="true"
@@ -12,16 +12,16 @@
 
     <ImageView
         android:id="@+id/artwork"
-        android:layout_width="232dp"
-        android:layout_height="130dp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:contentDescription="@null"
         android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/name"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="36dp"
         android:duplicateParentState="true"
         android:ellipsize="end"
         android:gravity="center"

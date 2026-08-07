@@ -58,6 +58,10 @@
         <activity
             android:name=".categories.CategoryManagementActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".categories.CategoryMembershipActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -29,8 +29,9 @@ class HiddenAppsActivity : AppCompatActivity() {
 
         val appAdapter = AppAdapter(
             onAppClick = viewModel::restore,
-            onAppLongClick = viewModel::restore
+            onAppLongClick = { app, _ -> viewModel.restore(app) }
         )
+        appAdapter.setItemSize(dp(244), dp(176))
         binding.apps.apply {
             layoutManager = LinearLayoutManager(
                 this@HiddenAppsActivity,
@@ -77,4 +78,6 @@ class HiddenAppsActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
