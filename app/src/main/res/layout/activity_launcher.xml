@@ -4,10 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/launcher_background"
+    android:paddingEnd="0dp"
     android:paddingStart="56dp"
     android:paddingTop="44dp"
-    android:paddingEnd="0dp"
-    android:paddingBottom="44dp">
+    android:paddingBottom="36dp">
 
     <TextView
         android:id="@+id/title"
@@ -19,40 +19,53 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/appsTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="52dp"
-        android:text="@string/applications"
-        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-        android:textColor="@color/text_primary"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title" />
-
-    <TextView
-        android:id="@+id/appCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        android:textColor="@color/text_secondary"
-        app:layout_constraintBaseline_toBaselineOf="@id/appsTitle"
-        app:layout_constraintStart_toEndOf="@id/appsTitle" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/apps"
+    <ScrollView
+        android:id="@+id/sectionScroll"
         android:layout_width="0dp"
-        android:layout_height="190dp"
-        android:layout_marginTop="18dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
         android:clipChildren="false"
-        android:clipToPadding="false"
-        android:focusable="false"
-        android:overScrollMode="never"
-        android:paddingStart="8dp"
-        android:paddingEnd="56dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appsTitle" />
+        app:layout_constraintTop_toBottomOf="@id/title">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:orientation="vertical">
+
+            <com.sergioasenjo.ltvlauncher.applications.AppRowView
+                android:id="@+id/favoriteRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <com.sergioasenjo.ltvlauncher.applications.AppRowView
+                android:id="@+id/tvRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <com.sergioasenjo.ltvlauncher.applications.AppRowView
+                android:id="@+id/nonTvRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/manageHiddenApps"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="@color/action_button_background"
+                android:text="@string/manage_hidden_apps"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

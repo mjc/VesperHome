@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LTvLauncher</string>
-    <string name="applications">Applications</string>
+    <string name="favorites">Favorites</string>
+    <string name="tv_apps">TV Apps</string>
+    <string name="non_tv_apps">Non-TV Apps</string>
+    <string name="launch_failed">This application could not be opened.</string>
+    <string name="preference_update_failed">The launcher could not save that change.</string>
+    <string name="add_to_favorites">Add to Favorites</string>
+    <string name="remove_from_favorites">Remove from Favorites</string>
+    <string name="hide_app">Hide application</string>
+    <string name="manage_hidden_apps">Manage hidden apps</string>
+    <string name="hidden_apps">Hidden Apps</string>
+    <string name="hidden_apps_description">Select an application to restore it to the launcher.</string>
+    <string name="no_hidden_apps">There are no hidden applications.</string>
     <plurals name="application_count">
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>
