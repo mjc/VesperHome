@@ -2,9 +2,11 @@ package com.sergioasenjo.ltvlauncher
 
 import android.app.Application
 import androidx.room.Room
+import com.sergioasenjo.ltvlauncher.about.DiagnosticsRepository
 import com.sergioasenjo.ltvlauncher.applications.ApplicationRepository
 import com.sergioasenjo.ltvlauncher.applications.ManagedApplicationsRepository
 import com.sergioasenjo.ltvlauncher.applications.PlatformApplicationRepository
+import com.sergioasenjo.ltvlauncher.backup.BackupRepository
 import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.data.LauncherDatabase
@@ -49,4 +51,8 @@ class AppContainer(application: Application) {
     val jellyfinPreferencesRepository by lazy { JellyfinPreferencesRepository(application) }
     val jellyfinDiscoveryRepository by lazy { JellyfinDiscoveryRepository(json) }
     val jellyfinApiRepository by lazy { JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository) }
+    val backupRepository by lazy {
+        BackupRepository(application, database, launcherSettingsRepository, wallpaperRepository, json)
+    }
+    val diagnosticsRepository = DiagnosticsRepository(application, homeRepository)
 }

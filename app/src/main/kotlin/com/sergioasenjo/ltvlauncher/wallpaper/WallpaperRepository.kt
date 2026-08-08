@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.sergioasenjo.ltvlauncher.R
 import java.io.File
 import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
@@ -23,18 +24,18 @@ import kotlinx.coroutines.withContext
 
 private val Context.wallpaperDataStore by preferencesDataStore(name = "wallpaper_settings")
 
-enum class BuiltInWallpaper(val displayName: String, val colors: IntArray, val angle: Int) {
-    PITCH_BLACK("Pitch Black", intArrayOf(0xFF000000.toInt(), 0xFF000000.toInt()), 0),
-    MIDNIGHT("Midnight", intArrayOf(0xFF18212B.toInt(), 0xFF080A0E.toInt()), 315),
-    ARCTIC("Arctic", intArrayOf(0xFF6991C7.toInt(), 0xFFA3BDED.toInt()), 315),
-    SLATE("Slate", intArrayOf(0xFF29323C.toInt(), 0xFF485563.toInt()), 90),
-    VIOLET_HAZE("Violet Haze", intArrayOf(0xFF6E45E2.toInt(), 0xFF88D3CE.toInt()), 45),
-    ROSE_DAWN("Rose Dawn", intArrayOf(0xFF9795F0.toInt(), 0xFFFBC8D4.toInt()), 180),
-    EMBER("Ember", intArrayOf(0xFFFF6B95.toInt(), 0xFFFFC796.toInt()), 135),
-    DUNE("Dune", intArrayOf(0xFFC79081.toInt(), 0xFFDFA579.toInt()), 180),
-    OCEAN("Ocean", intArrayOf(0xFF093028.toInt(), 0xFF237A57.toInt()), 45),
-    SILVER("Silver", intArrayOf(0xFFF5F7FA.toInt(), 0xFFC3CFE2.toInt()), 45),
-    AURORA("Aurora", intArrayOf(0xFF39F3BB.toInt(), 0xFF3A6073.toInt()), 315)
+enum class BuiltInWallpaper(val labelRes: Int, val colors: IntArray, val angle: Int) {
+    PITCH_BLACK(R.string.wallpaper_pitch_black, intArrayOf(0xFF000000.toInt(), 0xFF000000.toInt()), 0),
+    MIDNIGHT(R.string.wallpaper_midnight, intArrayOf(0xFF18212B.toInt(), 0xFF080A0E.toInt()), 315),
+    ARCTIC(R.string.wallpaper_arctic, intArrayOf(0xFF6991C7.toInt(), 0xFFA3BDED.toInt()), 315),
+    SLATE(R.string.wallpaper_slate, intArrayOf(0xFF29323C.toInt(), 0xFF485563.toInt()), 90),
+    VIOLET_HAZE(R.string.wallpaper_violet_haze, intArrayOf(0xFF6E45E2.toInt(), 0xFF88D3CE.toInt()), 45),
+    ROSE_DAWN(R.string.wallpaper_rose_dawn, intArrayOf(0xFF9795F0.toInt(), 0xFFFBC8D4.toInt()), 180),
+    EMBER(R.string.wallpaper_ember, intArrayOf(0xFFFF6B95.toInt(), 0xFFFFC796.toInt()), 135),
+    DUNE(R.string.wallpaper_dune, intArrayOf(0xFFC79081.toInt(), 0xFFDFA579.toInt()), 180),
+    OCEAN(R.string.wallpaper_ocean, intArrayOf(0xFF093028.toInt(), 0xFF237A57.toInt()), 45),
+    SILVER(R.string.wallpaper_silver, intArrayOf(0xFFF5F7FA.toInt(), 0xFFC3CFE2.toInt()), 45),
+    AURORA(R.string.wallpaper_aurora, intArrayOf(0xFF39F3BB.toInt(), 0xFF3A6073.toInt()), 315)
 }
 
 enum class WallpaperTarget {
@@ -133,7 +134,7 @@ class WallpaperRepository(private val context: Context) {
         }
     }
 
-    private fun customFile(target: WallpaperTarget): File = File(
+    internal fun customFile(target: WallpaperTarget): File = File(
         wallpaperDirectory,
         when (target) {
             WallpaperTarget.MAIN -> "main.image"
@@ -141,6 +142,16 @@ class WallpaperRepository(private val context: Context) {
             WallpaperTarget.NIGHT -> "night.image"
         }
     )
+
+    suspend fun restore(restored: WallpaperSettings) {
+        context.wallpaperDataStore.edit { preferences ->
+            preferences[TIME_BASED_ENABLED] = restored.timeBasedEnabled
+            preferences[MAIN_SELECTION] = restored.main.storedValue
+            preferences[DAY_SELECTION] = restored.day.storedValue
+            preferences[NIGHT_SELECTION] = restored.night.storedValue
+            preferences[REVISION] = (preferences[REVISION] ?: 0L) + 1L
+        }
+    }
 
     private fun readSettings(preferences: Preferences): WallpaperSettings = WallpaperSettings(
         timeBasedEnabled = preferences[TIME_BASED_ENABLED] ?: false,
@@ -176,6 +187,12 @@ class WallpaperRepository(private val context: Context) {
         val REVISION = longPreferencesKey("revision")
     }
 }
+
+private val WallpaperSelection.storedValue: String
+    get() = when (this) {
+        is WallpaperSelection.BuiltIn -> wallpaper.name
+        WallpaperSelection.Custom -> "CUSTOM"
+    }
 
 private fun Preferences.selection(key: Preferences.Key<String>, default: BuiltInWallpaper): WallpaperSelection {
     val storedValue = this[key] ?: return WallpaperSelection.BuiltIn(default)

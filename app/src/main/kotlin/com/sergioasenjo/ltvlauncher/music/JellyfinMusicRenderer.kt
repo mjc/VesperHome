@@ -14,7 +14,7 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
     musicPlayPause.setText(if (state.playing) R.string.pause else R.string.play)
     musicTitle.text = state.track?.title ?: context.getString(R.string.jellyfin_music)
     musicArtist.text = when {
-        state.error != null -> state.error
+        state.errorRes != null -> context.getString(state.errorRes)
 
         state.track != null -> listOfNotNull(
             state.track.artist.takeIf(String::isNotBlank),

@@ -54,8 +54,8 @@ class JellyfinSetupActivity : AppCompatActivity() {
                         getString(com.sergioasenjo.ltvlauncher.R.string.jellyfin_ready, it)
                     }.orEmpty()
                     binding.disconnect.isVisible = state.connectedServerName != null
-                    binding.error.isVisible = state.error != null
-                    binding.error.text = state.error.orEmpty()
+                    binding.error.isVisible = state.errorRes != null
+                    binding.error.text = state.errorRes?.let(::getString).orEmpty()
                     serverAdapter.submitList(state.servers) {
                         if (state.servers.isNotEmpty() && currentFocus == null) {
                             binding.servers.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.sergioasenjo.ltvlauncher.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,7 +19,7 @@ data class JellyfinSetupUiState(
     val pairing: Boolean = false,
     val quickConnectCode: String? = null,
     val connectedServerName: String? = null,
-    val error: String? = null
+    val errorRes: Int? = null
 )
 
 class JellyfinSetupViewModel(
@@ -47,21 +48,21 @@ class JellyfinSetupViewModel(
                 discovering = true,
                 servers = emptyList(),
                 quickConnectCode = null,
-                error = null
+                errorRes = null
             )
             try {
                 val servers = discoveryRepository.discover()
                 mutableUiState.value = mutableUiState.value.copy(
                     discovering = false,
                     servers = servers,
-                    error = if (servers.isEmpty()) "No Jellyfin servers were found on this network." else null
+                    errorRes = if (servers.isEmpty()) R.string.jellyfin_no_servers_found else null
                 )
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
                 mutableUiState.value = mutableUiState.value.copy(
                     discovering = false,
-                    error = "Jellyfin discovery failed. Check that the TV and server use the same network."
+                    errorRes = R.string.jellyfin_discovery_failed
                 )
             }
         }
@@ -74,7 +75,7 @@ class JellyfinSetupViewModel(
                 servers = emptyList(),
                 pairing = true,
                 quickConnectCode = null,
-                error = null
+                errorRes = null
             )
             try {
                 val request = apiRepository.initiateQuickConnect(server)
@@ -96,7 +97,7 @@ class JellyfinSetupViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     pairing = false,
                     quickConnectCode = null,
-                    error = "Quick Connect expired. Start discovery again to request a new code."
+                    errorRes = R.string.jellyfin_quick_connect_expired
                 )
             } catch (error: CancellationException) {
                 throw error
@@ -104,7 +105,7 @@ class JellyfinSetupViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     pairing = false,
                     quickConnectCode = null,
-                    error = "Quick Connect failed or is disabled on this Jellyfin server."
+                    errorRes = R.string.jellyfin_quick_connect_failed
                 )
             }
         }
@@ -116,7 +117,7 @@ class JellyfinSetupViewModel(
             mutableUiState.value = mutableUiState.value.copy(
                 discovering = true,
                 servers = emptyList(),
-                error = null
+                errorRes = null
             )
             try {
                 val server = apiRepository.resolveServer(address)
@@ -127,7 +128,7 @@ class JellyfinSetupViewModel(
             } catch (_: Exception) {
                 mutableUiState.value = mutableUiState.value.copy(
                     discovering = false,
-                    error = "The Jellyfin server URL could not be reached."
+                    errorRes = R.string.jellyfin_url_unreachable
                 )
             }
         }
@@ -141,7 +142,7 @@ class JellyfinSetupViewModel(
                 pairing = false,
                 quickConnectCode = null,
                 connectedServerName = null,
-                error = null
+                errorRes = null
             )
         }
     }

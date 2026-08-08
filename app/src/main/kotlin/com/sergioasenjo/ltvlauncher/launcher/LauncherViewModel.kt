@@ -11,6 +11,8 @@ import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
 import com.sergioasenjo.ltvlauncher.applications.ManagedApplicationsRepository
 import com.sergioasenjo.ltvlauncher.applications.sortedForDisplay
+import com.sergioasenjo.ltvlauncher.brightness.BrightnessPeriod
+import com.sergioasenjo.ltvlauncher.brightness.BrightnessSettings
 import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
 import com.sergioasenjo.ltvlauncher.categories.LauncherSection
 import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
@@ -46,6 +48,7 @@ data class LauncherUiState(
     val appearance: LauncherAppearance = LauncherAppearance(),
     val statusBar: StatusBarSettings = StatusBarSettings(),
     val screensaver: ScreensaverSettings = ScreensaverSettings(),
+    val brightness: BrightnessSettings = BrightnessSettings(),
     val wallpaper: WallpaperState = WallpaperState(),
     val isDefaultLauncher: Boolean? = null,
     val loading: Boolean = true
@@ -98,6 +101,7 @@ class LauncherViewModel(
             appearance = settings.appearance,
             statusBar = settings.statusBar,
             screensaver = settings.screensaver,
+            brightness = settings.brightness,
             wallpaper = wallpaper,
             loading = false
         )
@@ -236,6 +240,14 @@ class LauncherViewModel(
 
     fun setBackButtonAction(action: BackButtonAction) {
         updatePreference { launcherSettingsRepository.setBackButtonAction(action) }
+    }
+
+    fun setBrightnessEnabled(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setBrightnessEnabled(enabled) }
+    }
+
+    fun setBrightness(period: BrightnessPeriod, percentage: Int) {
+        updatePreference { launcherSettingsRepository.setBrightness(period, percentage) }
     }
 
     fun setTimeBasedWallpaperEnabled(enabled: Boolean) {

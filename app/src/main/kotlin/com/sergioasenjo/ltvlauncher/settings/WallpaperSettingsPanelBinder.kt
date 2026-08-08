@@ -63,7 +63,7 @@ class WallpaperSettingsPanelBinder(
         text = when (selection) {
             is WallpaperSelection.BuiltIn -> context.getString(
                 R.string.wallpaper_style_value,
-                selection.wallpaper.displayName
+                context.getString(selection.wallpaper.labelRes)
             )
 
             WallpaperSelection.Custom -> context.getString(R.string.custom_wallpaper_value)

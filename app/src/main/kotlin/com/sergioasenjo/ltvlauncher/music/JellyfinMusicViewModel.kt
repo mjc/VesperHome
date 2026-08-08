@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.sergioasenjo.ltvlauncher.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,7 @@ data class JellyfinMusicUiState(
     val track: JellyfinTrack? = null,
     val playing: Boolean = false,
     val loading: Boolean = false,
-    val error: String? = null
+    val errorRes: Int? = null
 )
 
 class JellyfinMusicViewModel(
@@ -41,7 +42,7 @@ class JellyfinMusicViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     serverName = updatedCredentials?.serverName,
                     track = if (updatedCredentials == null) null else mutableUiState.value.track,
-                    error = null
+                    errorRes = null
                 )
             }
         }
@@ -55,7 +56,7 @@ class JellyfinMusicViewModel(
         val activeCredentials = credentials ?: return
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
-            mutableUiState.value = mutableUiState.value.copy(loading = true, error = null)
+            mutableUiState.value = mutableUiState.value.copy(loading = true, errorRes = null)
             try {
                 val track = apiRepository().randomTrack(activeCredentials)
                 mutableUiState.value = mutableUiState.value.copy(track = track, loading = false)
@@ -65,7 +66,7 @@ class JellyfinMusicViewModel(
             } catch (_: Exception) {
                 mutableUiState.value = mutableUiState.value.copy(
                     loading = false,
-                    error = "Unable to load music from Jellyfin."
+                    errorRes = R.string.jellyfin_music_load_failed
                 )
             }
         }

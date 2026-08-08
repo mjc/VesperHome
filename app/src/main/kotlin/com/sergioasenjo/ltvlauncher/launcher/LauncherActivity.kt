@@ -1,7 +1,5 @@
 package com.sergioasenjo.ltvlauncher.launcher
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Bundle
 import android.os.Looper
 import android.view.KeyEvent
@@ -17,25 +15,23 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
+import com.sergioasenjo.ltvlauncher.about.AboutController
+import com.sergioasenjo.ltvlauncher.accessibility.HomeButtonFixController
 import com.sergioasenjo.ltvlauncher.applications.AppActionsController
 import com.sergioasenjo.ltvlauncher.applications.AppAdapter
-import com.sergioasenjo.ltvlauncher.applications.HiddenAppsActivity
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
-import com.sergioasenjo.ltvlauncher.categories.CategoryManagementActivity
+import com.sergioasenjo.ltvlauncher.backup.BackupController
+import com.sergioasenjo.ltvlauncher.brightness.BrightnessController
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
 import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.ltvlauncher.inputs.TvInputController
 import com.sergioasenjo.ltvlauncher.music.JellyfinMusicViewModel
-import com.sergioasenjo.ltvlauncher.music.JellyfinSetupActivity
 import com.sergioasenjo.ltvlauncher.music.renderJellyfinMusic
 import com.sergioasenjo.ltvlauncher.notifications.NotificationController
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverController
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettingsAction
-import com.sergioasenjo.ltvlauncher.settings.AppearanceSettingAction
-import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsAction
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanel
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanelPage
-import com.sergioasenjo.ltvlauncher.settings.LauncherTheme
 import com.sergioasenjo.ltvlauncher.status.StatusBarController
 import com.sergioasenjo.ltvlauncher.status.StatusBarSettingsAction
 import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperRenderer
@@ -54,6 +50,11 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var tvInputController: TvInputController
     private lateinit var notificationController: NotificationController
     private lateinit var screensaverController: ScreensaverController
+    private lateinit var homeButtonFixController: HomeButtonFixController
+    private lateinit var brightnessController: BrightnessController
+    private lateinit var backupController: BackupController
+    private lateinit var aboutController: AboutController
+    private lateinit var settingsActionController: LauncherSettingsActionController
     private var settingsPanel: LauncherSettingsPanel? = null
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
@@ -63,6 +64,9 @@ class LauncherActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) {
         viewModel.refreshHomeStatus()
+    }
+    private val backupPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && ::backupController.isInitialized) backupController.importBackup(uri)
     }
     private val viewModel: LauncherViewModel by viewModels {
         val container = (application as LtvLauncherApplication).container
@@ -87,6 +91,22 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        homeButtonFixController = HomeButtonFixController(this)
+        brightnessController = BrightnessController(
+            activity = this,
+            scope = lifecycleScope,
+            currentSettings = { viewModel.uiState.value.brightness },
+            setEnabled = viewModel::setBrightnessEnabled,
+            setBrightness = viewModel::setBrightness,
+            onPeriodChanged = {
+                val state = viewModel.uiState.value
+                settingsPanel?.renderBrightness(
+                    state.brightness,
+                    brightnessController.hasPermission(),
+                    state.appearance
+                )
+            }
+        )
         wallpaperRenderer = WallpaperRenderer(binding.root, binding.wallpaper)
         wallpaperSettingsCoordinator = WallpaperSettingsCoordinator(
             activity = this,
@@ -133,6 +153,28 @@ class LauncherActivity : AppCompatActivity() {
             setAutoHideBell = viewModel::setStatusBarAutoHideNotificationBell,
             setSystemPopups = viewModel::setSystemNotificationPopups
         )
+        backupController = BackupController(
+            activity = this,
+            scope = lifecycleScope,
+            repository = container.backupRepository,
+            currentAppearance = { viewModel.uiState.value.appearance },
+            requestImport = { backupPicker.launch("*/*") },
+            onRestored = { binding.openLauncherSettings.requestFocus() }
+        )
+        aboutController = AboutController(
+            activity = this,
+            diagnosticsRepository = container.diagnosticsRepository,
+            currentAppearance = { viewModel.uiState.value.appearance },
+            onDismissed = { binding.openLauncherSettings.requestFocus() }
+        )
+        settingsActionController = LauncherSettingsActionController(
+            this,
+            viewModel,
+            homeButtonFixController,
+            backupController,
+            aboutController,
+            ::showSortDialog
+        )
         screensaverController = ScreensaverController(
             this,
             currentSettings = { viewModel.uiState.value.screensaver },
@@ -157,11 +199,14 @@ class LauncherActivity : AppCompatActivity() {
             val state = viewModel.uiState.value
             getOrCreateSettingsPanel().show(
                 state.isDefaultLauncher,
+                homeButtonFixController.isEnabled(),
                 state.applicationSortMode,
                 state.appearance,
                 state.wallpaper,
                 state.statusBar,
-                state.screensaver
+                state.screensaver,
+                state.brightness,
+                brightnessController.hasPermission()
             )
         }
         binding.root.postOnAnimation(::initializeLauncher)
@@ -186,29 +231,38 @@ class LauncherActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
+                        brightnessController.render(state.brightness)
                         settingsPanel?.render(
                             state.isDefaultLauncher,
+                            homeButtonFixController.isEnabled(),
                             state.applicationSortMode,
                             state.appearance,
                             state.wallpaper,
                             state.statusBar,
-                            state.screensaver
+                            state.screensaver,
+                            state.brightness,
+                            brightnessController.hasPermission()
                         )
                         renderLauncherAppearance(binding, contentBinding, state.appearance)
                         statusBarController.render(state.statusBar, state.appearance)
                         tvInputController.render(state.statusBar.showInputs, state.appearance)
                         notificationController.render(state.statusBar, state.appearance)
+                        backupController.renderAppearance()
+                        aboutController.renderAppearance()
                         wallpaperRenderer.render(state.wallpaper)
                         contentRenderer.render(state)
                         if (!state.loading) {
                             settingsPanelPageToRestore?.let { page ->
                                 getOrCreateSettingsPanel().show(
                                     state.isDefaultLauncher,
+                                    homeButtonFixController.isEnabled(),
                                     state.applicationSortMode,
                                     state.appearance,
                                     state.wallpaper,
                                     state.statusBar,
                                     state.screensaver,
+                                    state.brightness,
+                                    brightnessController.hasPermission(),
                                     page
                                 )
                                 settingsPanelPageToRestore = null
@@ -224,7 +278,9 @@ class LauncherActivity : AppCompatActivity() {
                     }
                 }
                 launch {
-                    viewModel.events.collect(::handleEvent)
+                    viewModel.events.collect { event ->
+                        handleLauncherEvent(this@LauncherActivity, settingsLauncher, event)
+                    }
                 }
             }
         }
@@ -261,6 +317,12 @@ class LauncherActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (::notificationController.isInitialized) notificationController.refreshPermissions()
+        if (::brightnessController.isInitialized) {
+            brightnessController.onResume()
+            val state = viewModel.uiState.value
+            settingsPanel?.renderBrightness(state.brightness, brightnessController.hasPermission(), state.appearance)
+        }
+        if (::aboutController.isInitialized) aboutController.refresh()
         if (launcherInitialized) viewModel.refreshHomeStatus()
     }
 
@@ -281,6 +343,9 @@ class LauncherActivity : AppCompatActivity() {
         settingsPanel?.release()
         statusBarController.release()
         notificationController.release()
+        brightnessController.release()
+        backupController.release()
+        aboutController.release()
         super.onDestroy()
     }
 
@@ -291,100 +356,31 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun getOrCreateSettingsPanel(): LauncherSettingsPanel = settingsPanel ?: LauncherSettingsPanel(
         context = this,
-        onAction = ::handleSettingsAction,
-        onAppearanceAction = ::handleAppearanceAction,
+        onAction = settingsActionController::handle,
+        onAppearanceAction = viewModel::handleAppearanceAction,
         onWallpaperAction = ::handleWallpaperAction,
         onStatusBarAction = ::handleStatusBarAction,
         onScreensaverAction = ::handleScreensaverAction,
+        onBrightnessAction = brightnessController::handleSettingsAction,
         onDismissed = { binding.openLauncherSettings.requestFocus() }
     ).also { settingsPanel = it }
 
-    private fun handleEvent(event: LauncherEvent) {
-        when (event) {
-            LauncherEvent.LaunchFailed -> showMessage(R.string.launch_failed)
-            LauncherEvent.PreferenceUpdateFailed -> showMessage(R.string.preference_update_failed)
-            LauncherEvent.CategoryUpdateFailed -> showMessage(R.string.category_update_failed)
-            LauncherEvent.WallpaperUpdateFailed -> showMessage(R.string.wallpaper_update_failed)
-            LauncherEvent.CustomBannerUpdateFailed -> showMessage(R.string.custom_banner_update_failed)
-            is LauncherEvent.OpenIntent -> openIntent(event.intent)
-        }
-    }
-
-    private fun openIntent(intent: Intent) {
-        try {
-            settingsLauncher.launch(intent)
-        } catch (_: ActivityNotFoundException) {
-            showMessage(R.string.settings_open_failed)
-        }
-    }
-
-    private fun handleSettingsAction(action: LauncherSettingsAction) {
-        when (action) {
-            LauncherSettingsAction.SET_DEFAULT_HOME -> viewModel.requestDefaultLauncher()
-
-            LauncherSettingsAction.OPEN_SYSTEM_SETTINGS -> viewModel.openSystemSettings()
-
-            LauncherSettingsAction.MANAGE_CATEGORIES ->
-                startActivity(Intent(this, CategoryManagementActivity::class.java))
-
-            LauncherSettingsAction.MANAGE_HIDDEN_APPS ->
-                startActivity(Intent(this, HiddenAppsActivity::class.java))
-
-            LauncherSettingsAction.SORT_APPLICATIONS -> showSortDialog()
-
-            LauncherSettingsAction.SETUP_JELLYFIN ->
-                startActivity(Intent(this, JellyfinSetupActivity::class.java))
-        }
-    }
-
-    private fun handleAppearanceAction(action: AppearanceSettingAction) {
-        val appearance = viewModel.uiState.value.appearance
-        when (action) {
-            AppearanceSettingAction.THEME -> viewModel.setTheme(
-                if (appearance.theme == LauncherTheme.DARK) LauncherTheme.LIGHT else LauncherTheme.DARK
-            )
-
-            AppearanceSettingAction.SHOW_APP_NAMES -> viewModel.setShowAppNames(!appearance.showAppNames)
-
-            AppearanceSettingAction.SHOW_CATEGORY_TITLES ->
-                viewModel.setShowCategoryTitles(!appearance.showCategoryTitles)
-
-            AppearanceSettingAction.SHOW_FOCUS_OUTLINE ->
-                viewModel.setShowFocusOutline(!appearance.showFocusOutline)
-
-            AppearanceSettingAction.APP_CARD_FOCUS_ANIMATIONS ->
-                viewModel.setAppCardFocusAnimations(!appearance.appCardFocusAnimations)
-
-            AppearanceSettingAction.SELECTOR_TRANSITION_ANIMATIONS ->
-                viewModel.setSelectorTransitionAnimations(!appearance.selectorTransitionAnimations)
-
-            AppearanceSettingAction.KEY_CLICK_SOUNDS -> viewModel.setKeyClickSounds(!appearance.keyClickSounds)
-        }
-    }
-
-    private fun handleWallpaperAction(action: WallpaperSettingsAction) {
-        wallpaperSettingsCoordinator.handle(action)
-    }
+    private fun handleWallpaperAction(action: WallpaperSettingsAction) = wallpaperSettingsCoordinator.handle(action)
 
     private fun handleStatusBarAction(action: StatusBarSettingsAction) {
         if (!notificationController.handleSettingsAction(action)) statusBarController.handleSettingsAction(action)
     }
 
-    private fun handleScreensaverAction(action: ScreensaverSettingsAction) {
+    private fun handleScreensaverAction(action: ScreensaverSettingsAction) =
         screensaverController.handleSettingsAction(action)
-    }
 
     private fun showSortDialog() {
         showApplicationSortDialog(this, viewModel.uiState.value.applicationSortMode, viewModel::setApplicationSortMode)
     }
 
-    private fun showAppActions(app: LauncherApp, adapter: AppAdapter) {
-        appActionsController.show(app, adapter)
-    }
+    private fun showAppActions(app: LauncherApp, adapter: AppAdapter) = appActionsController.show(app, adapter)
 
-    private fun showMessage(messageRes: Int) {
-        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
-    }
+    private fun showMessage(messageRes: Int) = Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
 
     private companion object {
         const val EMOJI_INITIALIZATION_DELAY_MS = 3_000L

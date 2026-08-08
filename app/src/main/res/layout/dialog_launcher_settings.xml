@@ -52,6 +52,25 @@
                 android:visibility="gone"
                 app:cornerRadius="10dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/homeButtonFix"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:tag="secondary"
+                android:text="@string/home_button_fix_description"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="@color/text_secondary" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -102,6 +121,17 @@
                 android:backgroundTint="@color/action_button_background"
                 android:gravity="start|center_vertical"
                 android:text="@string/screensaver_and_clock"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openBrightness"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/brightness_scheduler"
                 android:textColor="@color/action_button_text"
                 app:cornerRadius="10dp" />
 
@@ -175,6 +205,28 @@
                 android:text="@string/system"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                 android:textColor="@color/text_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/backupAndRestore"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/backup_and_restore"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/aboutAndDiagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/about_and_diagnostics"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/openSystemSettings"
@@ -310,5 +362,10 @@
     <include
         android:id="@+id/screensaverPage"
         layout="@layout/view_screensaver_settings"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/brightnessPage"
+        layout="@layout/view_brightness_settings"
         android:visibility="gone" />
 </FrameLayout>

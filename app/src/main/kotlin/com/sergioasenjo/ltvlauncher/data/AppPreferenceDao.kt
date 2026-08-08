@@ -12,6 +12,15 @@ interface AppPreferenceDao {
     @Query("SELECT * FROM app_preferences")
     fun observeAll(): Flow<List<AppPreferenceEntity>>
 
+    @Query("SELECT * FROM app_preferences")
+    suspend fun getAll(): List<AppPreferenceEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(preferences: List<AppPreferenceEntity>)
+
+    @Query("DELETE FROM app_preferences")
+    suspend fun deleteAll()
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfMissing(preference: AppPreferenceEntity)
 

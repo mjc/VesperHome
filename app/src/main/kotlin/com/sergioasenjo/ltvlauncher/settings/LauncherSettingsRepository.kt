@@ -4,9 +4,12 @@ import android.content.Context
 import android.text.format.DateFormat
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
+import com.sergioasenjo.ltvlauncher.brightness.BrightnessPeriod
+import com.sergioasenjo.ltvlauncher.brightness.BrightnessSettings
 import com.sergioasenjo.ltvlauncher.screensaver.BackButtonAction
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverClockStyle
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettings
@@ -81,7 +84,8 @@ data class LauncherSettings(
     val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
     val appearance: LauncherAppearance = LauncherAppearance(),
     val statusBar: StatusBarSettings = StatusBarSettings(),
-    val screensaver: ScreensaverSettings = ScreensaverSettings()
+    val screensaver: ScreensaverSettings = ScreensaverSettings(),
+    val brightness: BrightnessSettings = BrightnessSettings()
 )
 
 class LauncherSettingsRepository(private val context: Context) {
@@ -112,6 +116,15 @@ class LauncherSettingsRepository(private val context: Context) {
             screensaver = ScreensaverSettings(
                 clockStyle = preferences.enumValue(SCREENSAVER_CLOCK_STYLE, ScreensaverClockStyle.MINIMAL),
                 backButtonAction = preferences.enumValue(BACK_BUTTON_ACTION, BackButtonAction.NOTHING)
+            ),
+            brightness = BrightnessSettings(
+                enabled = preferences[BRIGHTNESS_ENABLED] ?: false,
+                morningPercentage = preferences[BRIGHTNESS_MORNING] ?: BrightnessPeriod.MORNING.defaultPercentage,
+                dayPercentage = preferences[BRIGHTNESS_DAY] ?: BrightnessPeriod.DAY.defaultPercentage,
+                afternoonPercentage =
+                    preferences[BRIGHTNESS_AFTERNOON] ?: BrightnessPeriod.AFTERNOON.defaultPercentage,
+                eveningPercentage = preferences[BRIGHTNESS_EVENING] ?: BrightnessPeriod.EVENING.defaultPercentage,
+                nightPercentage = preferences[BRIGHTNESS_NIGHT] ?: BrightnessPeriod.NIGHT.defaultPercentage
             )
         )
     }
@@ -198,6 +211,52 @@ class LauncherSettingsRepository(private val context: Context) {
         setEnum(BACK_BUTTON_ACTION, action)
     }
 
+    suspend fun setBrightnessEnabled(enabled: Boolean) {
+        setBoolean(BRIGHTNESS_ENABLED, enabled)
+    }
+
+    suspend fun setBrightness(period: BrightnessPeriod, percentage: Int) {
+        val key = when (period) {
+            BrightnessPeriod.MORNING -> BRIGHTNESS_MORNING
+            BrightnessPeriod.DAY -> BRIGHTNESS_DAY
+            BrightnessPeriod.AFTERNOON -> BRIGHTNESS_AFTERNOON
+            BrightnessPeriod.EVENING -> BRIGHTNESS_EVENING
+            BrightnessPeriod.NIGHT -> BRIGHTNESS_NIGHT
+        }
+        setInteger(key, percentage.coerceIn(MIN_BRIGHTNESS_PERCENTAGE, MAX_BRIGHTNESS_PERCENTAGE))
+    }
+
+    suspend fun restore(restored: LauncherSettings) {
+        context.launcherSettingsDataStore.edit { preferences ->
+            preferences[APPLICATION_SORT_MODE] = restored.applicationSortMode.name
+            preferences[THEME] = restored.appearance.theme.name
+            preferences[SHOW_APP_NAMES] = restored.appearance.showAppNames
+            preferences[SHOW_CATEGORY_TITLES] = restored.appearance.showCategoryTitles
+            preferences[SHOW_FOCUS_OUTLINE] = restored.appearance.showFocusOutline
+            preferences[APP_CARD_FOCUS_ANIMATIONS] = restored.appearance.appCardFocusAnimations
+            preferences[SELECTOR_TRANSITION_ANIMATIONS] = restored.appearance.selectorTransitionAnimations
+            preferences[KEY_CLICK_SOUNDS] = restored.appearance.keyClickSounds
+            preferences[STATUS_AUTO_HIDE] = restored.statusBar.autoHide
+            preferences[STATUS_SHOW_DATE] = restored.statusBar.showDate
+            preferences[STATUS_SHOW_TIME] = restored.statusBar.showTime
+            preferences[STATUS_SHOW_NETWORK] = restored.statusBar.showNetwork
+            preferences[STATUS_SHOW_INPUTS] = restored.statusBar.showInputs
+            preferences[STATUS_SHOW_NOTIFICATIONS] = restored.statusBar.showNotifications
+            preferences[STATUS_AUTO_HIDE_NOTIFICATION_BELL] = restored.statusBar.autoHideNotificationBell
+            preferences[SYSTEM_NOTIFICATION_POPUPS] = restored.statusBar.systemNotificationPopups
+            preferences[STATUS_DATE_FORMAT] = restored.statusBar.dateFormat
+            preferences[STATUS_TIME_FORMAT] = restored.statusBar.timeFormat
+            preferences[SCREENSAVER_CLOCK_STYLE] = restored.screensaver.clockStyle.name
+            preferences[BACK_BUTTON_ACTION] = restored.screensaver.backButtonAction.name
+            preferences[BRIGHTNESS_ENABLED] = restored.brightness.enabled
+            preferences[BRIGHTNESS_MORNING] = restored.brightness.morningPercentage
+            preferences[BRIGHTNESS_DAY] = restored.brightness.dayPercentage
+            preferences[BRIGHTNESS_AFTERNOON] = restored.brightness.afternoonPercentage
+            preferences[BRIGHTNESS_EVENING] = restored.brightness.eveningPercentage
+            preferences[BRIGHTNESS_NIGHT] = restored.brightness.nightPercentage
+        }
+    }
+
     private suspend fun <T : Enum<T>> setEnum(
         key: androidx.datastore.preferences.core.Preferences.Key<String>,
         value: T
@@ -210,6 +269,10 @@ class LauncherSettingsRepository(private val context: Context) {
     }
 
     private suspend fun setString(key: androidx.datastore.preferences.core.Preferences.Key<String>, value: String) {
+        context.launcherSettingsDataStore.edit { preferences -> preferences[key] = value }
+    }
+
+    private suspend fun setInteger(key: androidx.datastore.preferences.core.Preferences.Key<Int>, value: Int) {
         context.launcherSettingsDataStore.edit { preferences -> preferences[key] = value }
     }
 
@@ -236,7 +299,15 @@ class LauncherSettingsRepository(private val context: Context) {
         val STATUS_TIME_FORMAT = stringPreferencesKey("status_time_format")
         val SCREENSAVER_CLOCK_STYLE = stringPreferencesKey("screensaver_clock_style")
         val BACK_BUTTON_ACTION = stringPreferencesKey("back_button_action")
+        val BRIGHTNESS_ENABLED = booleanPreferencesKey("brightness_scheduler_enabled")
+        val BRIGHTNESS_MORNING = intPreferencesKey("brightness_morning")
+        val BRIGHTNESS_DAY = intPreferencesKey("brightness_day")
+        val BRIGHTNESS_AFTERNOON = intPreferencesKey("brightness_afternoon")
+        val BRIGHTNESS_EVENING = intPreferencesKey("brightness_evening")
+        val BRIGHTNESS_NIGHT = intPreferencesKey("brightness_night")
         const val DEFAULT_DATE_FORMAT = "EEE, MMM d"
+        const val MIN_BRIGHTNESS_PERCENTAGE = 5
+        const val MAX_BRIGHTNESS_PERCENTAGE = 100
     }
 }
 

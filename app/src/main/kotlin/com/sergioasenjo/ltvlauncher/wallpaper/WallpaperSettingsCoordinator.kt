@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.sergioasenjo.ltvlauncher.R
 
 class WallpaperSettingsCoordinator(
     private val activity: AppCompatActivity,
@@ -36,9 +37,9 @@ class WallpaperSettingsCoordinator(
         val wallpapers = BuiltInWallpaper.entries
         val selected = (currentState().settings.selection(target) as? WallpaperSelection.BuiltIn)?.wallpaper
         AlertDialog.Builder(activity)
-            .setTitle(target.title)
+            .setTitle(target.titleRes)
             .setSingleChoiceItems(
-                wallpapers.map(BuiltInWallpaper::displayName).toTypedArray(),
+                wallpapers.map { wallpaper -> activity.getString(wallpaper.labelRes) }.toTypedArray(),
                 wallpapers.indexOf(selected)
             ) { dialog, index ->
                 onBuiltInSelected(target, wallpapers[index])
@@ -57,10 +58,10 @@ class WallpaperSettingsCoordinator(
         }
     }
 
-    private val WallpaperTarget.title: String
+    private val WallpaperTarget.titleRes: Int
         get() = when (this) {
-            WallpaperTarget.MAIN -> "Wallpaper"
-            WallpaperTarget.DAY -> "Day wallpaper"
-            WallpaperTarget.NIGHT -> "Night wallpaper"
+            WallpaperTarget.MAIN -> R.string.wallpaper
+            WallpaperTarget.DAY -> R.string.day_wallpaper_title
+            WallpaperTarget.NIGHT -> R.string.night_wallpaper_title
         }
 }

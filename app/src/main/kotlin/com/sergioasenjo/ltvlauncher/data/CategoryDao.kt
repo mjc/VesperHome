@@ -18,6 +18,33 @@ interface CategoryDao {
     @Query("SELECT * FROM spacers ORDER BY position")
     fun observeSpacers(): Flow<List<SpacerEntity>>
 
+    @Query("SELECT * FROM categories ORDER BY position, name")
+    suspend fun getCategories(): List<CategoryEntity>
+
+    @Query("SELECT * FROM category_apps ORDER BY category_id, position")
+    suspend fun getMemberships(): List<CategoryAppEntity>
+
+    @Query("SELECT * FROM spacers ORDER BY position")
+    suspend fun getSpacers(): List<SpacerEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategories(categories: List<CategoryEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMemberships(memberships: List<CategoryAppEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSpacers(spacers: List<SpacerEntity>)
+
+    @Query("DELETE FROM category_apps")
+    suspend fun deleteAllMemberships()
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
+
+    @Query("DELETE FROM spacers")
+    suspend fun deleteAllSpacers()
+
     @Insert
     suspend fun insertCategory(category: CategoryEntity): Long
 
