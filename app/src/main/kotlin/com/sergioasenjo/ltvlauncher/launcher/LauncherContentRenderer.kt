@@ -101,11 +101,25 @@ class LauncherContentRenderer(
             favoriteAppAdapter,
             CategoryLayoutType.ROW,
             6,
-            130,
+            BUILT_IN_ROW_HEIGHT_DP,
             state.favoriteApps.size
         )
-        configureAppsLayout(binding.tvRow, tvAppAdapter, CategoryLayoutType.ROW, 6, 130, state.tvApps.size)
-        configureAppsLayout(binding.nonTvRow, nonTvAppAdapter, CategoryLayoutType.ROW, 6, 130, state.nonTvApps.size)
+        configureAppsLayout(
+            binding.tvRow,
+            tvAppAdapter,
+            CategoryLayoutType.ROW,
+            6,
+            BUILT_IN_ROW_HEIGHT_DP,
+            state.tvApps.size
+        )
+        configureAppsLayout(
+            binding.nonTvRow,
+            nonTvAppAdapter,
+            CategoryLayoutType.ROW,
+            6,
+            BUILT_IN_ROW_HEIGHT_DP,
+            state.nonTvApps.size
+        )
         listOf(favoriteAppAdapter, tvAppAdapter, nonTvAppAdapter).forEach { adapter ->
             setReorderable(adapter, state.applicationSortMode == ApplicationSortMode.MANUAL)
         }
@@ -129,8 +143,10 @@ class LauncherContentRenderer(
 
     private fun updateRowAppearance(appRow: AppRowView) {
         appRow.categoryHeader.visibility = if (appearance.showCategoryTitles) View.VISIBLE else View.GONE
+        appRow.accentTick.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(appearance.palette.focus)
         appRow.title.setTextColor(appearance.palette.primaryText)
-        appRow.appCount.setTextColor(appearance.palette.secondaryText)
+        appRow.appCount.setTextColor(appearance.palette.focus)
         (appRow.apps.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin =
             if (appearance.showCategoryTitles) dp(CATEGORY_APPS_MARGIN_TOP_DP) else 0
     }
@@ -147,17 +163,17 @@ class LauncherContentRenderer(
         val cardWidth: Int
         val recyclerHeight: Int
         if (layoutType == CategoryLayoutType.GRID) {
-            val availableWidth = context.resources.displayMetrics.widthPixels - dp(120)
-            cardWidth = (availableWidth / columns) - dp(16)
-            val gridCardHeight = (cardWidth * 0.72f).toInt().coerceAtLeast(dp(96))
+            val availableWidth = context.resources.displayMetrics.widthPixels - dp(96)
+            cardWidth = (availableWidth / columns) - dp(12)
+            val gridCardHeight = (cardWidth * 0.68f).toInt().coerceAtLeast(dp(80))
             adapter.setItemSize(cardWidth, gridCardHeight, columns)
             appRow.apps.layoutManager = GridLayoutManager(context, columns)
-            recyclerHeight = ceil(appCount.toDouble() / columns).toInt() * (gridCardHeight + dp(16))
+            recyclerHeight = ceil(appCount.toDouble() / columns).toInt() * (gridCardHeight + dp(12))
         } else {
-            cardWidth = dp((rowHeight * 16 / 9) + 12)
+            cardWidth = dp(rowHeight * 16 / 9)
             adapter.setItemSize(cardWidth, cardHeight)
             appRow.apps.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            recyclerHeight = cardHeight + dp(14)
+            recyclerHeight = cardHeight + dp(12)
         }
         appRow.apps.layoutParams = appRow.apps.layoutParams.apply {
             height = recyclerHeight.coerceAtLeast(dp(32))
@@ -263,8 +279,9 @@ class LauncherContentRenderer(
     private fun dp(value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
     private companion object {
-        const val APP_NAME_AREA_HEIGHT_DP = 46
-        const val CARD_PADDING_DP = 10
-        const val CATEGORY_APPS_MARGIN_TOP_DP = 12
+        const val BUILT_IN_ROW_HEIGHT_DP = 96
+        const val APP_NAME_AREA_HEIGHT_DP = 26
+        const val CARD_PADDING_DP = 0
+        const val CATEGORY_APPS_MARGIN_TOP_DP = 8
     }
 }

@@ -17,17 +17,18 @@ internal fun renderLauncherAppearance(
     appearance: LauncherAppearance
 ) {
     val palette = appearance.palette
-    contentBinding.jellyfinPanel.background = roundedBackground(binding.root, palette.surface, palette.stroke)
-    binding.title.setTextColor(palette.primaryText)
+    contentBinding.jellyfinPanel.background = null
+    contentBinding.musicArtwork.clipToOutline = true
+    contentBinding.musicArtwork.background = GradientDrawable().apply {
+        cornerRadius = dp(binding.root, ARTWORK_CORNER_RADIUS_DP).toFloat()
+        setColor(palette.surface)
+    }
+    binding.title.setTextColor(palette.secondaryText)
     contentBinding.musicTitle.setTextColor(palette.primaryText)
     contentBinding.musicArtist.setTextColor(palette.secondaryText)
-    val strokeColors = ColorStateList(
-        arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-        intArrayOf(palette.focus, Color.TRANSPARENT)
-    )
     val buttonBackground = ColorStateList(
         arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-        intArrayOf(palette.focusedSurface, palette.surface)
+        intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
     )
     val buttonText = ColorStateList(
         arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
@@ -40,18 +41,13 @@ internal fun renderLauncherAppearance(
     ).forEach { button ->
         button.backgroundTintList = buttonBackground
         button.setTextColor(buttonText)
-        button.strokeColor = strokeColors
-        button.strokeWidth = dp(binding.root, 2)
+        button.iconTint = buttonText
     }
     contentBinding.musicLoading.indeterminateTintList = ColorStateList.valueOf(palette.focus)
     binding.root.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
 }
 
-private fun roundedBackground(view: View, color: Int, strokeColor: Int): GradientDrawable = GradientDrawable().apply {
-    cornerRadius = dp(view, 12).toFloat()
-    setColor(color)
-    setStroke(dp(view, 1), strokeColor)
-}
+private const val ARTWORK_CORNER_RADIUS_DP = 10
 
 private fun dp(view: View, value: Int): Int = (value * view.resources.displayMetrics.density).toInt()
 

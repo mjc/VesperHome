@@ -2,7 +2,6 @@ package com.sergioasenjo.ltvlauncher.notifications
 
 import android.app.Notification
 import android.content.Context
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -59,22 +58,20 @@ class NotificationPopupManager(private val context: Context) {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(14), dp(18), dp(14))
             background = GradientDrawable().apply {
-                cornerRadius = dp(12).toFloat()
-                setColor(0xEE1E252D.toInt())
-                setStroke(dp(1), 0x55FFFFFF)
+                setColor(0xF60E0B1C.toInt())
             }
             addView(
                 TextView(context).apply {
-                    setTextColor(Color.WHITE)
-                    textSize = 16f
-                    setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    this.text = listOf(appLabel, title).filter(String::isNotBlank).joinToString(" | ")
+                    setTextColor(0xFFF4F6FE.toInt())
+                    textSize = 15f
+                    setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+                    this.text = listOf(appLabel, title).filter(String::isNotBlank).joinToString("  ·  ")
                 }
             )
             if (text.isNotBlank()) {
                 addView(
                     TextView(context).apply {
-                        setTextColor(0xFFCCD5DF.toInt())
+                        setTextColor(0xFF9BA3B8.toInt())
                         textSize = 14f
                         maxLines = 2
                         this.text = text

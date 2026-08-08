@@ -63,6 +63,12 @@ class LauncherSettingsPanel(
     private val dialog = Dialog(context, R.style.Theme_LtvLauncher_SettingsPanel).apply {
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
+        window?.apply {
+            setLayout(dp(context, PANEL_WIDTH_DP), ViewGroup.LayoutParams.MATCH_PARENT)
+            setGravity(Gravity.START)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            attributes = attributes.apply { dimAmount = BACKGROUND_DIM_AMOUNT }
+        }
         setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && !isMainPageVisible()) {
                 showMainPage()
@@ -71,15 +77,7 @@ class LauncherSettingsPanel(
                 false
             }
         }
-        setOnShowListener {
-            window?.apply {
-                setLayout(dp(context, PANEL_WIDTH_DP), ViewGroup.LayoutParams.MATCH_PARENT)
-                setGravity(Gravity.START)
-                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                attributes = attributes.apply { dimAmount = BACKGROUND_DIM_AMOUNT }
-            }
-            requestInitialFocus()
-        }
+        setOnShowListener { requestInitialFocus() }
         setOnDismissListener {
             showMainPage(requestFocus = false)
             onDismissed()
@@ -182,7 +180,6 @@ class LauncherSettingsPanel(
         statusBarBinder.render(statusBar)
         screensaverBinder.render(screensaver, statusBar)
         applyThemeColors(appearance)
-        applyFocusColor(appearance.palette.focus)
         brightnessBinder.render(brightness, hasBrightnessPermission, appearance)
         binding.root.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
     }
@@ -286,82 +283,39 @@ class LauncherSettingsPanel(
 
     private fun isMainPageVisible(): Boolean = binding.mainPage.visibility == View.VISIBLE
 
-    private fun applyFocusColor(focusColor: Int) {
-        val strokeColors = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(focusColor, Color.TRANSPARENT)
-        )
-        panelButtons.forEach { button ->
-            button.strokeColor = strokeColors
-            button.strokeWidth = dp(binding.root.context, FOCUS_STROKE_WIDTH_DP)
-        }
-    }
-
     private fun applyThemeColors(appearance: LauncherAppearance) {
-        val context = binding.root.context
         val palette = appearance.palette
         val buttonBackground = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedSurface, palette.surface)
+            intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
         )
         val buttonText = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(palette.focusedText, palette.primaryText)
         )
-        binding.root.background = GradientDrawable().apply {
-            cornerRadii = floatArrayOf(
-                0f,
-                0f,
-                dp(context, PANEL_CORNER_RADIUS_DP).toFloat(),
-                dp(context, PANEL_CORNER_RADIUS_DP).toFloat(),
-                dp(context, PANEL_CORNER_RADIUS_DP).toFloat(),
-                dp(context, PANEL_CORNER_RADIUS_DP).toFloat(),
-                0f,
-                0f
-            )
-            setColor(palette.panel)
-            setStroke(dp(context, DEFAULT_STROKE_WIDTH_DP), palette.stroke)
+        binding.root.setBackgroundColor(palette.panel)
+        binding.homeStatus.background = GradientDrawable().apply {
+            cornerRadius = dp(binding.root.context, HOME_STATUS_CORNER_RADIUS_DP).toFloat()
+            setColor(palette.surface)
         }
-        binding.homeStatus.background = roundedBackground(context, palette.surface, palette.stroke)
         binding.root.forEachDescendant { view ->
             when (view) {
                 is MaterialButton -> {
                     view.backgroundTintList = buttonBackground
                     view.setTextColor(buttonText)
+                    view.iconTint = buttonText
                 }
 
                 is TextView -> view.setTextColor(
-                    if (view.tag == SECONDARY_TEXT_TAG) palette.secondaryText else palette.primaryText
+                    when (view.tag) {
+                        SECONDARY_TEXT_TAG -> palette.secondaryText
+                        ACCENT_TEXT_TAG -> palette.focus
+                        else -> palette.primaryText
+                    }
                 )
             }
         }
     }
-
-    private fun roundedBackground(context: Context, color: Int, strokeColor: Int): GradientDrawable =
-        GradientDrawable().apply {
-            cornerRadius = dp(context, CARD_CORNER_RADIUS_DP).toFloat()
-            setColor(color)
-            setStroke(dp(context, DEFAULT_STROKE_WIDTH_DP), strokeColor)
-        }
-
-    private val panelButtons: List<MaterialButton>
-        get() = listOf(
-            binding.setDefaultLauncher,
-            binding.homeButtonFix,
-            binding.openAppearance,
-            binding.openWallpaper,
-            binding.openStatusBar,
-            binding.openScreensaver,
-            binding.openBrightness,
-            binding.backupAndRestore,
-            binding.aboutAndDiagnostics,
-            binding.manageCategories,
-            binding.manageHiddenApps,
-            binding.sortApplications,
-            binding.setupJellyfin,
-            binding.openSystemSettings
-        ) + appearanceBinder.buttons + wallpaperBinder.buttons + statusBarBinder.buttons + screensaverBinder.buttons +
-            brightnessBinder.buttons
 
     private fun requestInitialFocus() {
         val firstAction = when {
@@ -382,13 +336,11 @@ class LauncherSettingsPanel(
     }
 
     private companion object {
-        const val PANEL_WIDTH_DP = 420
+        const val PANEL_WIDTH_DP = 360
         const val BACKGROUND_DIM_AMOUNT = 0.62f
-        const val FOCUS_STROKE_WIDTH_DP = 2
-        const val DEFAULT_STROKE_WIDTH_DP = 1
-        const val CARD_CORNER_RADIUS_DP = 12
-        const val PANEL_CORNER_RADIUS_DP = 24
+        const val HOME_STATUS_CORNER_RADIUS_DP = 8
         const val SECONDARY_TEXT_TAG = "secondary"
+        const val ACCENT_TEXT_TAG = "accent"
 
         fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
     }

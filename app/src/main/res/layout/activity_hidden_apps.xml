@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/launcher_background"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:paddingStart="56dp"
     android:paddingTop="44dp"
     android:paddingEnd="0dp"
@@ -13,9 +15,11 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="0.01"
         android:text="@string/hidden_apps"
-        android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
         android:textColor="@color/text_primary"
+        android:textSize="32sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -23,10 +27,10 @@
         android:id="@+id/description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:text="@string/hidden_apps_description"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
         android:textColor="@color/text_secondary"
+        android:textSize="15sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/title" />
 
@@ -39,8 +43,8 @@
         android:clipToPadding="false"
         android:focusable="false"
         android:overScrollMode="never"
-        android:paddingStart="8dp"
-        android:paddingEnd="56dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="48dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/description" />
@@ -51,8 +55,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
         android:text="@string/no_hidden_apps"
-        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
         android:textColor="@color/text_secondary"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/description" />
 

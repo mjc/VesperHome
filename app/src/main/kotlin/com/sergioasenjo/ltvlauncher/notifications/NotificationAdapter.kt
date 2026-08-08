@@ -1,6 +1,5 @@
 package com.sergioasenjo.ltvlauncher.notifications
 
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,17 +65,11 @@ class NotificationAdapter(private val onDismiss: (LauncherNotification) -> Unit)
 
         private fun renderBackground(focused: Boolean) {
             val palette = appearance.palette
-            binding.root.background = GradientDrawable().apply {
-                cornerRadius = dp(12).toFloat()
-                setColor(if (focused) palette.focusedSurface else palette.surface)
-                setStroke(dp(if (focused) 2 else 1), if (focused) palette.focus else palette.stroke)
-            }
+            binding.root.setBackgroundColor(if (focused) palette.focusedSurface else palette.surface)
             binding.title.setTextColor(if (focused) palette.focusedText else palette.primaryText)
             binding.text.setTextColor(if (focused) palette.focusedText else palette.secondaryText)
             binding.actionHint.setTextColor(if (focused) palette.focusedText else palette.secondaryText)
         }
-
-        private fun dp(value: Int): Int = (value * binding.root.resources.displayMetrics.density).toInt()
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<LauncherNotification>() {

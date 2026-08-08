@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
+    android:layout_marginBottom="10dp"
     android:clipChildren="false"
     android:orientation="vertical">
 
@@ -13,33 +13,46 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
+        <View
+            android:id="@+id/accentTick"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/accent_tick" />
+
         <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-            android:textColor="@color/text_primary" />
+            android:fontFamily="sans-serif-condensed"
+            android:letterSpacing="0.16"
+            android:textAllCaps="true"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/appCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-            android:textColor="@color/text_secondary" />
+            android:layout_marginStart="10dp"
+            android:fontFamily="sans-serif-condensed"
+            android:letterSpacing="0.08"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/apps"
         android:layout_width="match_parent"
-        android:layout_height="190dp"
-        android:layout_marginTop="12dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="8dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:focusable="false"
         android:overScrollMode="never"
-        android:paddingStart="8dp"
-        android:paddingEnd="56dp" />
+        android:paddingStart="0dp"
+        android:paddingEnd="48dp" />
 
 </LinearLayout>

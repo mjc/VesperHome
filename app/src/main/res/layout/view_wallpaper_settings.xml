@@ -11,36 +11,41 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingTop="32dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="32dp">
+        android:paddingStart="20dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/wallpaper"
-            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/text_primary"
+            android:textSize="20sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:tag="secondary"
             android:text="@string/wallpaper_description"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/text_secondary" />
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/timeBasedWallpaper"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="@color/action_button_background"
+            android:layout_height="44dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/panel_row_background"
             android:gravity="start|center_vertical"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="14dp"
             android:textColor="@color/action_button_text"
-            app:cornerRadius="10dp" />
+            android:textSize="14sp"
+            app:cornerRadius="8dp" />
 
         <LinearLayout
             android:id="@+id/mainWallpaperActions"
@@ -51,23 +56,29 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/mainWallpaperStyle"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/pickMainWallpaper"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:text="@string/pick_custom_wallpaper"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
 
@@ -81,62 +92,82 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:tag="secondary"
+                android:layout_marginTop="20dp"
+                android:paddingHorizontal="14dp"
+                android:letterSpacing="0.14"
+                android:tag="accent"
                 android:text="@string/day_wallpaper"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="@color/text_secondary" />
+                android:textAllCaps="true"
+                android:textColor="@color/accent"
+                android:textSize="11sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/dayWallpaperStyle"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/pickDayWallpaper"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:text="@string/pick_custom_day_wallpaper"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:tag="secondary"
+                android:layout_marginTop="20dp"
+                android:paddingHorizontal="14dp"
+                android:letterSpacing="0.14"
+                android:tag="accent"
                 android:text="@string/night_wallpaper"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="@color/text_secondary" />
+                android:textAllCaps="true"
+                android:textColor="@color/accent"
+                android:textSize="11sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/nightWallpaperStyle"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/pickNightWallpaper"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/action_button_background"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
                 android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:text="@string/pick_custom_night_wallpaper"
                 android:textColor="@color/action_button_text"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
 

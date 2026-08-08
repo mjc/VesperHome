@@ -3,6 +3,7 @@ package com.sergioasenjo.ltvlauncher.applications
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -171,7 +172,8 @@ class AppAdapter(
                 view.isSelected = focused
                 updateFocusAppearance(focused)
             }
-            binding.root.background = cardBackground
+            binding.artworkFrame.background = cardBackground
+            binding.artworkFrame.clipToOutline = true
         }
 
         fun bind(app: LauncherApp, moving: Boolean, appearance: LauncherAppearance) {
@@ -187,12 +189,7 @@ class AppAdapter(
                 placeholder(app.artwork.asImage())
             }
             binding.name.text = app.label
-            binding.name.setTextColor(
-                ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
-                    intArrayOf(appearance.palette.focusedText, appearance.palette.primaryText)
-                )
-            )
+            binding.name.setTextColor(appearance.palette.primaryText)
             binding.name.visibility = if (appearance.showAppNames) View.VISIBLE else View.GONE
             binding.root.contentDescription = app.label
             updateFocusAppearance(binding.root.hasFocus())
@@ -248,7 +245,7 @@ class AppAdapter(
 
         private fun updateBackground(focused: Boolean, outlineAlpha: Int) {
             val palette = appearance.palette
-            val fillColor = if (focused || moving) palette.focusedSurface else palette.surface
+            val fillColor = if (focused || moving) palette.focusedSurface else Color.TRANSPARENT
             val strokeColor: Int
             val strokeWidth: Int
             when {
@@ -263,12 +260,12 @@ class AppAdapter(
                 }
 
                 else -> {
-                    strokeColor = palette.stroke
-                    strokeWidth = dp(DEFAULT_STROKE_WIDTH_DP)
+                    strokeColor = Color.TRANSPARENT
+                    strokeWidth = 0
                 }
             }
             cardBackground.apply {
-                cornerRadius = dp(CARD_CORNER_RADIUS_DP).toFloat()
+                cornerRadius = dp(BANNER_CORNER_RADIUS_DP).toFloat()
                 setColor(fillColor)
                 setStroke(strokeWidth, strokeColor)
             }
@@ -279,17 +276,16 @@ class AppAdapter(
         private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 
         private companion object {
-            const val FOCUSED_SCALE = 1.07f
+            const val FOCUSED_SCALE = 1.1f
             const val SELECTOR_TRANSITION_MS = 140L
             const val OUTLINE_ANIMATION_MS = 850L
             const val OUTLINE_MIN_ALPHA = 110
             const val OUTLINE_FULL_ALPHA = 255
             const val EDGE_BUMP_DISTANCE_DP = 14
             const val EDGE_BUMP_DURATION_MS = 180L
-            const val DEFAULT_STROKE_WIDTH_DP = 1
             const val FOCUS_STROKE_WIDTH_DP = 3
-            const val MOVING_STROKE_WIDTH_DP = 5
-            const val CARD_CORNER_RADIUS_DP = 12
+            const val MOVING_STROKE_WIDTH_DP = 4
+            const val BANNER_CORNER_RADIUS_DP = 10
         }
     }
 

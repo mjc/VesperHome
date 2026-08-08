@@ -3,8 +3,6 @@ package com.sergioasenjo.ltvlauncher.about
 import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -23,13 +21,13 @@ class AboutPanel(
     private val dialog = Dialog(context, R.style.Theme_LtvLauncher_SettingsPanel).apply {
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
+        window?.apply {
+            setLayout(dp(context, PANEL_WIDTH_DP), ViewGroup.LayoutParams.MATCH_PARENT)
+            setGravity(Gravity.START)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            attributes = attributes.apply { dimAmount = BACKGROUND_DIM_AMOUNT }
+        }
         setOnShowListener {
-            window?.apply {
-                setLayout(dp(context, PANEL_WIDTH_DP), ViewGroup.LayoutParams.MATCH_PARENT)
-                setGravity(Gravity.START)
-                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                attributes = attributes.apply { dimAmount = BACKGROUND_DIM_AMOUNT }
-            }
             binding.sourceRepository.post { binding.sourceRepository.requestFocus() }
         }
         setOnDismissListener { onDismissed() }
@@ -98,27 +96,14 @@ class AboutPanel(
 
     private fun applyAppearance(appearance: LauncherAppearance) {
         val palette = appearance.palette
-        binding.root.background = GradientDrawable().apply {
-            cornerRadii = floatArrayOf(
-                0f,
-                0f,
-                dp(binding.root.context, 24).toFloat(),
-                dp(binding.root.context, 24).toFloat(),
-                dp(binding.root.context, 24).toFloat(),
-                dp(binding.root.context, 24).toFloat(),
-                0f,
-                0f
-            )
-            setColor(palette.panel)
-            setStroke(dp(binding.root.context, 1), palette.stroke)
-        }
+        binding.root.setBackgroundColor(palette.panel)
         binding.title.setTextColor(palette.primaryText)
         binding.description.setTextColor(palette.secondaryText)
         binding.version.setTextColor(palette.primaryText)
         binding.packageName.setTextColor(palette.secondaryText)
         binding.device.setTextColor(palette.secondaryText)
         binding.androidVersion.setTextColor(palette.secondaryText)
-        binding.permissionsTitle.setTextColor(palette.primaryText)
+        binding.permissionsTitle.setTextColor(palette.focus)
         listOf(binding.sourceRepository, binding.adbGuide).forEach { button -> renderButton(button, appearance) }
     }
 
@@ -128,21 +113,20 @@ class AboutPanel(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(palette.focusedSurface, palette.surface)
         )
+        button.iconTint = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(palette.focusedText, palette.primaryText)
+        )
         button.setTextColor(
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
                 intArrayOf(palette.focusedText, palette.primaryText)
             )
         )
-        button.strokeColor = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focus, Color.TRANSPARENT)
-        )
-        button.strokeWidth = dp(binding.root.context, 2)
     }
 
     private companion object {
-        const val PANEL_WIDTH_DP = 560
+        const val PANEL_WIDTH_DP = 470
         const val BACKGROUND_DIM_AMOUNT = 0.62f
 
         fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()

@@ -42,6 +42,7 @@ data class LauncherAppearance(
 
 data class LauncherPalette(
     val backgroundStart: Int,
+    val backgroundCenter: Int,
     val backgroundEnd: Int,
     val primaryText: Int,
     val secondaryText: Int,
@@ -54,28 +55,30 @@ data class LauncherPalette(
 ) {
     companion object {
         val DARK = LauncherPalette(
-            backgroundStart = 0xFF18212B.toInt(),
-            backgroundEnd = 0xFF080A0E.toInt(),
-            primaryText = 0xFFF7F9FC.toInt(),
-            secondaryText = 0xFFAEB8C4.toInt(),
-            surface = 0xFF263340.toInt(),
-            focusedSurface = 0xFFF7F9FC.toInt(),
-            focusedText = 0xFF111820.toInt(),
-            focus = 0xFF8EC5FF.toInt(),
-            stroke = 0x55FFFFFF,
-            panel = 0xFF1E252D.toInt()
+            backgroundStart = 0xFF191436.toInt(),
+            backgroundCenter = 0xFF0C0D1A.toInt(),
+            backgroundEnd = 0xFF05060B.toInt(),
+            primaryText = 0xFFF4F6FE.toInt(),
+            secondaryText = 0xFF9BA3B8.toInt(),
+            surface = 0x66070A12,
+            focusedSurface = 0xFF7C4DFF.toInt(),
+            focusedText = 0xFFFFFFFF.toInt(),
+            focus = 0xFFB9A5FF.toInt(),
+            stroke = 0x24FFFFFF,
+            panel = 0xFA0E0B1C.toInt()
         )
         val LIGHT = LauncherPalette(
-            backgroundStart = 0xFFF7FAFC.toInt(),
-            backgroundEnd = 0xFFDCE7EF.toInt(),
-            primaryText = 0xFF17212B.toInt(),
-            secondaryText = 0xFF5D6975.toInt(),
-            surface = 0xFFE5ECF2.toInt(),
-            focusedSurface = 0xFF17212B.toInt(),
-            focusedText = 0xFFF7F9FC.toInt(),
-            focus = 0xFF2563A8.toInt(),
-            stroke = 0x4017212B,
-            panel = 0xFFF7FAFC.toInt()
+            backgroundStart = 0xFFEFF2F9.toInt(),
+            backgroundCenter = 0xFFDFE5F1.toInt(),
+            backgroundEnd = 0xFFCBD2E4.toInt(),
+            primaryText = 0xFF191D2E.toInt(),
+            secondaryText = 0xFF5A6379.toInt(),
+            surface = 0x24191D2E,
+            focusedSurface = 0xFF5F35E6.toInt(),
+            focusedText = 0xFFFFFFFF.toInt(),
+            focus = 0xFF5F35E6.toInt(),
+            stroke = 0x2E29304E,
+            panel = 0xFAF2F3FA.toInt()
         )
     }
 }

@@ -41,24 +41,19 @@ class TvInputController(
         val palette = appearance.palette
         binding.statusInputs.backgroundTintList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedSurface, palette.surface)
+            intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
         )
-        binding.statusInputs.setTextColor(
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-                intArrayOf(palette.focusedText, palette.primaryText)
-            )
-        )
-        binding.statusInputs.strokeColor = ColorStateList(
+        val iconColors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focus, Color.TRANSPARENT)
+            intArrayOf(palette.focusedText, palette.primaryText)
         )
-        binding.statusInputs.strokeWidth = dp(2)
+        binding.statusInputs.setTextColor(iconColors)
+        binding.statusInputs.iconTint = iconColors
     }
 
     private fun updateVisibility() {
         binding.statusInputs.visibility = if (enabled && inputs.isNotEmpty()) View.VISIBLE else View.GONE
-        binding.statusInputs.text = activity.resources.getQuantityString(
+        binding.statusInputs.contentDescription = activity.resources.getQuantityString(
             R.plurals.tv_input_count,
             inputs.size,
             inputs.size
@@ -101,6 +96,4 @@ class TvInputController(
             activity.getString(R.string.tv_input_label_disconnected, input.label, type)
         }
     }
-
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
 }

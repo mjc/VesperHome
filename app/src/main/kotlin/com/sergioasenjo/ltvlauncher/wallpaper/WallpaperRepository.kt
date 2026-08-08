@@ -26,7 +26,11 @@ private val Context.wallpaperDataStore by preferencesDataStore(name = "wallpaper
 
 enum class BuiltInWallpaper(val labelRes: Int, val colors: IntArray, val angle: Int) {
     PITCH_BLACK(R.string.wallpaper_pitch_black, intArrayOf(0xFF000000.toInt(), 0xFF000000.toInt()), 0),
-    MIDNIGHT(R.string.wallpaper_midnight, intArrayOf(0xFF18212B.toInt(), 0xFF080A0E.toInt()), 315),
+    MIDNIGHT(
+        R.string.wallpaper_midnight,
+        intArrayOf(0xFF191436.toInt(), 0xFF0C0D1A.toInt(), 0xFF05060B.toInt()),
+        315
+    ),
     ARCTIC(R.string.wallpaper_arctic, intArrayOf(0xFF6991C7.toInt(), 0xFFA3BDED.toInt()), 315),
     SLATE(R.string.wallpaper_slate, intArrayOf(0xFF29323C.toInt(), 0xFF485563.toInt()), 90),
     VIOLET_HAZE(R.string.wallpaper_violet_haze, intArrayOf(0xFF6E45E2.toInt(), 0xFF88D3CE.toInt()), 45),

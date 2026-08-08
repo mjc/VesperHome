@@ -2,33 +2,35 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
+    android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp">
 
     <TextView
         android:id="@+id/name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/details"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+        android:layout_marginTop="3dp"
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/actionHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="5dp"
         android:text="@string/select_backup_actions"
-        android:textAppearance="@style/TextAppearance.Material3.LabelMedium" />
+        android:textSize="11sp" />
 
 </LinearLayout>

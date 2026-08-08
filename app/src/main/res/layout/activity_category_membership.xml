@@ -13,8 +13,10 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="0.01"
         android:textColor="@color/text_primary"
+        android:textSize="32sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -22,10 +24,10 @@
         android:id="@+id/description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:text="@string/category_membership_description"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
         android:textColor="@color/text_secondary"
+        android:textSize="15sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/title" />
 
@@ -47,8 +49,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="@string/no_installed_apps"
-        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
         android:textColor="@color/text_secondary"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/description" />
 

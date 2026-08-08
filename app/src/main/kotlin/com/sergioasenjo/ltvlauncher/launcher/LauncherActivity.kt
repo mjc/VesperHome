@@ -243,14 +243,15 @@ class LauncherActivity : AppCompatActivity() {
                             state.brightness,
                             brightnessController.hasPermission()
                         )
-                        renderLauncherAppearance(binding, contentBinding, state.appearance)
-                        statusBarController.render(state.statusBar, state.appearance)
-                        tvInputController.render(state.statusBar.showInputs, state.appearance)
-                        notificationController.render(state.statusBar, state.appearance)
+                        val homeAppearance = state.appearance.forWallpaper(state.wallpaper)
+                        renderLauncherAppearance(binding, contentBinding, homeAppearance)
+                        statusBarController.render(state.statusBar, homeAppearance)
+                        tvInputController.render(state.statusBar.showInputs, homeAppearance)
+                        notificationController.render(state.statusBar, homeAppearance, state.appearance)
                         backupController.renderAppearance()
                         aboutController.renderAppearance()
-                        wallpaperRenderer.render(state.wallpaper)
-                        contentRenderer.render(state)
+                        wallpaperRenderer.render(state.wallpaper, state.appearance.palette)
+                        contentRenderer.render(state.copy(appearance = homeAppearance))
                         if (!state.loading) {
                             settingsPanelPageToRestore?.let { page ->
                                 getOrCreateSettingsPanel().show(

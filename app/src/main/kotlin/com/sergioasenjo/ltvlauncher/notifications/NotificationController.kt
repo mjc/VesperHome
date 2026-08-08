@@ -31,6 +31,7 @@ class NotificationController(
     private var state = NotificationState()
     private var settings = StatusBarSettings()
     private var appearance = LauncherAppearance()
+    private var panelAppearance = LauncherAppearance()
     private val panelDelegate = lazy {
         NotificationPanel(
             activity,
@@ -49,26 +50,27 @@ class NotificationController(
 
     init {
         binding.statusNotifications.setOnClickListener {
-            panel.show(state, appearance)
+            panel.show(state, panelAppearance)
         }
         activity.lifecycleScope.launch {
             activity.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 repository.state.collect { state ->
                     this@NotificationController.state = state
                     renderStatus()
-                    if (panelDelegate.isInitialized() && panel.isShowing) panel.render(state, appearance)
+                    if (panelDelegate.isInitialized() && panel.isShowing) panel.render(state, panelAppearance)
                 }
             }
         }
         repository.refreshPermissions()
     }
 
-    fun render(settings: StatusBarSettings, appearance: LauncherAppearance) {
+    fun render(settings: StatusBarSettings, appearance: LauncherAppearance, panelAppearance: LauncherAppearance) {
         this.settings = settings
         this.appearance = appearance
+        this.panelAppearance = panelAppearance
         applyAppearance()
         renderStatus()
-        if (panelDelegate.isInitialized() && panel.isShowing) panel.render(state, appearance)
+        if (panelDelegate.isInitialized() && panel.isShowing) panel.render(state, panelAppearance)
     }
 
     fun refreshPermissions() {
@@ -136,19 +138,14 @@ class NotificationController(
         val palette = appearance.palette
         binding.statusNotifications.backgroundTintList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedSurface, palette.surface)
+            intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
         )
-        binding.statusNotifications.setTextColor(
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-                intArrayOf(palette.focusedText, palette.primaryText)
-            )
-        )
-        binding.statusNotifications.strokeColor = ColorStateList(
+        val iconColors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focus, Color.TRANSPARENT)
+            intArrayOf(palette.focusedText, palette.primaryText)
         )
-        binding.statusNotifications.strokeWidth = dp(2)
+        binding.statusNotifications.setTextColor(iconColors)
+        binding.statusNotifications.iconTint = iconColors
     }
 
     private fun openNotificationAccess() {
@@ -203,8 +200,6 @@ class NotificationController(
             .setPositiveButton(android.R.string.ok, null)
             .show()
     }
-
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
 
     private companion object {
         const val MAX_BADGE_COUNT = 99

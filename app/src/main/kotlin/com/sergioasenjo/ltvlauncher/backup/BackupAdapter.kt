@@ -1,6 +1,5 @@
 package com.sergioasenjo.ltvlauncher.backup
 
-import android.graphics.drawable.GradientDrawable
 import android.text.format.DateFormat
 import android.text.format.Formatter
 import android.view.LayoutInflater
@@ -63,19 +62,13 @@ class BackupAdapter(private val onSelected: (BackupFileEntry) -> Unit) :
 
         private fun renderBackground(focused: Boolean) {
             val palette = appearance.palette
-            binding.root.background = GradientDrawable().apply {
-                cornerRadius = dp(12).toFloat()
-                setColor(if (focused) palette.focusedSurface else palette.surface)
-                setStroke(dp(if (focused) 2 else 1), if (focused) palette.focus else palette.stroke)
-            }
+            binding.root.setBackgroundColor(if (focused) palette.focusedSurface else palette.surface)
             val primary = if (focused) palette.focusedText else palette.primaryText
             val secondary = if (focused) palette.focusedText else palette.secondaryText
             binding.name.setTextColor(primary)
             binding.details.setTextColor(secondary)
             binding.actionHint.setTextColor(secondary)
         }
-
-        private fun dp(value: Int): Int = (value * binding.root.resources.displayMetrics.density).toInt()
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<BackupFileEntry>() {

@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -161,53 +160,51 @@ class StatusBarController(
             if (settings.showDate) add(format(now, settings.dateFormat))
             if (settings.showTime) add(format(now, settings.timeFormat))
         }
-        binding.statusDateTime.text = values.joinToString("  |  ")
+        binding.statusDateTime.text = values.joinToString("  ·  ")
     }
 
     private fun renderNetwork() {
         if (!settings.showNetwork) return
-        binding.statusNetwork.setText(
+        val wifiLevel = networkStatus.wifiLevel?.coerceIn(0, WIFI_LEVEL_ICONS.lastIndex)
+        binding.statusNetwork.setIconResource(
             when {
-                !networkStatus.validated -> R.string.network_no_connection
-
-                networkStatus.transport == NetworkTransport.WIFI && networkStatus.wifiLevel != null -> {
-                    binding.statusNetwork.text = activity.getString(
-                        R.string.network_wifi_level,
-                        networkStatus.wifiLevel
-                    )
-                    return
-                }
-
-                networkStatus.transport == NetworkTransport.WIFI -> R.string.network_wifi
-
-                networkStatus.transport == NetworkTransport.ETHERNET -> R.string.network_ethernet
-
-                networkStatus.transport == NetworkTransport.OTHER -> R.string.network_connected
-
-                else -> R.string.network_no_connection
+                !networkStatus.validated -> R.drawable.ic_offline
+                networkStatus.transport == NetworkTransport.WIFI && wifiLevel != null -> WIFI_LEVEL_ICONS[wifiLevel]
+                networkStatus.transport == NetworkTransport.WIFI -> R.drawable.ic_wifi_4
+                networkStatus.transport == NetworkTransport.ETHERNET -> R.drawable.ic_ethernet
+                networkStatus.transport == NetworkTransport.OTHER -> R.drawable.ic_connected
+                else -> R.drawable.ic_offline
             }
         )
+        binding.statusNetwork.contentDescription = when {
+            !networkStatus.validated -> activity.getString(R.string.network_no_connection)
+
+            networkStatus.transport == NetworkTransport.WIFI && wifiLevel != null ->
+                activity.getString(R.string.network_wifi_level, wifiLevel)
+
+            networkStatus.transport == NetworkTransport.WIFI -> activity.getString(R.string.network_wifi)
+
+            networkStatus.transport == NetworkTransport.ETHERNET -> activity.getString(R.string.network_ethernet)
+
+            networkStatus.transport == NetworkTransport.OTHER -> activity.getString(R.string.network_connected)
+
+            else -> activity.getString(R.string.network_no_connection)
+        }
     }
 
     private fun applyAppearance() {
         val palette = appearance.palette
         binding.statusDateTime.setTextColor(palette.primaryText)
-        binding.statusDateTime.background = roundedBackground(palette.surface, palette.stroke)
         binding.statusNetwork.backgroundTintList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedSurface, palette.surface)
+            intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
         )
-        binding.statusNetwork.setTextColor(
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-                intArrayOf(palette.focusedText, palette.primaryText)
-            )
-        )
-        binding.statusNetwork.strokeColor = ColorStateList(
+        val iconColors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focus, Color.TRANSPARENT)
+            intArrayOf(palette.focusedText, palette.primaryText)
         )
-        binding.statusNetwork.strokeWidth = dp(2)
+        binding.statusNetwork.setTextColor(iconColors)
+        binding.statusNetwork.iconTint = iconColors
     }
 
     private fun showFormatPicker(
@@ -291,14 +288,6 @@ class StatusBarController(
         false
     }
 
-    private fun roundedBackground(color: Int, stroke: Int): GradientDrawable = GradientDrawable().apply {
-        cornerRadius = dp(10).toFloat()
-        setColor(color)
-        setStroke(dp(1), stroke)
-    }
-
-    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
-
     private companion object {
         const val STATUS_VISIBLE_DURATION_MS = 5_000L
         const val STATUS_FADE_DURATION_MS = 150L
@@ -306,5 +295,12 @@ class StatusBarController(
         const val MINUTE_MS = 60_000L
         val DATE_FORMAT_PRESETS = listOf("EEEE d", "E d", "dd/MM/y", "MMM d, y", "d MMMM", "M/d/y")
         val TIME_FORMAT_PRESETS = listOf("H:mm", "hh:mm", "h:mm a", "hh:mm a", "HH:mm")
+        val WIFI_LEVEL_ICONS = listOf(
+            R.drawable.ic_wifi_0,
+            R.drawable.ic_wifi_1,
+            R.drawable.ic_wifi_2,
+            R.drawable.ic_wifi_3,
+            R.drawable.ic_wifi_4
+        )
     }
 }

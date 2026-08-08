@@ -5,28 +5,36 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import coil3.load
+import com.sergioasenjo.ltvlauncher.settings.LauncherPalette
 
 class WallpaperRenderer(private val root: FrameLayout, private val image: ImageView) {
     private var renderedState: WallpaperState? = null
+    private var renderedPalette: LauncherPalette? = null
 
-    fun render(state: WallpaperState) {
-        if (renderedState == state) return
+    fun render(state: WallpaperState, palette: LauncherPalette) {
+        if (renderedState == state && renderedPalette == palette) return
         renderedState = state
+        renderedPalette = palette
         when (val selection = state.activeSelection) {
-            is WallpaperSelection.BuiltIn -> renderBuiltIn(selection.wallpaper)
-            WallpaperSelection.Custom -> renderCustom(state)
+            is WallpaperSelection.BuiltIn -> renderBuiltIn(selection.wallpaper, palette)
+            WallpaperSelection.Custom -> renderCustom(state, palette)
         }
     }
 
-    private fun renderBuiltIn(wallpaper: BuiltInWallpaper) {
+    private fun renderBuiltIn(wallpaper: BuiltInWallpaper, palette: LauncherPalette) {
         image.visibility = View.GONE
         image.setImageDrawable(null)
-        root.background = GradientDrawable(orientation(wallpaper.angle), wallpaper.colors.copyOf())
+        val colors = if (wallpaper == BuiltInWallpaper.MIDNIGHT) {
+            intArrayOf(palette.backgroundStart, palette.backgroundCenter, palette.backgroundEnd)
+        } else {
+            wallpaper.colors.copyOf()
+        }
+        root.background = GradientDrawable(orientation(wallpaper.angle), colors)
     }
 
-    private fun renderCustom(state: WallpaperState) {
+    private fun renderCustom(state: WallpaperState, palette: LauncherPalette) {
         val file = state.activeCustomFile ?: return
-        root.setBackgroundColor(BuiltInWallpaper.MIDNIGHT.colors.last())
+        root.setBackgroundColor(palette.backgroundEnd)
         image.visibility = View.VISIBLE
         image.load(file) {
             memoryCacheKey("${file.path}:${state.settings.revision}")

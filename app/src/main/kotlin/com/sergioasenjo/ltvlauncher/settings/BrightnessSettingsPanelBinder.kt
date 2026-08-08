@@ -1,7 +1,6 @@
 package com.sergioasenjo.ltvlauncher.settings
 
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import com.google.android.material.button.MaterialButton
@@ -80,15 +79,13 @@ class BrightnessSettingsPanelBinder(
         if (binding.configurePermission.visibility == View.VISIBLE) binding.configurePermission else binding.enabled
 
     private fun renderPeriod(item: PeriodBinding, active: Boolean, appearance: LauncherAppearance) {
-        val context = binding.root.context
         val palette = appearance.palette
-        item.binding.root.background = GradientDrawable().apply {
-            cornerRadius = dp(context, PERIOD_CORNER_RADIUS_DP).toFloat()
-            setColor(if (active) palette.surface else Color.TRANSPARENT)
-            setStroke(
-                dp(context, if (active) ACTIVE_STROKE_WIDTH_DP else STROKE_WIDTH_DP),
-                if (active) palette.focus else palette.stroke
-            )
+        item.binding.root.background = if (active) {
+            GradientDrawable().apply {
+                setColor((palette.focus and 0x00FFFFFF) or 0x2E000000)
+            }
+        } else {
+            null
         }
         item.binding.label.setTextColor(if (active) palette.focus else palette.primaryText)
         item.binding.value.setTextColor(if (active) palette.focus else palette.primaryText)
@@ -110,13 +107,4 @@ class BrightnessSettingsPanelBinder(
         val binding: ItemBrightnessPeriodBinding,
         val labelRes: Int
     )
-
-    private companion object {
-        const val PERIOD_CORNER_RADIUS_DP = 10
-        const val ACTIVE_STROKE_WIDTH_DP = 2
-        const val STROKE_WIDTH_DP = 1
-
-        fun dp(context: android.content.Context, value: Int): Int =
-            (value * context.resources.displayMetrics.density).toInt()
-    }
 }
