@@ -2,17 +2,13 @@ package com.sergioasenjo.ltvlauncher.launcher
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Looper
-import android.view.View
-import android.view.ViewGroup
+import android.view.KeyEvent
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.emoji2.text.DefaultEmojiCompatConfig
 import androidx.emoji2.text.EmojiCompat
@@ -21,29 +17,43 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
+import com.sergioasenjo.ltvlauncher.applications.AppActionsController
 import com.sergioasenjo.ltvlauncher.applications.AppAdapter
-import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.applications.HiddenAppsActivity
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
 import com.sergioasenjo.ltvlauncher.categories.CategoryManagementActivity
-import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
 import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
+import com.sergioasenjo.ltvlauncher.inputs.TvInputController
 import com.sergioasenjo.ltvlauncher.music.JellyfinMusicViewModel
 import com.sergioasenjo.ltvlauncher.music.JellyfinSetupActivity
 import com.sergioasenjo.ltvlauncher.music.renderJellyfinMusic
+import com.sergioasenjo.ltvlauncher.notifications.NotificationController
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverController
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettingsAction
 import com.sergioasenjo.ltvlauncher.settings.AppearanceSettingAction
-import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsAction
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanel
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanelPage
 import com.sergioasenjo.ltvlauncher.settings.LauncherTheme
+import com.sergioasenjo.ltvlauncher.status.StatusBarController
+import com.sergioasenjo.ltvlauncher.status.StatusBarSettingsAction
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperRenderer
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperSettingsAction
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperSettingsCoordinator
 import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLauncherBinding
     private lateinit var contentBinding: ViewLauncherContentBinding
     private lateinit var contentRenderer: LauncherContentRenderer
+    private lateinit var wallpaperRenderer: WallpaperRenderer
+    private lateinit var wallpaperSettingsCoordinator: WallpaperSettingsCoordinator
+    private lateinit var appActionsController: AppActionsController
+    private lateinit var statusBarController: StatusBarController
+    private lateinit var tvInputController: TvInputController
+    private lateinit var notificationController: NotificationController
+    private lateinit var screensaverController: ScreensaverController
     private var settingsPanel: LauncherSettingsPanel? = null
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
@@ -60,7 +70,8 @@ class LauncherActivity : AppCompatActivity() {
             container.managedApplicationsRepository,
             container.categoryRepository,
             container.homeRepository,
-            container.launcherSettingsRepository
+            container.launcherSettingsRepository,
+            container.wallpaperRepository
         )
     }
     private val musicViewModel: JellyfinMusicViewModel by viewModels {
@@ -76,6 +87,65 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        wallpaperRenderer = WallpaperRenderer(binding.root, binding.wallpaper)
+        wallpaperSettingsCoordinator = WallpaperSettingsCoordinator(
+            activity = this,
+            currentState = { viewModel.uiState.value.wallpaper },
+            onScheduleChanged = viewModel::setTimeBasedWallpaperEnabled,
+            onBuiltInSelected = viewModel::setBuiltInWallpaper,
+            onCustomSelected = viewModel::importCustomWallpaper,
+            onPickerUnavailable = { showMessage(R.string.wallpaper_picker_unavailable) }
+        )
+        appActionsController = AppActionsController(
+            activity = this,
+            categories = { viewModel.uiState.value.categories },
+            isReorderable = { contentRenderer.isReorderable(it) },
+            onFavoriteChanged = viewModel::toggleFavorite,
+            onHidden = { viewModel.setHidden(it, true) },
+            onApplicationDetails = viewModel::openApplicationDetails,
+            onUninstall = viewModel::uninstall,
+            onCategoryMembershipChanged = viewModel::setCategoryMembership,
+            onCustomBannerSelected = viewModel::importCustomBanner,
+            onCustomBannerRemoved = viewModel::removeCustomBanner,
+            onPickerUnavailable = { showMessage(R.string.custom_banner_picker_unavailable) }
+        )
+        val container = (application as LtvLauncherApplication).container
+        statusBarController = StatusBarController(
+            activity = this,
+            binding = binding,
+            networkStatusRepository = container.networkStatusRepository,
+            currentSettings = { viewModel.uiState.value.statusBar },
+            setAutoHide = viewModel::setStatusBarAutoHide,
+            setShowDate = viewModel::setStatusBarShowDate,
+            setShowTime = viewModel::setStatusBarShowTime,
+            setShowNetwork = viewModel::setStatusBarShowNetwork,
+            setShowInputs = viewModel::setStatusBarShowInputs,
+            setDateFormat = viewModel::setStatusBarDateFormat,
+            setTimeFormat = viewModel::setStatusBarTimeFormat
+        )
+        tvInputController = TvInputController(this, binding, container.tvInputRepository)
+        notificationController = NotificationController(
+            this,
+            binding,
+            container.notificationRepository,
+            currentSettings = { viewModel.uiState.value.statusBar },
+            setShowNotifications = viewModel::setStatusBarShowNotifications,
+            setAutoHideBell = viewModel::setStatusBarAutoHideNotificationBell,
+            setSystemPopups = viewModel::setSystemNotificationPopups
+        )
+        screensaverController = ScreensaverController(
+            this,
+            currentSettings = { viewModel.uiState.value.screensaver },
+            setClockStyle = viewModel::setScreensaverClockStyle,
+            setBackButtonAction = viewModel::setBackButtonAction,
+            chooseDateFormat = {
+                statusBarController.handleSettingsAction(StatusBarSettingsAction.ChooseDateFormat)
+            },
+            chooseTimeFormat = {
+                statusBarController.handleSettingsAction(StatusBarSettingsAction.ChooseTimeFormat)
+            }
+        )
+        onBackPressedDispatcher.addCallback(this) { screensaverController.handleBack() }
         settingsPanelPageToRestore = savedInstanceState
             ?.takeIf { it.getBoolean(STATE_SETTINGS_PANEL_OPEN) }
             ?.getString(STATE_SETTINGS_PANEL_PAGE)
@@ -85,7 +155,14 @@ class LauncherActivity : AppCompatActivity() {
             initializeLauncher()
             viewModel.refreshHomeStatus()
             val state = viewModel.uiState.value
-            getOrCreateSettingsPanel().show(state.isDefaultLauncher, state.applicationSortMode, state.appearance)
+            getOrCreateSettingsPanel().show(
+                state.isDefaultLauncher,
+                state.applicationSortMode,
+                state.appearance,
+                state.wallpaper,
+                state.statusBar,
+                state.screensaver
+            )
         }
         binding.root.postOnAnimation(::initializeLauncher)
     }
@@ -109,8 +186,19 @@ class LauncherActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        settingsPanel?.render(state.isDefaultLauncher, state.applicationSortMode, state.appearance)
-                        renderAppearance(state.appearance)
+                        settingsPanel?.render(
+                            state.isDefaultLauncher,
+                            state.applicationSortMode,
+                            state.appearance,
+                            state.wallpaper,
+                            state.statusBar,
+                            state.screensaver
+                        )
+                        renderLauncherAppearance(binding, contentBinding, state.appearance)
+                        statusBarController.render(state.statusBar, state.appearance)
+                        tvInputController.render(state.statusBar.showInputs, state.appearance)
+                        notificationController.render(state.statusBar, state.appearance)
+                        wallpaperRenderer.render(state.wallpaper)
                         contentRenderer.render(state)
                         if (!state.loading) {
                             settingsPanelPageToRestore?.let { page ->
@@ -118,6 +206,9 @@ class LauncherActivity : AppCompatActivity() {
                                     state.isDefaultLauncher,
                                     state.applicationSortMode,
                                     state.appearance,
+                                    state.wallpaper,
+                                    state.statusBar,
+                                    state.screensaver,
                                     page
                                 )
                                 settingsPanelPageToRestore = null
@@ -169,6 +260,7 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (::notificationController.isInitialized) notificationController.refreshPermissions()
         if (launcherInitialized) viewModel.refreshHomeStatus()
     }
 
@@ -187,13 +279,23 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         settingsPanel?.release()
+        statusBarController.release()
+        notificationController.release()
         super.onDestroy()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (::statusBarController.isInitialized) statusBarController.onKeyEvent(event)
+        return super.dispatchKeyEvent(event)
     }
 
     private fun getOrCreateSettingsPanel(): LauncherSettingsPanel = settingsPanel ?: LauncherSettingsPanel(
         context = this,
         onAction = ::handleSettingsAction,
         onAppearanceAction = ::handleAppearanceAction,
+        onWallpaperAction = ::handleWallpaperAction,
+        onStatusBarAction = ::handleStatusBarAction,
+        onScreensaverAction = ::handleScreensaverAction,
         onDismissed = { binding.openLauncherSettings.requestFocus() }
     ).also { settingsPanel = it }
 
@@ -202,6 +304,8 @@ class LauncherActivity : AppCompatActivity() {
             LauncherEvent.LaunchFailed -> showMessage(R.string.launch_failed)
             LauncherEvent.PreferenceUpdateFailed -> showMessage(R.string.preference_update_failed)
             LauncherEvent.CategoryUpdateFailed -> showMessage(R.string.category_update_failed)
+            LauncherEvent.WallpaperUpdateFailed -> showMessage(R.string.wallpaper_update_failed)
+            LauncherEvent.CustomBannerUpdateFailed -> showMessage(R.string.custom_banner_update_failed)
             is LauncherEvent.OpenIntent -> openIntent(event.intent)
         }
     }
@@ -258,94 +362,29 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderAppearance(appearance: LauncherAppearance) {
-        val palette = appearance.palette
-        binding.root.background = GradientDrawable(
-            GradientDrawable.Orientation.TL_BR,
-            intArrayOf(palette.backgroundStart, palette.backgroundEnd)
-        )
-        contentBinding.jellyfinPanel.background = roundedBackground(palette.surface, palette.stroke)
-        binding.title.setTextColor(palette.primaryText)
-        contentBinding.musicTitle.setTextColor(palette.primaryText)
-        contentBinding.musicArtist.setTextColor(palette.secondaryText)
-        val strokeColors = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focus, Color.TRANSPARENT)
-        )
-        val buttonBackground = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedSurface, palette.surface)
-        )
-        val buttonText = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(palette.focusedText, palette.primaryText)
-        )
-        listOf(
-            binding.openLauncherSettings,
-            contentBinding.musicPlayPause,
-            contentBinding.musicNext
-        ).forEach { button ->
-            button.backgroundTintList = buttonBackground
-            button.setTextColor(buttonText)
-            button.strokeColor = strokeColors
-            button.strokeWidth = dp(2)
-        }
-        contentBinding.musicLoading.indeterminateTintList = ColorStateList.valueOf(palette.focus)
-        binding.root.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
+    private fun handleWallpaperAction(action: WallpaperSettingsAction) {
+        wallpaperSettingsCoordinator.handle(action)
     }
 
-    private fun roundedBackground(color: Int, strokeColor: Int): GradientDrawable = GradientDrawable().apply {
-        cornerRadius = dp(12).toFloat()
-        setColor(color)
-        setStroke(dp(1), strokeColor)
+    private fun handleStatusBarAction(action: StatusBarSettingsAction) {
+        if (!notificationController.handleSettingsAction(action)) statusBarController.handleSettingsAction(action)
+    }
+
+    private fun handleScreensaverAction(action: ScreensaverSettingsAction) {
+        screensaverController.handleSettingsAction(action)
     }
 
     private fun showSortDialog() {
-        val modes = ApplicationSortMode.entries
-        AlertDialog.Builder(this)
-            .setTitle(R.string.sort_applications)
-            .setSingleChoiceItems(
-                modes.map { getString(it.labelRes) }.toTypedArray(),
-                modes.indexOf(viewModel.uiState.value.applicationSortMode)
-            ) { dialog, selection ->
-                viewModel.setApplicationSortMode(modes[selection])
-                dialog.dismiss()
-            }
-            .show()
+        showApplicationSortDialog(this, viewModel.uiState.value.applicationSortMode, viewModel::setApplicationSortMode)
     }
 
     private fun showAppActions(app: LauncherApp, adapter: AppAdapter) {
-        val favoriteAction = if (app.isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites
-        val actions = mutableListOf(
-            getString(favoriteAction) to { viewModel.toggleFavorite(app) },
-            getString(R.string.hide_app) to { viewModel.setHidden(app, true) },
-            getString(R.string.application_info) to { viewModel.openApplicationDetails(app) },
-            getString(R.string.uninstall_application) to { viewModel.uninstall(app) }
-        )
-        if (contentRenderer.isReorderable(adapter)) {
-            actions += getString(R.string.reorder_application) to { adapter.startMoving(app) }
-        }
-        viewModel.uiState.value.categories.forEach { category ->
-            val included = category.apps.any { it.packageName == app.packageName }
-            val label = if (included) {
-                getString(R.string.remove_from_category, category.name)
-            } else {
-                getString(R.string.add_to_category, category.name)
-            }
-            actions += label to { viewModel.setCategoryMembership(category, app, included = !included) }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(app.label)
-            .setItems(actions.map { it.first }.toTypedArray()) { _, action -> actions[action].second() }
-            .show()
+        appActionsController.show(app, adapter)
     }
 
     private fun showMessage(messageRes: Int) {
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
     }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private companion object {
         const val EMOJI_INITIALIZATION_DELAY_MS = 3_000L
@@ -353,17 +392,3 @@ class LauncherActivity : AppCompatActivity() {
         const val STATE_SETTINGS_PANEL_PAGE = "settings_panel_page"
     }
 }
-
-private fun View.setSoundEffectsEnabledRecursively(enabled: Boolean) {
-    isSoundEffectsEnabled = enabled
-    if (this is ViewGroup) {
-        for (index in 0 until childCount) getChildAt(index).setSoundEffectsEnabledRecursively(enabled)
-    }
-}
-
-private val ApplicationSortMode.labelRes: Int
-    get() = when (this) {
-        ApplicationSortMode.MANUAL -> R.string.sort_manual
-        ApplicationSortMode.ALPHABETICAL -> R.string.sort_alphabetical
-        ApplicationSortMode.LAST_USED -> R.string.sort_last_used
-    }

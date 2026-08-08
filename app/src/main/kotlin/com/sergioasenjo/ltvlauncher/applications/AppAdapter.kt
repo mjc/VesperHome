@@ -1,5 +1,6 @@
 package com.sergioasenjo.ltvlauncher.applications
 
+import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
@@ -38,7 +39,13 @@ class AppAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
         val binding = ItemAppBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return AppViewHolder(binding, onAppClick, { app -> onAppLongClick(app, this) }, ::handleMoveKey)
+        return AppViewHolder(
+            binding,
+            onAppClick,
+            { app -> onAppLongClick(app, this) },
+            ::handleMoveKey,
+            ::boundaryDirection
+        )
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
@@ -98,6 +105,29 @@ class AppAdapter(
         return true
     }
 
+    private fun boundaryDirection(app: LauncherApp, keyCode: Int): Int {
+        val position = currentList.indexOfFirst { it.packageName == app.packageName }
+        if (position == RecyclerView.NO_POSITION) return 0
+        return when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> when {
+                movementStride == 1 && position == 0 -> -1
+                movementStride > 1 && position % movementStride == 0 -> -1
+                else -> 0
+            }
+
+            KeyEvent.KEYCODE_DPAD_RIGHT -> when {
+                movementStride == 1 && position == currentList.lastIndex -> 1
+
+                movementStride > 1 &&
+                    (position % movementStride == movementStride - 1 || position == currentList.lastIndex) -> 1
+
+                else -> 0
+            }
+
+            else -> 0
+        }
+    }
+
     private fun notifyPackageChanged(packageName: String) {
         currentList.indexOfFirst { it.packageName == packageName }
             .takeIf { it != RecyclerView.NO_POSITION }
@@ -108,12 +138,14 @@ class AppAdapter(
         private val binding: ItemAppBinding,
         onAppClick: (LauncherApp) -> Unit,
         onAppLongClick: (LauncherApp) -> Unit,
-        onMoveKey: (LauncherApp, Int) -> Boolean
+        onMoveKey: (LauncherApp, Int) -> Boolean,
+        boundaryDirection: (LauncherApp, Int) -> Int
     ) : RecyclerView.ViewHolder(binding.root) {
         private var app: LauncherApp? = null
         private var appearance = LauncherAppearance()
         private var moving = false
         private var outlineAnimator: ValueAnimator? = null
+        private var edgeAnimator: ObjectAnimator? = null
         private val cardBackground = GradientDrawable()
 
         init {
@@ -123,7 +155,17 @@ class AppAdapter(
                 app != null
             }
             binding.root.setOnKeyListener { _, keyCode, event ->
-                event.action == KeyEvent.ACTION_DOWN && app?.let { onMoveKey(it, keyCode) } == true
+                val direction = app?.let { boundaryDirection(it, keyCode) } ?: 0
+                when {
+                    direction != 0 -> {
+                        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) animateEdgeBump(direction)
+                        true
+                    }
+
+                    event.action == KeyEvent.ACTION_DOWN -> app?.let { onMoveKey(it, keyCode) } == true
+
+                    else -> false
+                }
             }
             binding.root.setOnFocusChangeListener { view, focused ->
                 view.isSelected = focused
@@ -138,7 +180,10 @@ class AppAdapter(
             this.appearance = appearance
             binding.root.isActivated = moving
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
-            binding.artwork.load(app.artworkFile ?: app.artwork) {
+            binding.artwork.load(app.customBannerFile ?: app.artworkFile ?: app.artwork) {
+                app.customBannerRevision?.let { revision ->
+                    memoryCacheKey("custom-banner:${app.packageName}:$revision")
+                }
                 placeholder(app.artwork.asImage())
             }
             binding.name.text = app.label
@@ -156,7 +201,24 @@ class AppAdapter(
         fun recycle() {
             outlineAnimator?.cancel()
             outlineAnimator = null
+            edgeAnimator?.cancel()
+            edgeAnimator = null
+            binding.root.translationX = 0f
             binding.root.animate().cancel()
+        }
+
+        private fun animateEdgeBump(direction: Int) {
+            if (edgeAnimator?.isRunning == true) return
+            edgeAnimator = ObjectAnimator.ofFloat(
+                binding.root,
+                View.TRANSLATION_X,
+                0f,
+                dp(EDGE_BUMP_DISTANCE_DP).toFloat() * direction,
+                0f
+            ).apply {
+                duration = EDGE_BUMP_DURATION_MS
+                start()
+            }
         }
 
         private fun updateFocusAppearance(focused: Boolean) {
@@ -222,6 +284,8 @@ class AppAdapter(
             const val OUTLINE_ANIMATION_MS = 850L
             const val OUTLINE_MIN_ALPHA = 110
             const val OUTLINE_FULL_ALPHA = 255
+            const val EDGE_BUMP_DISTANCE_DP = 14
+            const val EDGE_BUMP_DURATION_MS = 180L
             const val DEFAULT_STROKE_WIDTH_DP = 1
             const val FOCUS_STROKE_WIDTH_DP = 3
             const val MOVING_STROKE_WIDTH_DP = 5
@@ -240,6 +304,7 @@ class AppAdapter(
                 oldItem.isHidden == newItem.isHidden &&
                 oldItem.isTvApp == newItem.isTvApp &&
                 oldItem.artworkVersion == newItem.artworkVersion &&
+                oldItem.customBannerRevision == newItem.customBannerRevision &&
                 oldItem.manualOrder == newItem.manualOrder &&
                 oldItem.lastUsedAt == newItem.lastUsedAt
     }

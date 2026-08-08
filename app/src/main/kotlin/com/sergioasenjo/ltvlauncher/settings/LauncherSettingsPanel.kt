@@ -15,6 +15,12 @@ import com.google.android.material.button.MaterialButton
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.databinding.DialogLauncherSettingsBinding
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettings
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettingsAction
+import com.sergioasenjo.ltvlauncher.status.StatusBarSettings
+import com.sergioasenjo.ltvlauncher.status.StatusBarSettingsAction
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperSettingsAction
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperState
 
 enum class LauncherSettingsAction {
     SET_DEFAULT_HOME,
@@ -37,21 +43,30 @@ enum class AppearanceSettingAction {
 
 enum class LauncherSettingsPanelPage {
     MAIN,
-    APPEARANCE
+    APPEARANCE,
+    WALLPAPER,
+    STATUS_BAR,
+    SCREENSAVER
 }
 
 class LauncherSettingsPanel(
     context: Context,
     private val onAction: (LauncherSettingsAction) -> Unit,
     private val onAppearanceAction: (AppearanceSettingAction) -> Unit,
+    private val onWallpaperAction: (WallpaperSettingsAction) -> Unit,
+    private val onStatusBarAction: (StatusBarSettingsAction) -> Unit,
+    private val onScreensaverAction: (ScreensaverSettingsAction) -> Unit,
     private val onDismissed: () -> Unit
 ) {
     private val binding = DialogLauncherSettingsBinding.inflate(android.view.LayoutInflater.from(context))
+    private val wallpaperBinder = WallpaperSettingsPanelBinder(binding.wallpaperPage, onWallpaperAction)
+    private val statusBarBinder = StatusBarSettingsPanelBinder(binding.statusBarPage, onStatusBarAction)
+    private val screensaverBinder = ScreensaverSettingsPanelBinder(binding.screensaverPage, onScreensaverAction)
     private val dialog = Dialog(context, R.style.Theme_LtvLauncher_SettingsPanel).apply {
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
         setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && isAppearancePageVisible()) {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && !isMainPageVisible()) {
                 showMainPage()
                 true
             } else {
@@ -81,6 +96,9 @@ class LauncherSettingsPanel(
         bindAction(binding.sortApplications, LauncherSettingsAction.SORT_APPLICATIONS)
         bindAction(binding.setupJellyfin, LauncherSettingsAction.SETUP_JELLYFIN)
         binding.openAppearance.setOnClickListener { showAppearancePage() }
+        binding.openWallpaper.setOnClickListener { showWallpaperPage() }
+        binding.openStatusBar.setOnClickListener { showStatusBarPage() }
+        binding.openScreensaver.setOnClickListener { showScreensaverPage() }
         bindAppearanceAction(binding.theme, AppearanceSettingAction.THEME)
         bindAppearanceAction(binding.showAppNames, AppearanceSettingAction.SHOW_APP_NAMES)
         bindAppearanceAction(binding.showCategoryTitles, AppearanceSettingAction.SHOW_CATEGORY_TITLES)
@@ -97,27 +115,42 @@ class LauncherSettingsPanel(
         get() = dialog.isShowing
 
     val currentPage: LauncherSettingsPanelPage
-        get() = if (isAppearancePageVisible()) {
-            LauncherSettingsPanelPage.APPEARANCE
-        } else {
-            LauncherSettingsPanelPage.MAIN
+        get() = when {
+            isAppearancePageVisible() -> LauncherSettingsPanelPage.APPEARANCE
+            isWallpaperPageVisible() -> LauncherSettingsPanelPage.WALLPAPER
+            isStatusBarPageVisible() -> LauncherSettingsPanelPage.STATUS_BAR
+            isScreensaverPageVisible() -> LauncherSettingsPanelPage.SCREENSAVER
+            else -> LauncherSettingsPanelPage.MAIN
         }
 
     fun show(
         isDefaultLauncher: Boolean?,
         sortMode: ApplicationSortMode,
         appearance: LauncherAppearance,
+        wallpaper: WallpaperState,
+        statusBar: StatusBarSettings,
+        screensaver: ScreensaverSettings,
         page: LauncherSettingsPanelPage = LauncherSettingsPanelPage.MAIN
     ) {
-        render(isDefaultLauncher, sortMode, appearance)
+        render(isDefaultLauncher, sortMode, appearance, wallpaper, statusBar, screensaver)
         when (page) {
             LauncherSettingsPanelPage.MAIN -> showMainPage(requestFocus = false)
             LauncherSettingsPanelPage.APPEARANCE -> showAppearancePage(requestFocus = false)
+            LauncherSettingsPanelPage.WALLPAPER -> showWallpaperPage(requestFocus = false)
+            LauncherSettingsPanelPage.STATUS_BAR -> showStatusBarPage(requestFocus = false)
+            LauncherSettingsPanelPage.SCREENSAVER -> showScreensaverPage(requestFocus = false)
         }
         if (!dialog.isShowing) dialog.show()
     }
 
-    fun render(isDefaultLauncher: Boolean?, sortMode: ApplicationSortMode, appearance: LauncherAppearance) {
+    fun render(
+        isDefaultLauncher: Boolean?,
+        sortMode: ApplicationSortMode,
+        appearance: LauncherAppearance,
+        wallpaper: WallpaperState,
+        statusBar: StatusBarSettings,
+        screensaver: ScreensaverSettings
+    ) {
         binding.homeStatus.setText(
             when (isDefaultLauncher) {
                 null -> R.string.home_status_checking
@@ -152,6 +185,9 @@ class LauncherSettingsPanel(
             appearance.selectorTransitionAnimations
         )
         binding.keyClickSounds.setBooleanLabel(R.string.key_click_sounds_value, appearance.keyClickSounds)
+        wallpaperBinder.render(wallpaper)
+        statusBarBinder.render(statusBar)
+        screensaverBinder.render(screensaver, statusBar)
         applyThemeColors(appearance)
         applyFocusColor(appearance.palette.focus)
         binding.root.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
@@ -175,6 +211,9 @@ class LauncherSettingsPanel(
 
     private fun showAppearancePage(requestFocus: Boolean = true) {
         binding.mainPage.visibility = View.GONE
+        binding.wallpaperPage.root.visibility = View.GONE
+        binding.statusBarPage.root.visibility = View.GONE
+        binding.screensaverPage.root.visibility = View.GONE
         binding.appearancePage.visibility = View.VISIBLE
         binding.appearancePage.scrollTo(0, 0)
         if (requestFocus) binding.theme.post { binding.theme.requestFocus() }
@@ -182,11 +221,56 @@ class LauncherSettingsPanel(
 
     private fun showMainPage(requestFocus: Boolean = true) {
         binding.appearancePage.visibility = View.GONE
+        binding.wallpaperPage.root.visibility = View.GONE
+        binding.statusBarPage.root.visibility = View.GONE
+        binding.screensaverPage.root.visibility = View.GONE
         binding.mainPage.visibility = View.VISIBLE
         if (requestFocus) binding.openAppearance.post { binding.openAppearance.requestFocus() }
     }
 
     private fun isAppearancePageVisible(): Boolean = binding.appearancePage.visibility == View.VISIBLE
+
+    private fun showWallpaperPage(requestFocus: Boolean = true) {
+        binding.mainPage.visibility = View.GONE
+        binding.appearancePage.visibility = View.GONE
+        binding.statusBarPage.root.visibility = View.GONE
+        binding.screensaverPage.root.visibility = View.GONE
+        binding.wallpaperPage.root.visibility = View.VISIBLE
+        binding.wallpaperPage.root.scrollTo(0, 0)
+        if (requestFocus) {
+            binding.wallpaperPage.timeBasedWallpaper.post {
+                binding.wallpaperPage.timeBasedWallpaper.requestFocus()
+            }
+        }
+    }
+
+    private fun isWallpaperPageVisible(): Boolean = binding.wallpaperPage.root.visibility == View.VISIBLE
+
+    private fun showStatusBarPage(requestFocus: Boolean = true) {
+        binding.mainPage.visibility = View.GONE
+        binding.appearancePage.visibility = View.GONE
+        binding.wallpaperPage.root.visibility = View.GONE
+        binding.screensaverPage.root.visibility = View.GONE
+        binding.statusBarPage.root.visibility = View.VISIBLE
+        binding.statusBarPage.root.scrollTo(0, 0)
+        if (requestFocus) binding.statusBarPage.autoHide.post { binding.statusBarPage.autoHide.requestFocus() }
+    }
+
+    private fun isStatusBarPageVisible(): Boolean = binding.statusBarPage.root.visibility == View.VISIBLE
+
+    private fun showScreensaverPage(requestFocus: Boolean = true) {
+        binding.mainPage.visibility = View.GONE
+        binding.appearancePage.visibility = View.GONE
+        binding.wallpaperPage.root.visibility = View.GONE
+        binding.statusBarPage.root.visibility = View.GONE
+        binding.screensaverPage.root.visibility = View.VISIBLE
+        binding.screensaverPage.root.scrollTo(0, 0)
+        if (requestFocus) binding.screensaverPage.clockStyle.post { binding.screensaverPage.clockStyle.requestFocus() }
+    }
+
+    private fun isScreensaverPageVisible(): Boolean = binding.screensaverPage.root.visibility == View.VISIBLE
+
+    private fun isMainPageVisible(): Boolean = binding.mainPage.visibility == View.VISIBLE
 
     private fun applyFocusColor(focusColor: Int) {
         val strokeColors = ColorStateList(
@@ -255,6 +339,9 @@ class LauncherSettingsPanel(
         get() = listOf(
             binding.setDefaultLauncher,
             binding.openAppearance,
+            binding.openWallpaper,
+            binding.openStatusBar,
+            binding.openScreensaver,
             binding.manageCategories,
             binding.manageHiddenApps,
             binding.sortApplications,
@@ -267,13 +354,19 @@ class LauncherSettingsPanel(
             binding.appCardFocusAnimations,
             binding.selectorTransitionAnimations,
             binding.keyClickSounds
-        )
+        ) + wallpaperBinder.buttons + statusBarBinder.buttons + screensaverBinder.buttons
 
     private fun requestInitialFocus() {
-        val firstAction = if (isAppearancePageVisible()) {
-            binding.theme
-        } else {
-            binding.setDefaultLauncher.takeIf { it.visibility == View.VISIBLE }
+        val firstAction = when {
+            isAppearancePageVisible() -> binding.theme
+
+            isWallpaperPageVisible() -> binding.wallpaperPage.timeBasedWallpaper
+
+            isStatusBarPageVisible() -> binding.statusBarPage.autoHide
+
+            isScreensaverPageVisible() -> binding.screensaverPage.clockStyle
+
+            else -> binding.setDefaultLauncher.takeIf { it.visibility == View.VISIBLE }
                 ?: binding.manageCategories
         }
         firstAction.post { firstAction.requestFocus() }
@@ -291,34 +384,3 @@ class LauncherSettingsPanel(
         fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
     }
 }
-
-private fun View.forEachDescendant(action: (View) -> Unit) {
-    if (this is ViewGroup) {
-        for (index in 0 until childCount) {
-            getChildAt(index).let { child ->
-                action(child)
-                child.forEachDescendant(action)
-            }
-        }
-    }
-}
-
-private fun View.setSoundEffectsEnabledRecursively(enabled: Boolean) {
-    isSoundEffectsEnabled = enabled
-    if (this is ViewGroup) {
-        for (index in 0 until childCount) getChildAt(index).setSoundEffectsEnabledRecursively(enabled)
-    }
-}
-
-private val ApplicationSortMode.labelRes: Int
-    get() = when (this) {
-        ApplicationSortMode.MANUAL -> R.string.sort_manual
-        ApplicationSortMode.ALPHABETICAL -> R.string.sort_alphabetical
-        ApplicationSortMode.LAST_USED -> R.string.sort_last_used
-    }
-
-private val LauncherTheme.labelRes: Int
-    get() = when (this) {
-        LauncherTheme.DARK -> R.string.theme_dark
-        LauncherTheme.LIGHT -> R.string.theme_light
-    }

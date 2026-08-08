@@ -27,6 +27,13 @@ interface AppPreferenceDao {
     @Query("UPDATE app_preferences SET last_used_at = :lastUsedAt WHERE component_name = :packageName")
     suspend fun updateLastUsedAt(packageName: String, lastUsedAt: Long)
 
+    @Query(
+        "UPDATE app_preferences SET custom_banner_revision = " +
+            "CASE WHEN :present THEN COALESCE(custom_banner_revision, 0) + 1 ELSE NULL END " +
+            "WHERE component_name = :packageName"
+    )
+    suspend fun updateCustomBanner(packageName: String, present: Boolean)
+
     @Transaction
     suspend fun setFavorite(packageName: String, isFavorite: Boolean) {
         insertIfMissing(AppPreferenceEntity(packageName))
@@ -56,5 +63,11 @@ interface AppPreferenceDao {
     suspend fun setLastUsedAt(packageName: String, lastUsedAt: Long) {
         insertIfMissing(AppPreferenceEntity(packageName))
         updateLastUsedAt(packageName, lastUsedAt)
+    }
+
+    @Transaction
+    suspend fun setCustomBanner(packageName: String, present: Boolean) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateCustomBanner(packageName, present)
     }
 }

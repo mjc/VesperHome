@@ -16,5 +16,7 @@ data class AppPreferenceEntity(
     @ColumnInfo(name = "manual_order")
     val manualOrder: Long? = null,
     @ColumnInfo(name = "last_used_at")
-    val lastUsedAt: Long? = null
+    val lastUsedAt: Long? = null,
+    @ColumnInfo(name = "custom_banner_revision")
+    val customBannerRevision: Long? = null
 )

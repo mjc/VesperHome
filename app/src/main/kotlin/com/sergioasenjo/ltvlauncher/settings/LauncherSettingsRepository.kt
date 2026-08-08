@@ -1,11 +1,16 @@
 package com.sergioasenjo.ltvlauncher.settings
 
 import android.content.Context
+import android.text.format.DateFormat
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
+import com.sergioasenjo.ltvlauncher.screensaver.BackButtonAction
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverClockStyle
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettings
+import com.sergioasenjo.ltvlauncher.status.StatusBarSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -74,7 +79,9 @@ data class LauncherPalette(
 
 data class LauncherSettings(
     val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
-    val appearance: LauncherAppearance = LauncherAppearance()
+    val appearance: LauncherAppearance = LauncherAppearance(),
+    val statusBar: StatusBarSettings = StatusBarSettings(),
+    val screensaver: ScreensaverSettings = ScreensaverSettings()
 )
 
 class LauncherSettingsRepository(private val context: Context) {
@@ -89,6 +96,22 @@ class LauncherSettingsRepository(private val context: Context) {
                 appCardFocusAnimations = preferences[APP_CARD_FOCUS_ANIMATIONS] ?: true,
                 selectorTransitionAnimations = preferences[SELECTOR_TRANSITION_ANIMATIONS] ?: true,
                 keyClickSounds = preferences[KEY_CLICK_SOUNDS] ?: true
+            ),
+            statusBar = StatusBarSettings(
+                autoHide = preferences[STATUS_AUTO_HIDE] ?: false,
+                showDate = preferences[STATUS_SHOW_DATE] ?: true,
+                showTime = preferences[STATUS_SHOW_TIME] ?: true,
+                showNetwork = preferences[STATUS_SHOW_NETWORK] ?: true,
+                showInputs = preferences[STATUS_SHOW_INPUTS] ?: true,
+                showNotifications = preferences[STATUS_SHOW_NOTIFICATIONS] ?: true,
+                autoHideNotificationBell = preferences[STATUS_AUTO_HIDE_NOTIFICATION_BELL] ?: true,
+                systemNotificationPopups = preferences[SYSTEM_NOTIFICATION_POPUPS] ?: false,
+                dateFormat = preferences[STATUS_DATE_FORMAT] ?: DEFAULT_DATE_FORMAT,
+                timeFormat = preferences[STATUS_TIME_FORMAT] ?: defaultTimeFormat()
+            ),
+            screensaver = ScreensaverSettings(
+                clockStyle = preferences.enumValue(SCREENSAVER_CLOCK_STYLE, ScreensaverClockStyle.MINIMAL),
+                backButtonAction = preferences.enumValue(BACK_BUTTON_ACTION, BackButtonAction.NOTHING)
             )
         )
     }
@@ -127,6 +150,54 @@ class LauncherSettingsRepository(private val context: Context) {
         setBoolean(KEY_CLICK_SOUNDS, enabled)
     }
 
+    suspend fun setStatusBarAutoHide(enabled: Boolean) {
+        setBoolean(STATUS_AUTO_HIDE, enabled)
+    }
+
+    suspend fun setStatusBarShowDate(show: Boolean) {
+        setBoolean(STATUS_SHOW_DATE, show)
+    }
+
+    suspend fun setStatusBarShowTime(show: Boolean) {
+        setBoolean(STATUS_SHOW_TIME, show)
+    }
+
+    suspend fun setStatusBarShowNetwork(show: Boolean) {
+        setBoolean(STATUS_SHOW_NETWORK, show)
+    }
+
+    suspend fun setStatusBarShowInputs(show: Boolean) {
+        setBoolean(STATUS_SHOW_INPUTS, show)
+    }
+
+    suspend fun setStatusBarShowNotifications(show: Boolean) {
+        setBoolean(STATUS_SHOW_NOTIFICATIONS, show)
+    }
+
+    suspend fun setStatusBarAutoHideNotificationBell(enabled: Boolean) {
+        setBoolean(STATUS_AUTO_HIDE_NOTIFICATION_BELL, enabled)
+    }
+
+    suspend fun setSystemNotificationPopups(enabled: Boolean) {
+        setBoolean(SYSTEM_NOTIFICATION_POPUPS, enabled)
+    }
+
+    suspend fun setStatusBarDateFormat(format: String) {
+        setString(STATUS_DATE_FORMAT, format)
+    }
+
+    suspend fun setStatusBarTimeFormat(format: String) {
+        setString(STATUS_TIME_FORMAT, format)
+    }
+
+    suspend fun setScreensaverClockStyle(style: ScreensaverClockStyle) {
+        setEnum(SCREENSAVER_CLOCK_STYLE, style)
+    }
+
+    suspend fun setBackButtonAction(action: BackButtonAction) {
+        setEnum(BACK_BUTTON_ACTION, action)
+    }
+
     private suspend fun <T : Enum<T>> setEnum(
         key: androidx.datastore.preferences.core.Preferences.Key<String>,
         value: T
@@ -138,6 +209,12 @@ class LauncherSettingsRepository(private val context: Context) {
         context.launcherSettingsDataStore.edit { preferences -> preferences[key] = value }
     }
 
+    private suspend fun setString(key: androidx.datastore.preferences.core.Preferences.Key<String>, value: String) {
+        context.launcherSettingsDataStore.edit { preferences -> preferences[key] = value }
+    }
+
+    private fun defaultTimeFormat(): String = if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
+
     private companion object {
         val APPLICATION_SORT_MODE = stringPreferencesKey("application_sort_mode")
         val THEME = stringPreferencesKey("theme")
@@ -147,6 +224,19 @@ class LauncherSettingsRepository(private val context: Context) {
         val APP_CARD_FOCUS_ANIMATIONS = booleanPreferencesKey("app_card_focus_animations")
         val SELECTOR_TRANSITION_ANIMATIONS = booleanPreferencesKey("selector_transition_animations")
         val KEY_CLICK_SOUNDS = booleanPreferencesKey("key_click_sounds")
+        val STATUS_AUTO_HIDE = booleanPreferencesKey("status_auto_hide")
+        val STATUS_SHOW_DATE = booleanPreferencesKey("status_show_date")
+        val STATUS_SHOW_TIME = booleanPreferencesKey("status_show_time")
+        val STATUS_SHOW_NETWORK = booleanPreferencesKey("status_show_network")
+        val STATUS_SHOW_INPUTS = booleanPreferencesKey("status_show_inputs")
+        val STATUS_SHOW_NOTIFICATIONS = booleanPreferencesKey("status_show_notifications")
+        val STATUS_AUTO_HIDE_NOTIFICATION_BELL = booleanPreferencesKey("status_auto_hide_notification_bell")
+        val SYSTEM_NOTIFICATION_POPUPS = booleanPreferencesKey("system_notification_popups")
+        val STATUS_DATE_FORMAT = stringPreferencesKey("status_date_format")
+        val STATUS_TIME_FORMAT = stringPreferencesKey("status_time_format")
+        val SCREENSAVER_CLOCK_STYLE = stringPreferencesKey("screensaver_clock_style")
+        val BACK_BUTTON_ACTION = stringPreferencesKey("back_button_action")
+        const val DEFAULT_DATE_FORMAT = "EEE, MMM d"
     }
 }
 

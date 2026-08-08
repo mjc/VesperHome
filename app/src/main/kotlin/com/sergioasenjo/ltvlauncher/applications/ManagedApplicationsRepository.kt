@@ -1,6 +1,7 @@
 package com.sergioasenjo.ltvlauncher.applications
 
 import android.content.Intent
+import android.net.Uri
 import com.sergioasenjo.ltvlauncher.data.AppPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -13,9 +14,20 @@ class ManagedApplicationsRepository(
         applicationRepository.observeApplications(),
         appPreferencesRepository.observePreferences()
     ) { apps, preferences ->
+        if (apps.isNotEmpty()) {
+            appPreferencesRepository.removeCustomBannersForMissingPackages(
+                apps.mapTo(mutableSetOf(), LauncherApp::packageName),
+                preferences.values
+            )
+        }
         apps.map { app ->
             val preference = preferences[app.packageName]
+            val customBannerFile = preference?.customBannerRevision
+                ?.let { appPreferencesRepository.customBannerFile(app.packageName) }
+                ?.takeIf { it.isFile }
             app.copy(
+                customBannerFile = customBannerFile,
+                customBannerRevision = customBannerFile?.let { preference.customBannerRevision },
                 isFavorite = preference?.isFavorite == true,
                 isHidden = preference?.isHidden == true,
                 manualOrder = preference?.manualOrder,
@@ -45,5 +57,13 @@ class ManagedApplicationsRepository(
 
     suspend fun recordLaunch(app: LauncherApp) {
         appPreferencesRepository.recordLaunch(app)
+    }
+
+    suspend fun importCustomBanner(app: LauncherApp, source: Uri) {
+        appPreferencesRepository.importCustomBanner(app, source)
+    }
+
+    suspend fun removeCustomBanner(app: LauncherApp) {
+        appPreferencesRepository.removeCustomBanner(app)
     }
 }

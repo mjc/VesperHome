@@ -72,6 +72,39 @@
                 android:textColor="@color/action_button_text"
                 app:cornerRadius="10dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openWallpaper"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/wallpaper"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openStatusBar"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/status_bar"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openScreensaver"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/action_button_background"
+                android:gravity="start|center_vertical"
+                android:text="@string/screensaver_and_clock"
+                android:textColor="@color/action_button_text"
+                app:cornerRadius="10dp" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -263,4 +296,19 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <include
+        android:id="@+id/wallpaperPage"
+        layout="@layout/view_wallpaper_settings"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/statusBarPage"
+        layout="@layout/view_status_bar_settings"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/screensaverPage"
+        layout="@layout/view_screensaver_settings"
+        android:visibility="gone" />
 </FrameLayout>

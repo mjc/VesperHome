@@ -1,6 +1,7 @@
 package com.sergioasenjo.ltvlauncher.launcher
 
 import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,9 +17,17 @@ import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.data.LauncherCategoryDefinition
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
+import com.sergioasenjo.ltvlauncher.screensaver.BackButtonAction
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverClockStyle
+import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettings
 import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
 import com.sergioasenjo.ltvlauncher.settings.LauncherTheme
+import com.sergioasenjo.ltvlauncher.status.StatusBarSettings
+import com.sergioasenjo.ltvlauncher.wallpaper.BuiltInWallpaper
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperRepository
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperState
+import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperTarget
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +44,9 @@ data class LauncherUiState(
     val sections: List<LauncherSection> = emptyList(),
     val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
     val appearance: LauncherAppearance = LauncherAppearance(),
+    val statusBar: StatusBarSettings = StatusBarSettings(),
+    val screensaver: ScreensaverSettings = ScreensaverSettings(),
+    val wallpaper: WallpaperState = WallpaperState(),
     val isDefaultLauncher: Boolean? = null,
     val loading: Boolean = true
 ) {
@@ -46,6 +58,8 @@ sealed interface LauncherEvent {
     data object LaunchFailed : LauncherEvent
     data object PreferenceUpdateFailed : LauncherEvent
     data object CategoryUpdateFailed : LauncherEvent
+    data object WallpaperUpdateFailed : LauncherEvent
+    data object CustomBannerUpdateFailed : LauncherEvent
     data class OpenIntent(val intent: Intent) : LauncherEvent
 }
 
@@ -53,7 +67,8 @@ class LauncherViewModel(
     private val managedApplicationsRepository: ManagedApplicationsRepository,
     private val categoryRepository: CategoryRepository,
     private val homeRepository: HomeRepository,
-    private val launcherSettingsRepository: LauncherSettingsRepository
+    private val launcherSettingsRepository: LauncherSettingsRepository,
+    private val wallpaperRepository: WallpaperRepository
 ) : ViewModel() {
     private val eventsChannel = Channel<LauncherEvent>(Channel.BUFFERED)
     val events = eventsChannel.receiveAsFlow()
@@ -62,8 +77,9 @@ class LauncherViewModel(
     private val appState = combine(
         managedApplicationsRepository.observeApplications(),
         categoryRepository.observeSections(),
-        launcherSettingsRepository.settings
-    ) { apps, sectionDefinitions, settings ->
+        launcherSettingsRepository.settings,
+        wallpaperRepository.state
+    ) { apps, sectionDefinitions, settings, wallpaper ->
         val appsByKey = apps.associateBy(LauncherApp::packageName)
         val visibleApps = apps.filterNot(LauncherApp::isHidden)
         val applicationSortMode = settings.applicationSortMode
@@ -80,6 +96,9 @@ class LauncherViewModel(
             },
             applicationSortMode = applicationSortMode,
             appearance = settings.appearance,
+            statusBar = settings.statusBar,
+            screensaver = settings.screensaver,
+            wallpaper = wallpaper,
             loading = false
         )
     }
@@ -171,6 +190,78 @@ class LauncherViewModel(
         updatePreference { launcherSettingsRepository.setKeyClickSounds(enabled) }
     }
 
+    fun setStatusBarAutoHide(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarAutoHide(enabled) }
+    }
+
+    fun setStatusBarShowDate(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarShowDate(show) }
+    }
+
+    fun setStatusBarShowTime(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarShowTime(show) }
+    }
+
+    fun setStatusBarShowNetwork(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarShowNetwork(show) }
+    }
+
+    fun setStatusBarShowInputs(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarShowInputs(show) }
+    }
+
+    fun setStatusBarShowNotifications(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarShowNotifications(show) }
+    }
+
+    fun setStatusBarAutoHideNotificationBell(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setStatusBarAutoHideNotificationBell(enabled) }
+    }
+
+    fun setSystemNotificationPopups(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setSystemNotificationPopups(enabled) }
+    }
+
+    fun setStatusBarDateFormat(format: String) {
+        updatePreference { launcherSettingsRepository.setStatusBarDateFormat(format) }
+    }
+
+    fun setStatusBarTimeFormat(format: String) {
+        updatePreference { launcherSettingsRepository.setStatusBarTimeFormat(format) }
+    }
+
+    fun setScreensaverClockStyle(style: ScreensaverClockStyle) {
+        updatePreference { launcherSettingsRepository.setScreensaverClockStyle(style) }
+    }
+
+    fun setBackButtonAction(action: BackButtonAction) {
+        updatePreference { launcherSettingsRepository.setBackButtonAction(action) }
+    }
+
+    fun setTimeBasedWallpaperEnabled(enabled: Boolean) {
+        updateWallpaper { wallpaperRepository.setTimeBasedEnabled(enabled) }
+    }
+
+    fun setBuiltInWallpaper(target: WallpaperTarget, wallpaper: BuiltInWallpaper) {
+        updateWallpaper { wallpaperRepository.setBuiltIn(target, wallpaper) }
+    }
+
+    fun importCustomWallpaper(target: WallpaperTarget, source: Uri) {
+        updateWallpaper { wallpaperRepository.importCustom(target, source) }
+    }
+
+    fun importCustomBanner(app: LauncherApp, source: Uri) {
+        updateData(LauncherEvent.CustomBannerUpdateFailed) {
+            managedApplicationsRepository.importCustomBanner(app, source)
+        }
+    }
+
+    fun removeCustomBanner(app: LauncherApp) {
+        updateData(LauncherEvent.CustomBannerUpdateFailed) {
+            managedApplicationsRepository.removeCustomBanner(app)
+        }
+    }
+
     fun setManualAppOrder(apps: List<LauncherApp>) {
         updatePreference { managedApplicationsRepository.setManualOrder(apps) }
     }
@@ -185,6 +276,10 @@ class LauncherViewModel(
 
     private fun updateCategory(update: suspend () -> Unit) {
         updateData(LauncherEvent.CategoryUpdateFailed, update)
+    }
+
+    private fun updateWallpaper(update: suspend () -> Unit) {
+        updateData(LauncherEvent.WallpaperUpdateFailed, update)
     }
 
     private fun updateData(failureEvent: LauncherEvent, update: suspend () -> Unit) {
@@ -218,14 +313,16 @@ class LauncherViewModel(
             managedApplicationsRepository: ManagedApplicationsRepository,
             categoryRepository: CategoryRepository,
             homeRepository: HomeRepository,
-            launcherSettingsRepository: LauncherSettingsRepository
+            launcherSettingsRepository: LauncherSettingsRepository,
+            wallpaperRepository: WallpaperRepository
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 LauncherViewModel(
                     managedApplicationsRepository,
                     categoryRepository,
                     homeRepository,
-                    launcherSettingsRepository
+                    launcherSettingsRepository,
+                    wallpaperRepository
                 )
             }
         }

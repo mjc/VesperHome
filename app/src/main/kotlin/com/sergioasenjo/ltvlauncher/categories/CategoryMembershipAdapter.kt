@@ -40,7 +40,10 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
 
         fun bind(item: CategoryMembershipItem) {
             this.item = item
-            binding.artwork.load(item.app.artworkFile ?: item.app.artwork) {
+            binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
+                item.app.customBannerRevision?.let { revision ->
+                    memoryCacheKey("custom-banner:${item.app.packageName}:$revision")
+                }
                 placeholder(item.app.artwork.asImage())
             }
             binding.name.text = item.app.label
@@ -61,6 +64,8 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
             oldItem.app.packageName == newItem.app.packageName
 
         override fun areContentsTheSame(oldItem: CategoryMembershipItem, newItem: CategoryMembershipItem): Boolean =
-            oldItem.app.label == newItem.app.label && oldItem.included == newItem.included
+            oldItem.app.label == newItem.app.label &&
+                oldItem.app.customBannerRevision == newItem.app.customBannerRevision &&
+                oldItem.included == newItem.included
     }
 }
