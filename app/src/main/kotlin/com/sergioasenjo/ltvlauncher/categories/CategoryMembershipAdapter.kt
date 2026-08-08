@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.asImage
+import coil3.load
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ItemCategoryMembershipBinding
 
@@ -38,7 +40,9 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
 
         fun bind(item: CategoryMembershipItem) {
             this.item = item
-            binding.artwork.setImageDrawable(item.app.artwork)
+            binding.artwork.load(item.app.artworkFile ?: item.app.artwork) {
+                placeholder(item.app.artwork.asImage())
+            }
             binding.name.text = item.app.label
             binding.membershipStatus.setText(
                 if (item.included) R.string.included_in_category else R.string.not_included_in_category

@@ -6,4 +6,5 @@
     <color name="card_background">#263340</color>
     <color name="card_background_focused">#F7F9FC</color>
     <color name="card_stroke">#55FFFFFF</color>
+    <color name="settings_panel_background">#F21E252D</color>
 </resources>

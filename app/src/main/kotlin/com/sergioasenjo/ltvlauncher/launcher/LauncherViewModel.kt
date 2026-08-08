@@ -16,7 +16,9 @@ import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.data.CategoryRepository
 import com.sergioasenjo.ltvlauncher.data.LauncherCategoryDefinition
 import com.sergioasenjo.ltvlauncher.platform.HomeRepository
+import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
+import com.sergioasenjo.ltvlauncher.settings.LauncherTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +34,7 @@ data class LauncherUiState(
     val nonTvApps: List<LauncherApp> = emptyList(),
     val sections: List<LauncherSection> = emptyList(),
     val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
+    val appearance: LauncherAppearance = LauncherAppearance(),
     val isDefaultLauncher: Boolean? = null,
     val loading: Boolean = true
 ) {
@@ -59,10 +62,11 @@ class LauncherViewModel(
     private val appState = combine(
         managedApplicationsRepository.observeApplications(),
         categoryRepository.observeSections(),
-        launcherSettingsRepository.applicationSortMode
-    ) { apps, sectionDefinitions, applicationSortMode ->
+        launcherSettingsRepository.settings
+    ) { apps, sectionDefinitions, settings ->
         val appsByKey = apps.associateBy(LauncherApp::packageName)
         val visibleApps = apps.filterNot(LauncherApp::isHidden)
+        val applicationSortMode = settings.applicationSortMode
         LauncherUiState(
             favoriteApps = visibleApps.filter(LauncherApp::isFavorite).sortedForDisplay(applicationSortMode),
             tvApps = visibleApps.filter(LauncherApp::isTvApp).sortedForDisplay(applicationSortMode),
@@ -75,6 +79,7 @@ class LauncherViewModel(
                 }
             },
             applicationSortMode = applicationSortMode,
+            appearance = settings.appearance,
             loading = false
         )
     }
@@ -136,6 +141,34 @@ class LauncherViewModel(
 
     fun setApplicationSortMode(sortMode: ApplicationSortMode) {
         updatePreference { launcherSettingsRepository.setApplicationSortMode(sortMode) }
+    }
+
+    fun setTheme(theme: LauncherTheme) {
+        updatePreference { launcherSettingsRepository.setTheme(theme) }
+    }
+
+    fun setShowAppNames(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setShowAppNames(show) }
+    }
+
+    fun setShowCategoryTitles(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setShowCategoryTitles(show) }
+    }
+
+    fun setShowFocusOutline(show: Boolean) {
+        updatePreference { launcherSettingsRepository.setShowFocusOutline(show) }
+    }
+
+    fun setAppCardFocusAnimations(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setAppCardFocusAnimations(enabled) }
+    }
+
+    fun setSelectorTransitionAnimations(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setSelectorTransitionAnimations(enabled) }
+    }
+
+    fun setKeyClickSounds(enabled: Boolean) {
+        updatePreference { launcherSettingsRepository.setKeyClickSounds(enabled) }
     }
 
     fun setManualAppOrder(apps: List<LauncherApp>) {

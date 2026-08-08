@@ -22,7 +22,7 @@ data class JellyfinMusicUiState(
 
 class JellyfinMusicViewModel(
     application: Application,
-    private val apiRepository: JellyfinApiRepository,
+    private val apiRepository: () -> JellyfinApiRepository,
     preferencesRepository: JellyfinPreferencesRepository
 ) : AndroidViewModel(application) {
     private val mutableUiState = MutableStateFlow(JellyfinMusicUiState())
@@ -57,7 +57,7 @@ class JellyfinMusicViewModel(
         requestJob = viewModelScope.launch {
             mutableUiState.value = mutableUiState.value.copy(loading = true, error = null)
             try {
-                val track = apiRepository.randomTrack(activeCredentials)
+                val track = apiRepository().randomTrack(activeCredentials)
                 mutableUiState.value = mutableUiState.value.copy(track = track, loading = false)
                 player.play(track.streamUrl)
             } catch (error: CancellationException) {
@@ -85,7 +85,7 @@ class JellyfinMusicViewModel(
     companion object {
         fun factory(
             application: Application,
-            apiRepository: JellyfinApiRepository,
+            apiRepository: () -> JellyfinApiRepository,
             preferencesRepository: JellyfinPreferencesRepository
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer { JellyfinMusicViewModel(application, apiRepository, preferencesRepository) }

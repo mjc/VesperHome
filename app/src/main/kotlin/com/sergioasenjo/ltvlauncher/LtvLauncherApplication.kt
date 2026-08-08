@@ -36,9 +36,9 @@ class AppContainer(application: Application) {
     val categoryRepository = CategoryRepository(database.categoryDao())
     val homeRepository: HomeRepository = PlatformHomeRepository(application)
     val launcherSettingsRepository = LauncherSettingsRepository(application)
-    private val json = Json { ignoreUnknownKeys = true }
-    private val httpClient = OkHttpClient()
-    val jellyfinPreferencesRepository = JellyfinPreferencesRepository(application)
-    val jellyfinDiscoveryRepository = JellyfinDiscoveryRepository(json)
-    val jellyfinApiRepository = JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository)
+    private val json by lazy { Json { ignoreUnknownKeys = true } }
+    private val httpClient by lazy { OkHttpClient() }
+    val jellyfinPreferencesRepository by lazy { JellyfinPreferencesRepository(application) }
+    val jellyfinDiscoveryRepository by lazy { JellyfinDiscoveryRepository(json) }
+    val jellyfinApiRepository by lazy { JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository) }
 }

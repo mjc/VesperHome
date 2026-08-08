@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.test) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.spotless)
@@ -7,11 +8,11 @@ plugins {
 
 spotless {
     kotlin {
-        target("app/src/**/*.kt")
+        target("app/src/**/*.kt", "benchmark/src/**/*.kt")
         ktlint("1.8.0")
     }
     kotlinGradle {
-        target("*.gradle.kts", "app/*.gradle.kts")
+        target("*.gradle.kts", "app/*.gradle.kts", "benchmark/*.gradle.kts")
         ktlint("1.8.0")
     }
     format("misc") {
@@ -19,7 +20,8 @@ spotless {
             ".editorconfig",
             ".gitignore",
             "gradle.properties",
-            "app/src/**/*.xml"
+            "app/src/**/*.xml",
+            "benchmark/src/**/*.xml"
         )
         trimTrailingWhitespace()
         endWithNewline()

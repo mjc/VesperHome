@@ -10,6 +10,7 @@ class AppRowView @JvmOverloads constructor(context: Context, attrs: AttributeSet
     FrameLayout(context, attrs, defStyleAttr) {
     private val binding = ViewAppRowBinding.inflate(LayoutInflater.from(context), this, true)
 
+    val categoryHeader = binding.categoryHeader
     val title = binding.title
     val appCount = binding.appCount
     val apps = binding.apps

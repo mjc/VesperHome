@@ -3,6 +3,7 @@ package com.sergioasenjo.ltvlauncher.applications
 import android.content.ComponentName
 import android.graphics.drawable.Drawable
 import android.os.UserHandle
+import java.io.File
 
 data class LauncherApp(
     val componentName: ComponentName,
@@ -11,6 +12,7 @@ data class LauncherApp(
     val artworkVersion: Long,
     val user: UserHandle,
     val isTvApp: Boolean,
+    val artworkFile: File? = null,
     val isFavorite: Boolean = false,
     val isHidden: Boolean = false,
     val manualOrder: Long? = null,

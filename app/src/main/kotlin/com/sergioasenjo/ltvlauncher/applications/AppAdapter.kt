@@ -1,12 +1,19 @@
 package com.sergioasenjo.ltvlauncher.applications
 
+import android.animation.ValueAnimator
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.asImage
+import coil3.load
 import com.sergioasenjo.ltvlauncher.databinding.ItemAppBinding
+import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 
 class AppAdapter(
     private val onAppClick: (LauncherApp) -> Unit,
@@ -17,6 +24,7 @@ class AppAdapter(
     private var itemHeight = 176
     private var itemWidth = 244
     private var movementStride = 1
+    private var appearance = LauncherAppearance()
 
     init {
         setHasStableIds(true)
@@ -38,7 +46,12 @@ class AppAdapter(
             width = itemWidth
             height = itemHeight
         }
-        holder.bind(getItem(position), getItem(position).packageName == movingPackageName)
+        holder.bind(getItem(position), getItem(position).packageName == movingPackageName, appearance)
+    }
+
+    override fun onViewRecycled(holder: AppViewHolder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
     }
 
     fun setItemSize(width: Int, height: Int, gridColumns: Int? = null) {
@@ -52,6 +65,12 @@ class AppAdapter(
     fun startMoving(app: LauncherApp) {
         movingPackageName = app.packageName
         notifyPackageChanged(app.packageName)
+    }
+
+    fun setAppearance(appearance: LauncherAppearance) {
+        if (this.appearance == appearance) return
+        this.appearance = appearance
+        notifyItemRangeChanged(0, itemCount)
     }
 
     private fun handleMoveKey(app: LauncherApp, keyCode: Int): Boolean {
@@ -92,6 +111,10 @@ class AppAdapter(
         onMoveKey: (LauncherApp, Int) -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private var app: LauncherApp? = null
+        private var appearance = LauncherAppearance()
+        private var moving = false
+        private var outlineAnimator: ValueAnimator? = null
+        private val cardBackground = GradientDrawable()
 
         init {
             binding.root.setOnClickListener { app?.let(onAppClick) }
@@ -104,17 +127,105 @@ class AppAdapter(
             }
             binding.root.setOnFocusChangeListener { view, focused ->
                 view.isSelected = focused
-                val scale = if (focused) 1.07f else 1f
-                view.animate().scaleX(scale).scaleY(scale).setDuration(140L).start()
+                updateFocusAppearance(focused)
+            }
+            binding.root.background = cardBackground
+        }
+
+        fun bind(app: LauncherApp, moving: Boolean, appearance: LauncherAppearance) {
+            this.app = app
+            this.moving = moving
+            this.appearance = appearance
+            binding.root.isActivated = moving
+            binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
+            binding.artwork.load(app.artworkFile ?: app.artwork) {
+                placeholder(app.artwork.asImage())
+            }
+            binding.name.text = app.label
+            binding.name.setTextColor(
+                ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
+                    intArrayOf(appearance.palette.focusedText, appearance.palette.primaryText)
+                )
+            )
+            binding.name.visibility = if (appearance.showAppNames) View.VISIBLE else View.GONE
+            binding.root.contentDescription = app.label
+            updateFocusAppearance(binding.root.hasFocus())
+        }
+
+        fun recycle() {
+            outlineAnimator?.cancel()
+            outlineAnimator = null
+            binding.root.animate().cancel()
+        }
+
+        private fun updateFocusAppearance(focused: Boolean) {
+            outlineAnimator?.cancel()
+            outlineAnimator = null
+            updateBackground(focused, OUTLINE_FULL_ALPHA)
+
+            val scale = if (focused) FOCUSED_SCALE else 1f
+            binding.root.animate().cancel()
+            if (appearance.selectorTransitionAnimations) {
+                binding.root.animate().scaleX(scale).scaleY(scale).setDuration(SELECTOR_TRANSITION_MS).start()
+            } else {
+                binding.root.scaleX = scale
+                binding.root.scaleY = scale
+            }
+
+            if (focused && appearance.showFocusOutline && appearance.appCardFocusAnimations && !moving) {
+                outlineAnimator = ValueAnimator.ofInt(OUTLINE_MIN_ALPHA, OUTLINE_FULL_ALPHA).apply {
+                    duration = OUTLINE_ANIMATION_MS
+                    repeatCount = ValueAnimator.INFINITE
+                    repeatMode = ValueAnimator.REVERSE
+                    addUpdateListener { animator -> updateBackground(focused = true, animator.animatedValue as Int) }
+                    start()
+                }
             }
         }
 
-        fun bind(app: LauncherApp, moving: Boolean) {
-            this.app = app
-            binding.root.isActivated = moving
-            binding.artwork.setImageDrawable(app.artwork)
-            binding.name.text = app.label
-            binding.root.contentDescription = app.label
+        private fun updateBackground(focused: Boolean, outlineAlpha: Int) {
+            val palette = appearance.palette
+            val fillColor = if (focused || moving) palette.focusedSurface else palette.surface
+            val strokeColor: Int
+            val strokeWidth: Int
+            when {
+                moving -> {
+                    strokeColor = palette.focus
+                    strokeWidth = dp(MOVING_STROKE_WIDTH_DP)
+                }
+
+                focused && appearance.showFocusOutline -> {
+                    strokeColor = palette.focus.withAlpha(outlineAlpha)
+                    strokeWidth = dp(FOCUS_STROKE_WIDTH_DP)
+                }
+
+                else -> {
+                    strokeColor = palette.stroke
+                    strokeWidth = dp(DEFAULT_STROKE_WIDTH_DP)
+                }
+            }
+            cardBackground.apply {
+                cornerRadius = dp(CARD_CORNER_RADIUS_DP).toFloat()
+                setColor(fillColor)
+                setStroke(strokeWidth, strokeColor)
+            }
+        }
+
+        private fun dp(value: Int): Int = (value * binding.root.resources.displayMetrics.density).toInt()
+
+        private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
+
+        private companion object {
+            const val FOCUSED_SCALE = 1.07f
+            const val SELECTOR_TRANSITION_MS = 140L
+            const val OUTLINE_ANIMATION_MS = 850L
+            const val OUTLINE_MIN_ALPHA = 110
+            const val OUTLINE_FULL_ALPHA = 255
+            const val DEFAULT_STROKE_WIDTH_DP = 1
+            const val FOCUS_STROKE_WIDTH_DP = 3
+            const val MOVING_STROKE_WIDTH_DP = 5
+            const val CARD_CORNER_RADIUS_DP = 12
         }
     }
 

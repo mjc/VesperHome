@@ -4,6 +4,21 @@
         <item name="colorPrimary">@color/accent</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">@drawable/launcher_background</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Animation.LtvLauncher.SettingsPanel" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/settings_panel_enter</item>
+        <item name="android:windowExitAnimation">@anim/settings_panel_exit</item>
+    </style>
+
+    <style name="Theme.LtvLauncher.SettingsPanel" parent="Theme.Material3.Dark.Dialog">
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@style/Animation.LtvLauncher.SettingsPanel</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:windowIsFloating">true</item>
         <item name="android:windowNoTitle">true</item>
     </style>
 </resources>

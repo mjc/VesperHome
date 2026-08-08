@@ -2,46 +2,53 @@ package com.sergioasenjo.ltvlauncher.launcher
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Looper
 import android.view.View
-import android.widget.Space
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.emoji2.text.DefaultEmojiCompatConfig
+import androidx.emoji2.text.EmojiCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.applications.AppAdapter
-import com.sergioasenjo.ltvlauncher.applications.AppRowView
 import com.sergioasenjo.ltvlauncher.applications.ApplicationSortMode
 import com.sergioasenjo.ltvlauncher.applications.HiddenAppsActivity
 import com.sergioasenjo.ltvlauncher.applications.LauncherApp
-import com.sergioasenjo.ltvlauncher.categories.CategoryLayoutType
 import com.sergioasenjo.ltvlauncher.categories.CategoryManagementActivity
 import com.sergioasenjo.ltvlauncher.categories.LauncherCategory
-import com.sergioasenjo.ltvlauncher.categories.LauncherSection
-import com.sergioasenjo.ltvlauncher.categories.LauncherSpacer
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
+import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.ltvlauncher.music.JellyfinMusicViewModel
 import com.sergioasenjo.ltvlauncher.music.JellyfinSetupActivity
 import com.sergioasenjo.ltvlauncher.music.renderJellyfinMusic
-import kotlin.math.ceil
+import com.sergioasenjo.ltvlauncher.settings.AppearanceSettingAction
+import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
+import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsAction
+import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanel
+import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsPanelPage
+import com.sergioasenjo.ltvlauncher.settings.LauncherTheme
 import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
-    private data class CategoryRowUi(val view: AppRowView, val adapter: AppAdapter)
-
     private lateinit var binding: ActivityLauncherBinding
-    private val sectionViews = mutableMapOf<Long, View>()
-    private val categoryRows = mutableMapOf<Long, CategoryRowUi>()
-    private val reorderableAdapters = mutableSetOf<AppAdapter>()
+    private lateinit var contentBinding: ViewLauncherContentBinding
+    private lateinit var contentRenderer: LauncherContentRenderer
+    private var settingsPanel: LauncherSettingsPanel? = null
+    private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
+    private var launcherInitialized = false
+    private var musicInitialized = false
+    private var fullyDrawnReported = false
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -60,7 +67,7 @@ class LauncherActivity : AppCompatActivity() {
         val container = (application as LtvLauncherApplication).container
         JellyfinMusicViewModel.factory(
             application as LtvLauncherApplication,
-            container.jellyfinApiRepository,
+            { container.jellyfinApiRepository },
             container.jellyfinPreferencesRepository
         )
     }
@@ -69,126 +76,126 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        settingsPanelPageToRestore = savedInstanceState
+            ?.takeIf { it.getBoolean(STATE_SETTINGS_PANEL_OPEN) }
+            ?.getString(STATE_SETTINGS_PANEL_PAGE)
+            ?.let { storedPage -> LauncherSettingsPanelPage.entries.firstOrNull { it.name == storedPage } }
 
-        val favoriteAppAdapter = createAdapter(viewModel::setManualAppOrder)
-        val tvAppAdapter = createAdapter(viewModel::setManualAppOrder)
-        val nonTvAppAdapter = createAdapter(viewModel::setManualAppOrder)
-        configureRow(binding.favoriteRow, favoriteAppAdapter, getString(R.string.favorites))
-        configureRow(binding.tvRow, tvAppAdapter, getString(R.string.tv_apps))
-        configureRow(binding.nonTvRow, nonTvAppAdapter, getString(R.string.non_tv_apps))
+        binding.openLauncherSettings.setOnClickListener {
+            initializeLauncher()
+            viewModel.refreshHomeStatus()
+            val state = viewModel.uiState.value
+            getOrCreateSettingsPanel().show(state.isDefaultLauncher, state.applicationSortMode, state.appearance)
+        }
+        binding.root.postOnAnimation(::initializeLauncher)
+    }
 
-        binding.manageHiddenApps.setOnClickListener {
-            startActivity(Intent(this, HiddenAppsActivity::class.java))
-        }
-        binding.manageCategories.setOnClickListener {
-            startActivity(Intent(this, CategoryManagementActivity::class.java))
-        }
-        binding.sortApplications.setOnClickListener { showSortDialog() }
-        binding.setupJellyfin.setOnClickListener {
-            startActivity(Intent(this, JellyfinSetupActivity::class.java))
-        }
-        binding.musicPlayPause.setOnClickListener { musicViewModel.playPause() }
-        binding.musicNext.setOnClickListener { musicViewModel.next() }
-        binding.setDefaultLauncher.setOnClickListener { viewModel.requestDefaultLauncher() }
-        binding.openSystemSettings.setOnClickListener { viewModel.openSystemSettings() }
-
+    private fun initializeLauncher() {
+        if (launcherInitialized) return
+        launcherInitialized = true
+        contentBinding = ViewLauncherContentBinding.bind(binding.launcherContentStub.inflate())
+        contentBinding.musicPlayPause.setOnClickListener { musicViewModel.playPause() }
+        contentBinding.musicNext.setOnClickListener { musicViewModel.next() }
+        contentRenderer = LauncherContentRenderer(
+            context = this,
+            binding = contentBinding,
+            emptyStateFocusTarget = binding.openLauncherSettings,
+            onAppClick = viewModel::launch,
+            onAppLongClick = ::showAppActions,
+            onManualOrderChanged = viewModel::setManualAppOrder,
+            onCategoryOrderChanged = viewModel::setCategoryAppOrder
+        )
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        renderHomeStatus(state.isDefaultLauncher)
-                        renderBuiltInRows(state, favoriteAppAdapter, tvAppAdapter, nonTvAppAdapter)
-                        val sectionsHaveApps = renderSections(
-                            state.sections,
-                            requestInitialFocus = canRequestInitialFocus(state) && state.favoriteApps.isEmpty()
-                        )
-                        submitApps(
-                            binding.tvRow.apps,
-                            tvAppAdapter,
-                            state.tvApps,
-                            canRequestInitialFocus(state) && state.favoriteApps.isEmpty() && !sectionsHaveApps
-                        )
-                        submitApps(
-                            binding.nonTvRow.apps,
-                            nonTvAppAdapter,
-                            state.nonTvApps,
-                            canRequestInitialFocus(state) &&
-                                state.favoriteApps.isEmpty() &&
-                                !sectionsHaveApps &&
-                                state.tvApps.isEmpty()
-                        )
-                        if (!state.loading && allAppRowsEmpty(state)) {
-                            binding.manageHiddenApps.post { binding.manageHiddenApps.requestFocus() }
+                        settingsPanel?.render(state.isDefaultLauncher, state.applicationSortMode, state.appearance)
+                        renderAppearance(state.appearance)
+                        contentRenderer.render(state)
+                        if (!state.loading) {
+                            settingsPanelPageToRestore?.let { page ->
+                                getOrCreateSettingsPanel().show(
+                                    state.isDefaultLauncher,
+                                    state.applicationSortMode,
+                                    state.appearance,
+                                    page
+                                )
+                                settingsPanelPageToRestore = null
+                            }
+                        }
+                        if (!state.loading && state.isDefaultLauncher == false && currentFocus == null) {
+                            binding.openLauncherSettings.post { binding.openLauncherSettings.requestFocus() }
+                        }
+                        if (!state.loading && !fullyDrawnReported) {
+                            fullyDrawnReported = true
+                            binding.root.postOnAnimation(::reportFullyDrawnAndInitializeEmojiCompat)
                         }
                     }
                 }
                 launch {
                     viewModel.events.collect(::handleEvent)
                 }
-                launch {
-                    musicViewModel.uiState.collect { binding.renderJellyfinMusic(this@LauncherActivity, it) }
-                }
             }
         }
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.refreshHomeStatus()
+        Looper.myQueue().addIdleHandler {
+            initializeMusic()
+            false
+        }
+    }
+
+    private fun initializeMusic() {
+        if (musicInitialized || isFinishing || isDestroyed) return
+        musicInitialized = true
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                musicViewModel.uiState.collect { contentBinding.renderJellyfinMusic(this@LauncherActivity, it) }
+            }
+        }
+    }
+
+    private fun reportFullyDrawnAndInitializeEmojiCompat() {
+        reportFullyDrawn()
+        binding.root.postDelayed(::initializeEmojiCompat, EMOJI_INITIALIZATION_DELAY_MS)
+    }
+
+    private fun initializeEmojiCompat() {
+        if (isFinishing || isDestroyed) return
+        val config = DefaultEmojiCompatConfig.create(applicationContext) ?: return
+        config.setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
+        EmojiCompat.init(config)
+        EmojiCompat.get().load()
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.refreshHomeStatus()
+        if (launcherInitialized) viewModel.refreshHomeStatus()
     }
 
     override fun onStop() {
-        musicViewModel.onHostStopped()
+        if (musicInitialized) musicViewModel.onHostStopped()
         super.onStop()
     }
 
-    private fun createAdapter(onManualOrderChanged: (List<LauncherApp>) -> Unit): AppAdapter =
-        AppAdapter(viewModel::launch, ::showAppActions, onManualOrderChanged)
-
-    private fun renderBuiltInRows(
-        state: LauncherUiState,
-        favoriteAdapter: AppAdapter,
-        tvAdapter: AppAdapter,
-        nonTvAdapter: AppAdapter
-    ) {
-        binding.favoriteRow.visibility = if (state.favoriteApps.isEmpty()) View.GONE else View.VISIBLE
-        binding.favoriteRow.appCount.text = appCount(state.favoriteApps.size)
-        binding.tvRow.appCount.text = appCount(state.tvApps.size)
-        binding.nonTvRow.appCount.text = appCount(state.nonTvApps.size)
-        configureAppsLayout(
-            binding.favoriteRow,
-            favoriteAdapter,
-            CategoryLayoutType.ROW,
-            6,
-            130,
-            state.favoriteApps.size
-        )
-        configureAppsLayout(binding.tvRow, tvAdapter, CategoryLayoutType.ROW, 6, 130, state.tvApps.size)
-        configureAppsLayout(binding.nonTvRow, nonTvAdapter, CategoryLayoutType.ROW, 6, 130, state.nonTvApps.size)
-        listOf(favoriteAdapter, tvAdapter, nonTvAdapter).forEach { adapter ->
-            setReorderable(adapter, state.applicationSortMode == ApplicationSortMode.MANUAL)
+    override fun onSaveInstanceState(outState: Bundle) {
+        settingsPanel?.takeIf { it.isShowing }?.let { panel ->
+            outState.putBoolean(STATE_SETTINGS_PANEL_OPEN, true)
+            outState.putString(STATE_SETTINGS_PANEL_PAGE, panel.currentPage.name)
         }
-        submitApps(
-            binding.favoriteRow.apps,
-            favoriteAdapter,
-            state.favoriteApps,
-            canRequestInitialFocus(state)
-        )
+        super.onSaveInstanceState(outState)
     }
 
-    private fun renderHomeStatus(isDefaultLauncher: Boolean?) {
-        binding.homeStatus.setText(
-            when (isDefaultLauncher) {
-                null -> R.string.home_status_checking
-                true -> R.string.home_status_default
-                false -> R.string.home_status_not_default
-            }
-        )
-        binding.setDefaultLauncher.visibility = if (isDefaultLauncher == false) View.VISIBLE else View.GONE
-        if (isDefaultLauncher == false && currentFocus == null) {
-            binding.setDefaultLauncher.post { binding.setDefaultLauncher.requestFocus() }
-        }
+    override fun onDestroy() {
+        settingsPanel?.release()
+        super.onDestroy()
     }
+
+    private fun getOrCreateSettingsPanel(): LauncherSettingsPanel = settingsPanel ?: LauncherSettingsPanel(
+        context = this,
+        onAction = ::handleSettingsAction,
+        onAppearanceAction = ::handleAppearanceAction,
+        onDismissed = { binding.openLauncherSettings.requestFocus() }
+    ).also { settingsPanel = it }
 
     private fun handleEvent(event: LauncherEvent) {
         when (event) {
@@ -205,6 +212,92 @@ class LauncherActivity : AppCompatActivity() {
         } catch (_: ActivityNotFoundException) {
             showMessage(R.string.settings_open_failed)
         }
+    }
+
+    private fun handleSettingsAction(action: LauncherSettingsAction) {
+        when (action) {
+            LauncherSettingsAction.SET_DEFAULT_HOME -> viewModel.requestDefaultLauncher()
+
+            LauncherSettingsAction.OPEN_SYSTEM_SETTINGS -> viewModel.openSystemSettings()
+
+            LauncherSettingsAction.MANAGE_CATEGORIES ->
+                startActivity(Intent(this, CategoryManagementActivity::class.java))
+
+            LauncherSettingsAction.MANAGE_HIDDEN_APPS ->
+                startActivity(Intent(this, HiddenAppsActivity::class.java))
+
+            LauncherSettingsAction.SORT_APPLICATIONS -> showSortDialog()
+
+            LauncherSettingsAction.SETUP_JELLYFIN ->
+                startActivity(Intent(this, JellyfinSetupActivity::class.java))
+        }
+    }
+
+    private fun handleAppearanceAction(action: AppearanceSettingAction) {
+        val appearance = viewModel.uiState.value.appearance
+        when (action) {
+            AppearanceSettingAction.THEME -> viewModel.setTheme(
+                if (appearance.theme == LauncherTheme.DARK) LauncherTheme.LIGHT else LauncherTheme.DARK
+            )
+
+            AppearanceSettingAction.SHOW_APP_NAMES -> viewModel.setShowAppNames(!appearance.showAppNames)
+
+            AppearanceSettingAction.SHOW_CATEGORY_TITLES ->
+                viewModel.setShowCategoryTitles(!appearance.showCategoryTitles)
+
+            AppearanceSettingAction.SHOW_FOCUS_OUTLINE ->
+                viewModel.setShowFocusOutline(!appearance.showFocusOutline)
+
+            AppearanceSettingAction.APP_CARD_FOCUS_ANIMATIONS ->
+                viewModel.setAppCardFocusAnimations(!appearance.appCardFocusAnimations)
+
+            AppearanceSettingAction.SELECTOR_TRANSITION_ANIMATIONS ->
+                viewModel.setSelectorTransitionAnimations(!appearance.selectorTransitionAnimations)
+
+            AppearanceSettingAction.KEY_CLICK_SOUNDS -> viewModel.setKeyClickSounds(!appearance.keyClickSounds)
+        }
+    }
+
+    private fun renderAppearance(appearance: LauncherAppearance) {
+        val palette = appearance.palette
+        binding.root.background = GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(palette.backgroundStart, palette.backgroundEnd)
+        )
+        contentBinding.jellyfinPanel.background = roundedBackground(palette.surface, palette.stroke)
+        binding.title.setTextColor(palette.primaryText)
+        contentBinding.musicTitle.setTextColor(palette.primaryText)
+        contentBinding.musicArtist.setTextColor(palette.secondaryText)
+        val strokeColors = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(palette.focus, Color.TRANSPARENT)
+        )
+        val buttonBackground = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(palette.focusedSurface, palette.surface)
+        )
+        val buttonText = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(palette.focusedText, palette.primaryText)
+        )
+        listOf(
+            binding.openLauncherSettings,
+            contentBinding.musicPlayPause,
+            contentBinding.musicNext
+        ).forEach { button ->
+            button.backgroundTintList = buttonBackground
+            button.setTextColor(buttonText)
+            button.strokeColor = strokeColors
+            button.strokeWidth = dp(2)
+        }
+        contentBinding.musicLoading.indeterminateTintList = ColorStateList.valueOf(palette.focus)
+        binding.root.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
+    }
+
+    private fun roundedBackground(color: Int, strokeColor: Int): GradientDrawable = GradientDrawable().apply {
+        cornerRadius = dp(12).toFloat()
+        setColor(color)
+        setStroke(dp(1), strokeColor)
     }
 
     private fun showSortDialog() {
@@ -229,7 +322,7 @@ class LauncherActivity : AppCompatActivity() {
             getString(R.string.application_info) to { viewModel.openApplicationDetails(app) },
             getString(R.string.uninstall_application) to { viewModel.uninstall(app) }
         )
-        if (adapter in reorderableAdapters) {
+        if (contentRenderer.isReorderable(adapter)) {
             actions += getString(R.string.reorder_application) to { adapter.startMoving(app) }
         }
         viewModel.uiState.value.categories.forEach { category ->
@@ -248,144 +341,24 @@ class LauncherActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun configureRow(appRow: AppRowView, appAdapter: AppAdapter, title: String) {
-        appRow.title.text = title
-        appRow.apps.apply {
-            layoutManager = LinearLayoutManager(this@LauncherActivity, LinearLayoutManager.HORIZONTAL, false)
-            adapter = appAdapter
-            itemAnimator = null
-        }
-    }
-
-    private fun configureAppsLayout(
-        appRow: AppRowView,
-        adapter: AppAdapter,
-        layoutType: CategoryLayoutType,
-        columns: Int,
-        rowHeight: Int,
-        appCount: Int
-    ) {
-        val cardHeight = dp(rowHeight + 46)
-        val cardWidth: Int
-        val recyclerHeight: Int
-        if (layoutType == CategoryLayoutType.GRID) {
-            val availableWidth = resources.displayMetrics.widthPixels - dp(120)
-            cardWidth = (availableWidth / columns) - dp(16)
-            val gridCardHeight = (cardWidth * 0.72f).toInt().coerceAtLeast(dp(96))
-            adapter.setItemSize(cardWidth, gridCardHeight, columns)
-            appRow.apps.layoutManager = GridLayoutManager(this, columns)
-            recyclerHeight = ceil(appCount.toDouble() / columns).toInt() * (gridCardHeight + dp(16))
-        } else {
-            cardWidth = dp((rowHeight * 16 / 9) + 12)
-            adapter.setItemSize(cardWidth, cardHeight)
-            appRow.apps.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-            recyclerHeight = cardHeight + dp(14)
-        }
-        appRow.apps.layoutParams = appRow.apps.layoutParams.apply {
-            height = recyclerHeight.coerceAtLeast(dp(32))
-        }
-    }
-
-    private fun renderSections(sections: List<LauncherSection>, requestInitialFocus: Boolean): Boolean {
-        val sectionIds = sections.mapTo(mutableSetOf(), LauncherSection::stableId)
-        sectionViews.keys.filterNot(sectionIds::contains).forEach { removedId ->
-            sectionViews.remove(removedId)?.let(binding.categoryRows::removeView)
-            categoryRows.remove(removedId)
-        }
-
-        var focusRequested = false
-        sections.forEachIndexed { index, section ->
-            val view = when (section) {
-                is LauncherCategory -> renderCategory(section, requestInitialFocus && !focusRequested).also {
-                    focusRequested = focusRequested || (requestInitialFocus && section.apps.isNotEmpty())
-                }
-
-                is LauncherSpacer -> sectionViews.getOrPut(section.stableId) { Space(this) }.apply {
-                    layoutParams = layoutParams?.apply { height = dp(section.height) }
-                        ?: android.widget.LinearLayout.LayoutParams(1, dp(section.height))
-                }
-
-                else -> error("Unsupported launcher section")
-            }
-            sectionViews[section.stableId] = view
-            if (binding.categoryRows.indexOfChild(view) != index) {
-                binding.categoryRows.removeView(view)
-                binding.categoryRows.addView(view, index)
-            }
-        }
-        return sections.filterIsInstance<LauncherCategory>().any { it.apps.isNotEmpty() }
-    }
-
-    private fun renderCategory(category: LauncherCategory, requestInitialFocus: Boolean): AppRowView {
-        val row = categoryRows.getOrPut(category.stableId) {
-            val adapter = createAdapter { apps -> viewModel.setCategoryAppOrder(category.id, apps) }
-            val view = AppRowView(this)
-            configureRow(view, adapter, category.name)
-            CategoryRowUi(view, adapter)
-        }
-        row.view.title.text = category.name
-        row.view.appCount.text = appCount(category.apps.size)
-        configureAppsLayout(
-            row.view,
-            row.adapter,
-            category.layoutType,
-            category.gridColumns,
-            category.rowHeight,
-            category.apps.size
-        )
-        setReorderable(row.adapter, category.sortMode == ApplicationSortMode.MANUAL)
-        submitApps(row.view.apps, row.adapter, category.apps, requestInitialFocus)
-        return row.view
-    }
-
-    private fun setReorderable(adapter: AppAdapter, reorderable: Boolean) {
-        if (reorderable) reorderableAdapters += adapter else reorderableAdapters -= adapter
-    }
-
-    private fun submitApps(
-        recyclerView: RecyclerView,
-        appAdapter: AppAdapter,
-        apps: List<LauncherApp>,
-        requestInitialFocus: Boolean
-    ) {
-        val hadFocus = recyclerView.hasFocus()
-        val focusedPosition = recyclerView.focusedChild?.let(recyclerView::getChildAdapterPosition)
-            ?: RecyclerView.NO_POSITION
-        val focusedApp = appAdapter.currentList.getOrNull(focusedPosition)
-        appAdapter.submitList(apps) {
-            if (apps.isEmpty()) return@submitList
-            val targetPosition = focusedApp
-                ?.let { focused -> apps.indexOfFirst { it.packageName == focused.packageName } }
-                ?.takeIf { it >= 0 }
-                ?: focusedPosition.coerceIn(0, apps.lastIndex)
-            if (hadFocus || (requestInitialFocus && currentFocus == null)) {
-                requestFocus(recyclerView, targetPosition)
-            }
-        }
-    }
-
-    private fun requestFocus(recyclerView: RecyclerView, position: Int) {
-        recyclerView.scrollToPosition(position)
-        recyclerView.post {
-            recyclerView.findViewHolderForAdapterPosition(position)?.itemView?.requestFocus()
-        }
-    }
-
-    private fun canRequestInitialFocus(state: LauncherUiState): Boolean =
-        !state.loading && state.isDefaultLauncher != false
-
-    private fun allAppRowsEmpty(state: LauncherUiState): Boolean = state.favoriteApps.isEmpty() &&
-        state.tvApps.isEmpty() &&
-        state.nonTvApps.isEmpty() &&
-        state.categories.all { it.apps.isEmpty() }
-
     private fun showMessage(messageRes: Int) {
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
     }
 
-    private fun appCount(count: Int): String = resources.getQuantityString(R.plurals.application_count, count, count)
-
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val EMOJI_INITIALIZATION_DELAY_MS = 3_000L
+        const val STATE_SETTINGS_PANEL_OPEN = "settings_panel_open"
+        const val STATE_SETTINGS_PANEL_PAGE = "settings_panel_page"
+    }
+}
+
+private fun View.setSoundEffectsEnabledRecursively(enabled: Boolean) {
+    isSoundEffectsEnabled = enabled
+    if (this is ViewGroup) {
+        for (index in 0 until childCount) getChildAt(index).setSoundEffectsEnabledRecursively(enabled)
+    }
 }
 
 private val ApplicationSortMode.labelRes: Int

@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "LtvLauncher"
 include(":app")
+include(":benchmark")

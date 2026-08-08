@@ -6,7 +6,34 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
 class JellyfinPlayer(context: Context, private val onPlayingChanged: (Boolean) -> Unit) {
-    private val player = ExoPlayer.Builder(context).build().apply {
+    private val applicationContext = context.applicationContext
+    private var player: ExoPlayer? = null
+
+    fun play(url: String) {
+        getOrCreatePlayer().apply {
+            setMediaItem(MediaItem.fromUri(url))
+            prepare()
+            play()
+        }
+    }
+
+    fun toggle() {
+        player?.run { if (isPlaying) pause() else play() }
+    }
+
+    fun stop() {
+        player?.run {
+            stop()
+            clearMediaItems()
+        }
+    }
+
+    fun release() {
+        player?.release()
+        player = null
+    }
+
+    private fun getOrCreatePlayer(): ExoPlayer = player ?: ExoPlayer.Builder(applicationContext).build().apply {
         addListener(
             object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -14,24 +41,6 @@ class JellyfinPlayer(context: Context, private val onPlayingChanged: (Boolean) -
                 }
             }
         )
-    }
-
-    fun play(url: String) {
-        player.setMediaItem(MediaItem.fromUri(url))
-        player.prepare()
-        player.play()
-    }
-
-    fun toggle() {
-        if (player.isPlaying) player.pause() else player.play()
-    }
-
-    fun stop() {
-        player.stop()
-        player.clearMediaItems()
-    }
-
-    fun release() {
-        player.release()
+        player = this
     }
 }

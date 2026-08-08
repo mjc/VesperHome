@@ -4,9 +4,9 @@ import android.content.Context
 import android.view.View
 import coil3.load
 import com.sergioasenjo.ltvlauncher.R
-import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
+import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
 
-fun ActivityLauncherBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
+fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
     val configured = state.serverName != null
     musicPlayPause.visibility = if (configured) View.VISIBLE else View.GONE
     musicNext.visibility = if (configured) View.VISIBLE else View.GONE
