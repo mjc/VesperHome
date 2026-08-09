@@ -24,10 +24,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         create("benchmark") {
             initWith(getByName("release"))
@@ -83,5 +80,4 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.profileinstaller)
 }

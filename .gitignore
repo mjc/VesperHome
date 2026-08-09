@@ -1,63 +1,12 @@
-# Native Gradle / Kotlin
+# Gradle / Kotlin
 .gradle/
 .kotlin/
 **/build/
 local.properties
-**/local.properties
-captures/
-.externalNativeBuild/
-.cxx/
 *.hprof
 
-# Flutter / Dart / Pub
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
-pubspec-overrides.yaml
-
-# Symbols & Obfuscation
-app.*.symbols
-app.*.map.json
-
-# Android Build & Secrets
-/android/app/debug
-/android/app/profile
-/android/app/release
-/android/app/build
-/android/build
-**/google-services.json
-**/upload-keystore.jks
-**/keystore.properties
-*.apk
-*.ap_
-*.aab
+# Signing secrets
 *.jks
 *.keystore
-*.p12
-*.pem
 keystore.properties
 key.properties
-
-# Local Tools, Libs & Scripts
-*.py
-sqlite_lib/
-com.leanbitlab.ltvL.yml
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite-journal
-*.sqlite-shm
-*.sqlite-wal
-
-# Environment & Dev Tooling
-.env
-.env.*
-!.env.example
