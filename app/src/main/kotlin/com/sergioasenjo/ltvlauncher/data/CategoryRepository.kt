@@ -132,11 +132,9 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
     private companion object {
         val RESERVED_CATEGORY_NAMES = setOf(
             "favorites",
-            "tv apps",
-            "non-tv apps",
+            "applications",
             "favoritos",
-            "aplicaciones de tv",
-            "otras aplicaciones"
+            "aplicaciones"
         )
         const val MIN_GRID_COLUMNS = 5
         const val MAX_GRID_COLUMNS = 10

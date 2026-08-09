@@ -37,13 +37,11 @@ class LauncherContentRenderer(
     private val reorderableAdapters = mutableSetOf<AppAdapter>()
     private var appearance = LauncherAppearance()
     private val favoriteAppAdapter = createAdapter(onManualOrderChanged)
-    private val tvAppAdapter = createAdapter(onManualOrderChanged)
-    private val nonTvAppAdapter = createAdapter(onManualOrderChanged)
+    private val appAdapter = createAdapter(onManualOrderChanged)
 
     init {
         configureRow(binding.favoriteRow, favoriteAppAdapter, context.getString(R.string.favorites))
-        configureRow(binding.tvRow, tvAppAdapter, context.getString(R.string.tv_apps))
-        configureRow(binding.nonTvRow, nonTvAppAdapter, context.getString(R.string.non_tv_apps))
+        configureRow(binding.applicationsRow, appAdapter, context.getString(R.string.applications))
     }
 
     fun render(state: LauncherUiState) {
@@ -54,19 +52,10 @@ class LauncherContentRenderer(
             requestInitialFocus = canRequestInitialFocus(state) && state.favoriteApps.isEmpty()
         )
         submitApps(
-            binding.tvRow.apps,
-            tvAppAdapter,
-            state.tvApps,
+            binding.applicationsRow.apps,
+            appAdapter,
+            state.apps,
             canRequestInitialFocus(state) && state.favoriteApps.isEmpty() && !sectionsHaveApps
-        )
-        submitApps(
-            binding.nonTvRow.apps,
-            nonTvAppAdapter,
-            state.nonTvApps,
-            canRequestInitialFocus(state) &&
-                state.favoriteApps.isEmpty() &&
-                !sectionsHaveApps &&
-                state.tvApps.isEmpty()
         )
         if (!state.loading && allAppRowsEmpty(state) && emptyStateFocusTarget.rootView.findFocus() == null) {
             emptyStateFocusTarget.post { emptyStateFocusTarget.requestFocus() }
@@ -81,10 +70,10 @@ class LauncherContentRenderer(
     private fun applyAppearance(appearance: LauncherAppearance) {
         if (this.appearance == appearance) return
         this.appearance = appearance
-        listOf(favoriteAppAdapter, tvAppAdapter, nonTvAppAdapter).forEach { adapter ->
+        listOf(favoriteAppAdapter, appAdapter).forEach { adapter ->
             adapter.setAppearance(appearance)
         }
-        listOf(binding.favoriteRow, binding.tvRow, binding.nonTvRow).forEach(::updateRowAppearance)
+        listOf(binding.favoriteRow, binding.applicationsRow).forEach(::updateRowAppearance)
         categoryRows.values.forEach { row ->
             row.adapter.setAppearance(appearance)
             updateRowAppearance(row.view)
@@ -94,8 +83,7 @@ class LauncherContentRenderer(
     private fun renderBuiltInRows(state: LauncherUiState) {
         binding.favoriteRow.visibility = if (state.favoriteApps.isEmpty()) View.GONE else View.VISIBLE
         binding.favoriteRow.appCount.text = appCount(state.favoriteApps.size)
-        binding.tvRow.appCount.text = appCount(state.tvApps.size)
-        binding.nonTvRow.appCount.text = appCount(state.nonTvApps.size)
+        binding.applicationsRow.appCount.text = appCount(state.apps.size)
         configureAppsLayout(
             binding.favoriteRow,
             favoriteAppAdapter,
@@ -105,22 +93,14 @@ class LauncherContentRenderer(
             state.favoriteApps.size
         )
         configureAppsLayout(
-            binding.tvRow,
-            tvAppAdapter,
+            binding.applicationsRow,
+            appAdapter,
             CategoryLayoutType.ROW,
             6,
             BUILT_IN_ROW_HEIGHT_DP,
-            state.tvApps.size
+            state.apps.size
         )
-        configureAppsLayout(
-            binding.nonTvRow,
-            nonTvAppAdapter,
-            CategoryLayoutType.ROW,
-            6,
-            BUILT_IN_ROW_HEIGHT_DP,
-            state.nonTvApps.size
-        )
-        listOf(favoriteAppAdapter, tvAppAdapter, nonTvAppAdapter).forEach { adapter ->
+        listOf(favoriteAppAdapter, appAdapter).forEach { adapter ->
             setReorderable(adapter, state.applicationSortMode == ApplicationSortMode.MANUAL)
         }
         submitApps(
@@ -269,8 +249,7 @@ class LauncherContentRenderer(
         !state.loading && state.isDefaultLauncher != false
 
     private fun allAppRowsEmpty(state: LauncherUiState): Boolean = state.favoriteApps.isEmpty() &&
-        state.tvApps.isEmpty() &&
-        state.nonTvApps.isEmpty() &&
+        state.apps.isEmpty() &&
         state.categories.all { it.apps.isEmpty() }
 
     private fun appCount(count: Int): String =

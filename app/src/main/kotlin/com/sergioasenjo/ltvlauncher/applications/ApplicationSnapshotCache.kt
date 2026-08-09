@@ -33,7 +33,6 @@ class ApplicationSnapshotCache(context: Context) {
                 artwork = defaultArtwork,
                 artworkVersion = cachedApp.artworkVersion,
                 user = user,
-                isTvApp = cachedApp.isTvApp,
                 artworkFile = artworkFile(cachedApp.packageName).takeIf(File::isFile)
             )
         }
@@ -58,8 +57,7 @@ class ApplicationSnapshotCache(context: Context) {
                     packageName = app.packageName,
                     className = app.componentName.className,
                     label = app.label,
-                    artworkVersion = app.artworkVersion,
-                    isTvApp = app.isTvApp
+                    artworkVersion = app.artworkVersion
                 )
             }
         )
@@ -120,6 +118,5 @@ private data class CachedApplication(
     val packageName: String,
     val className: String,
     val label: String,
-    val artworkVersion: Long,
-    val isTvApp: Boolean
+    val artworkVersion: Long
 )

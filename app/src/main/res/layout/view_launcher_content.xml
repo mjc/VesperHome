@@ -32,9 +32,10 @@
                 android:src="@drawable/ic_music" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="12dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="vertical">
 
@@ -125,12 +126,7 @@
             android:orientation="vertical" />
 
         <com.sergioasenjo.ltvlauncher.applications.AppRowView
-            android:id="@+id/tvRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <com.sergioasenjo.ltvlauncher.applications.AppRowView
-            android:id="@+id/nonTvRow"
+            android:id="@+id/applicationsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 

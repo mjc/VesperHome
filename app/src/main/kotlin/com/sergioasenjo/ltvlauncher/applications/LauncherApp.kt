@@ -11,7 +11,6 @@ data class LauncherApp(
     val artwork: Drawable,
     val artworkVersion: Long,
     val user: UserHandle,
-    val isTvApp: Boolean,
     val artworkFile: File? = null,
     val customBannerFile: File? = null,
     val customBannerRevision: Long? = null,

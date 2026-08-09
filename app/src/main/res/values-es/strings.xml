@@ -2,8 +2,6 @@
 <resources>
     <string name="app_name">LTvLauncher</string>
     <string name="favorites">Favoritos</string>
-    <string name="tv_apps">Aplicaciones de TV</string>
-    <string name="non_tv_apps">Otras aplicaciones</string>
     <string name="launch_failed">No se pudo abrir esta aplicación.</string>
     <string name="preference_update_failed">El lanzador no pudo guardar ese cambio.</string>
     <string name="add_to_favorites">Añadir a Favoritos</string>
@@ -207,7 +205,7 @@
     <string name="category_name">Nombre de la categoría</string>
     <string name="category_name_required">Introduce un nombre para la categoría.</string>
     <string name="no_categories">No hay categorías personalizadas.</string>
-    <string name="category_update_failed">El lanzador no pudo guardar el cambio de categoría. Los nombres deben ser únicos y no pueden ser Favoritos, Aplicaciones de TV ni Otras aplicaciones.</string>
+    <string name="category_update_failed">El lanzador no pudo guardar el cambio de categoría. Los nombres deben ser únicos y no pueden ser Favoritos ni Aplicaciones.</string>
     <string name="add_to_category">Añadir a %1$s</string>
     <string name="remove_from_category">Quitar de %1$s</string>
     <string name="manage_category_apps">Gestionar aplicaciones</string>

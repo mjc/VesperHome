@@ -41,8 +41,7 @@ import kotlinx.coroutines.launch
 
 data class LauncherUiState(
     val favoriteApps: List<LauncherApp> = emptyList(),
-    val tvApps: List<LauncherApp> = emptyList(),
-    val nonTvApps: List<LauncherApp> = emptyList(),
+    val apps: List<LauncherApp> = emptyList(),
     val sections: List<LauncherSection> = emptyList(),
     val applicationSortMode: ApplicationSortMode = ApplicationSortMode.MANUAL,
     val appearance: LauncherAppearance = LauncherAppearance(),
@@ -88,8 +87,7 @@ class LauncherViewModel(
         val applicationSortMode = settings.applicationSortMode
         LauncherUiState(
             favoriteApps = visibleApps.filter(LauncherApp::isFavorite).sortedForDisplay(applicationSortMode),
-            tvApps = visibleApps.filter(LauncherApp::isTvApp).sortedForDisplay(applicationSortMode),
-            nonTvApps = visibleApps.filterNot(LauncherApp::isTvApp).sortedForDisplay(applicationSortMode),
+            apps = visibleApps.sortedForDisplay(applicationSortMode),
             sections = sectionDefinitions.map { definition ->
                 when (definition) {
                     is LauncherCategoryDefinition -> definition.toLauncherCategory(appsByKey)

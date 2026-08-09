@@ -106,10 +106,6 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
 
     private suspend fun loadApplications(): List<LauncherApp> {
         val user = Process.myUserHandle()
-        val tvPackages = packageManager.queryIntentActivities(
-            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER),
-            0
-        ).mapTo(mutableSetOf()) { it.activityInfo.packageName }
         val activities = launcherApps.getActivityList(null, user)
             .asSequence()
             .filterNot { it.componentName.packageName == ownPackageName }
@@ -131,8 +127,7 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
                             ?.let(::File)
                             ?.lastModified()
                             ?: (artworkVersions[packageName] ?: 0L),
-                        user = activity.user,
-                        isTvApp = packageName in tvPackages
+                        user = activity.user
                     )
                 }
             }

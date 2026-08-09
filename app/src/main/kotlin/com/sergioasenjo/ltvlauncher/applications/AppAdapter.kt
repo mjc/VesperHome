@@ -298,7 +298,6 @@ class AppAdapter(
                 oldItem.label == newItem.label &&
                 oldItem.isFavorite == newItem.isFavorite &&
                 oldItem.isHidden == newItem.isHidden &&
-                oldItem.isTvApp == newItem.isTvApp &&
                 oldItem.artworkVersion == newItem.artworkVersion &&
                 oldItem.customBannerRevision == newItem.customBannerRevision &&
                 oldItem.manualOrder == newItem.manualOrder &&
