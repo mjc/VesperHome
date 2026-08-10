@@ -25,8 +25,8 @@ import com.sergioasenjo.ltvlauncher.brightness.BrightnessController
 import com.sergioasenjo.ltvlauncher.databinding.ActivityLauncherBinding
 import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.ltvlauncher.inputs.TvInputController
+import com.sergioasenjo.ltvlauncher.music.JellyfinMusicController
 import com.sergioasenjo.ltvlauncher.music.JellyfinMusicViewModel
-import com.sergioasenjo.ltvlauncher.music.renderJellyfinMusic
 import com.sergioasenjo.ltvlauncher.notifications.NotificationController
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverController
 import com.sergioasenjo.ltvlauncher.screensaver.ScreensaverSettingsAction
@@ -55,6 +55,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var backupController: BackupController
     private lateinit var aboutController: AboutController
     private lateinit var settingsActionController: LauncherSettingsActionController
+    private lateinit var musicController: JellyfinMusicController
     private var settingsPanel: LauncherSettingsPanel? = null
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
@@ -216,8 +217,6 @@ class LauncherActivity : AppCompatActivity() {
         if (launcherInitialized) return
         launcherInitialized = true
         contentBinding = ViewLauncherContentBinding.bind(binding.launcherContentStub.inflate())
-        contentBinding.musicPlayPause.setOnClickListener { musicViewModel.playPause() }
-        contentBinding.musicNext.setOnClickListener { musicViewModel.next() }
         contentRenderer = LauncherContentRenderer(
             context = this,
             binding = contentBinding,
@@ -244,6 +243,7 @@ class LauncherActivity : AppCompatActivity() {
                             brightnessController.hasPermission()
                         )
                         val homeAppearance = state.appearance.forWallpaper(state.wallpaper)
+                        if (::musicController.isInitialized) musicController.setAppearance(homeAppearance)
                         renderLauncherAppearance(binding, contentBinding, homeAppearance)
                         statusBarController.render(state.statusBar, homeAppearance)
                         tvInputController.render(state.statusBar.showInputs, homeAppearance)
@@ -295,9 +295,12 @@ class LauncherActivity : AppCompatActivity() {
     private fun initializeMusic() {
         if (musicInitialized || isFinishing || isDestroyed) return
         musicInitialized = true
+        musicController = JellyfinMusicController(this, contentBinding, musicViewModel) {
+            viewModel.uiState.value.let { it.appearance.forWallpaper(it.wallpaper) }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                musicViewModel.uiState.collect { contentBinding.renderJellyfinMusic(this@LauncherActivity, it) }
+                musicController.collectState()
             }
         }
     }
@@ -328,7 +331,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        if (musicInitialized) musicViewModel.onHostStopped()
+        if (musicInitialized) musicController.onHostStopped()
         super.onStop()
     }
 
@@ -347,6 +350,7 @@ class LauncherActivity : AppCompatActivity() {
         brightnessController.release()
         backupController.release()
         aboutController.release()
+        if (::musicController.isInitialized) musicController.release()
         super.onDestroy()
     }
 

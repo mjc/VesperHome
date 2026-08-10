@@ -10,8 +10,11 @@ import com.sergioasenjo.ltvlauncher.databinding.ViewLauncherContentBinding
 
 fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
     val configured = state.serverName != null
+    musicLibrary.visibility = if (configured) View.VISIBLE else View.GONE
     musicPlayPause.visibility = if (configured) View.VISIBLE else View.GONE
-    musicNext.visibility = if (configured) View.VISIBLE else View.GONE
+    musicPrevious.visibility = if (configured && state.collectionPlayback) View.VISIBLE else View.GONE
+    musicNext.visibility = if (configured && state.collectionPlayback) View.VISIBLE else View.GONE
+    musicRandom.visibility = if (configured) View.VISIBLE else View.GONE
     musicLoading.visibility = if (state.loading) View.VISIBLE else View.GONE
     musicPlayPause.setIconResource(if (state.playing) R.drawable.ic_pause else R.drawable.ic_play)
     musicPlayPause.contentDescription = context.getString(if (state.playing) R.string.pause else R.string.play)
@@ -33,7 +36,7 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
         val padding = (PLACEHOLDER_PADDING_DP * musicArtwork.resources.displayMetrics.density).toInt()
         musicArtwork.setPadding(padding, padding, padding, padding)
         musicArtwork.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
-        musicArtwork.setImageResource(R.drawable.ic_music)
+        musicArtwork.load(R.drawable.ic_music)
     } else {
         musicArtwork.setPadding(0, 0, 0, 0)
         musicArtwork.imageTintList = null

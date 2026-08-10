@@ -243,6 +243,8 @@
     <string name="jellyfin_ready">Connected to %1$s</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="previous_track">Previous track</string>
+    <string name="next_track">Next track</string>
     <string name="random_next">Random next</string>
     <string name="music_artwork">Current track artwork</string>
     <string name="connect_to_jellyfin_server">Connect to %1$s at %2$s</string>
@@ -254,6 +256,25 @@
     <string name="jellyfin_quick_connect_expired">Quick Connect expired. Start discovery again to request a new code.</string>
     <string name="jellyfin_quick_connect_failed">Quick Connect failed or is disabled on this Jellyfin server.</string>
     <string name="jellyfin_url_unreachable">The Jellyfin server URL could not be reached.</string>
+    <string name="jellyfin_library">Jellyfin library</string>
+    <string name="choose_music">Choose music</string>
+    <string name="choose_music_description">Play random songs, or choose a playlist or album to play its tracks in order.</string>
+    <string name="jellyfin_collection_loading">Loading playlists and albums…</string>
+    <string name="jellyfin_collection_empty">This selection has no audio tracks.</string>
+    <string name="jellyfin_no_music_collections">No playlists or albums are available for this Jellyfin user.</string>
+    <string name="jellyfin_collection_load_failed">Unable to load playlists and albums from Jellyfin.</string>
+    <string name="jellyfin_collection_play_failed">Unable to play this Jellyfin selection.</string>
+    <string name="music_picker_hint">D-pad to browse  |  OK to play  |  Back to close</string>
+    <string name="playlist">Playlist</string>
+    <string name="album">Album</string>
+    <string name="all_music">All music</string>
+    <string name="random_songs">Random songs</string>
+    <string name="random_songs_description">Shuffle across your library</string>
+    <string name="retry">Retry</string>
+    <plurals name="music_collection_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
     <plurals name="application_count">
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>

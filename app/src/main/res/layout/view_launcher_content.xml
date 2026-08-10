@@ -73,10 +73,48 @@
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/musicPlayPause"
+                android:id="@+id/musicLibrary"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="14dp"
+                android:backgroundTint="@color/action_button_background"
+                android:contentDescription="@string/choose_music"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_music_library"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/action_button_text" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/musicPrevious"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:backgroundTint="@color/action_button_background"
+                android:contentDescription="@string/previous_track"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_previous"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/action_button_text" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/musicPlayPause"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
                 android:backgroundTint="@color/action_button_background"
                 android:contentDescription="@string/play"
                 android:insetTop="0dp"
@@ -93,6 +131,25 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/musicNext"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:backgroundTint="@color/action_button_background"
+                android:contentDescription="@string/next_track"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_next"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/action_button_text" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/musicRandom"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="6dp"

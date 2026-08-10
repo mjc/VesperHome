@@ -17,6 +17,14 @@ data class JellyfinMusicUiState(
     val serverName: String? = null,
     val track: JellyfinTrack? = null,
     val playing: Boolean = false,
+    val collectionPlayback: Boolean = false,
+    val loading: Boolean = false,
+    val errorRes: Int? = null,
+    val collectionPicker: JellyfinCollectionPickerState = JellyfinCollectionPickerState()
+)
+
+data class JellyfinCollectionPickerState(
+    val collections: List<JellyfinMusicCollection> = emptyList(),
     val loading: Boolean = false,
     val errorRes: Int? = null
 )
@@ -28,39 +36,66 @@ class JellyfinMusicViewModel(
 ) : AndroidViewModel(application) {
     private val mutableUiState = MutableStateFlow(JellyfinMusicUiState())
     val uiState = mutableUiState.asStateFlow()
-    private val player = JellyfinPlayer(application) { playing ->
-        mutableUiState.value = mutableUiState.value.copy(playing = playing)
-    }
+    private val player = JellyfinPlayer(
+        application,
+        onPlayingChanged = { playing -> mutableUiState.value = mutableUiState.value.copy(playing = playing) },
+        onTrackChanged = { track -> mutableUiState.value = mutableUiState.value.copy(track = track) }
+    )
     private var credentials: JellyfinCredentials? = null
     private var requestJob: Job? = null
+    private var playlistRequestJob: Job? = null
 
     init {
         viewModelScope.launch {
             preferencesRepository.credentials.collect { updatedCredentials ->
+                val credentialsChanged = credentials != updatedCredentials
+                if (credentialsChanged) {
+                    requestJob?.cancel()
+                    playlistRequestJob?.cancel()
+                }
                 credentials = updatedCredentials
-                if (updatedCredentials == null) player.stop()
+                if (credentialsChanged) player.stop()
                 mutableUiState.value = mutableUiState.value.copy(
                     serverName = updatedCredentials?.serverName,
-                    track = if (updatedCredentials == null) null else mutableUiState.value.track,
-                    errorRes = null
+                    track = if (credentialsChanged) null else mutableUiState.value.track,
+                    collectionPlayback = if (credentialsChanged) false else mutableUiState.value.collectionPlayback,
+                    errorRes = null,
+                    collectionPicker = if (credentialsChanged) {
+                        JellyfinCollectionPickerState()
+                    } else {
+                        mutableUiState.value.collectionPicker
+                    }
                 )
             }
         }
     }
 
     fun playPause() {
-        if (mutableUiState.value.track == null) next() else player.toggle()
+        if (mutableUiState.value.track == null) random() else player.toggle()
     }
 
-    fun next() {
+    fun random() {
+        if (mutableUiState.value.collectionPlayback) {
+            player.playRandom()
+            return
+        }
+        playGlobalRandom()
+    }
+
+    fun playGlobalRandom() {
         val activeCredentials = credentials ?: return
         requestJob?.cancel()
+        mutableUiState.value = mutableUiState.value.copy(collectionPlayback = false)
         requestJob = viewModelScope.launch {
             mutableUiState.value = mutableUiState.value.copy(loading = true, errorRes = null)
             try {
                 val track = apiRepository().randomTrack(activeCredentials)
-                mutableUiState.value = mutableUiState.value.copy(track = track, loading = false)
-                player.play(track.streamUrl)
+                mutableUiState.value = mutableUiState.value.copy(
+                    track = track,
+                    collectionPlayback = false,
+                    loading = false
+                )
+                player.play(listOf(track))
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
@@ -72,11 +107,82 @@ class JellyfinMusicViewModel(
         }
     }
 
+    fun playPrevious() {
+        player.playPrevious()
+    }
+
+    fun playNext() {
+        player.playNext()
+    }
+
+    fun loadCollections() {
+        val activeCredentials = credentials ?: return
+        playlistRequestJob?.cancel()
+        mutableUiState.value = mutableUiState.value.copy(
+            collectionPicker = mutableUiState.value.collectionPicker.copy(loading = true, errorRes = null)
+        )
+        playlistRequestJob = viewModelScope.launch {
+            try {
+                val collections = apiRepository().musicCollections(activeCredentials)
+                mutableUiState.value = mutableUiState.value.copy(
+                    collectionPicker = JellyfinCollectionPickerState(collections = collections)
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                mutableUiState.value = mutableUiState.value.copy(
+                    collectionPicker = mutableUiState.value.collectionPicker.copy(
+                        loading = false,
+                        errorRes = R.string.jellyfin_collection_load_failed
+                    )
+                )
+            }
+        }
+    }
+
+    fun playCollection(collection: JellyfinMusicCollection) {
+        val activeCredentials = credentials ?: return
+        requestJob?.cancel()
+        requestJob = viewModelScope.launch {
+            mutableUiState.value = mutableUiState.value.copy(loading = true, errorRes = null)
+            try {
+                val tracks = apiRepository().collectionTracks(activeCredentials, collection)
+                if (tracks.isEmpty()) {
+                    mutableUiState.value = mutableUiState.value.copy(
+                        loading = false,
+                        errorRes = R.string.jellyfin_collection_empty
+                    )
+                    return@launch
+                }
+                mutableUiState.value = mutableUiState.value.copy(
+                    track = tracks.first(),
+                    collectionPlayback = true,
+                    loading = false
+                )
+                player.play(tracks)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                mutableUiState.value = mutableUiState.value.copy(
+                    loading = false,
+                    errorRes = R.string.jellyfin_collection_play_failed
+                )
+            }
+        }
+    }
+
     fun onHostStopped() {
         requestJob?.cancel()
         requestJob = null
+        playlistRequestJob?.cancel()
+        playlistRequestJob = null
         player.stop()
-        mutableUiState.value = mutableUiState.value.copy(track = null, loading = false)
+        mutableUiState.value = mutableUiState.value.copy(
+            track = null,
+            collectionPlayback = false,
+            loading = false,
+            collectionPicker = mutableUiState.value.collectionPicker.copy(loading = false)
+        )
     }
 
     override fun onCleared() {

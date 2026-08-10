@@ -58,25 +58,102 @@ class JellyfinApiRepository(
             )
         )
         val item = result.Items.firstOrNull() ?: throw IOException("The Jellyfin library contains no audio items")
-        val streamUrl = authenticatedUrl(credentials, "Audio/${item.Id}/stream", mapOf("static" to "true"))
-        val imageId = if (item.ImageTags["Primary"] != null) item.Id else item.AlbumId
-        val imageTag = item.ImageTags["Primary"] ?: item.AlbumPrimaryImageTag
-        val artworkUrl = imageId?.let { id -> imageTag?.let { tag -> id to tag } }?.let { (id, tag) ->
-            authenticatedUrl(
-                credentials,
-                "Items/$id/Images/Primary",
-                mapOf("tag" to tag, "maxWidth" to "512", "quality" to "90")
+        return item.toTrack(credentials)
+    }
+
+    suspend fun musicCollections(credentials: JellyfinCredentials): List<JellyfinMusicCollection> {
+        val result: JellyfinLibraryItemsResult = execute(
+            credentials.baseUrl,
+            "Items",
+            token = credentials.accessToken,
+            query = mapOf(
+                "userId" to credentials.userId,
+                "includeItemTypes" to "Playlist,MusicAlbum",
+                "recursive" to "true",
+                "sortBy" to "SortName",
+                "sortOrder" to "Ascending",
+                "fields" to "ChildCount,RecursiveItemCount",
+                "enableImages" to "true",
+                "imageTypeLimit" to "1",
+                "enableImageTypes" to "Primary"
             )
+        )
+        return result.Items.map { item ->
+            JellyfinMusicCollection(
+                id = item.Id,
+                name = item.Name,
+                trackCount = item.ChildCount ?: item.RecursiveItemCount ?: 0,
+                artworkUrl = item.ImageTags["Primary"]?.let { tag -> imageUrl(credentials, item.Id, tag, 480) },
+                type = if (item.Type == "Playlist") JellyfinCollectionType.PLAYLIST else JellyfinCollectionType.ALBUM
+            )
+        }.sortedWith(compareBy(JellyfinMusicCollection::type, { it.name.lowercase() }))
+    }
+
+    suspend fun collectionTracks(
+        credentials: JellyfinCredentials,
+        collection: JellyfinMusicCollection
+    ): List<JellyfinTrack> {
+        val path: String
+        val query: Map<String, String>
+        when (collection.type) {
+            JellyfinCollectionType.PLAYLIST -> {
+                path = "Playlists/${collection.id}/Items"
+                query = mediaQuery(credentials)
+            }
+
+            JellyfinCollectionType.ALBUM -> {
+                path = "Items"
+                query = mediaQuery(credentials) + mapOf(
+                    "parentId" to collection.id,
+                    "includeItemTypes" to "Audio",
+                    "recursive" to "true",
+                    "sortBy" to "ParentIndexNumber,IndexNumber,SortName",
+                    "sortOrder" to "Ascending"
+                )
+            }
+        }
+        val result: JellyfinItemsResult = execute(
+            credentials.baseUrl,
+            path,
+            token = credentials.accessToken,
+            query = query
+        )
+        return result.Items
+            .filter { it.MediaType == null || it.MediaType.equals("Audio", ignoreCase = true) }
+            .map { it.toTrack(credentials) }
+    }
+
+    private fun mediaQuery(credentials: JellyfinCredentials): Map<String, String> = mapOf(
+        "userId" to credentials.userId,
+        "fields" to "PrimaryImageAspectRatio",
+        "enableImages" to "true",
+        "imageTypeLimit" to "1",
+        "enableImageTypes" to "Primary"
+    )
+
+    private fun JellyfinAudioItem.toTrack(credentials: JellyfinCredentials): JellyfinTrack {
+        val streamUrl = authenticatedUrl(credentials, "Audio/$Id/stream", mapOf("static" to "true"))
+        val imageId = if (ImageTags["Primary"] != null) Id else AlbumId
+        val imageTag = ImageTags["Primary"] ?: AlbumPrimaryImageTag
+        val artworkUrl = imageId?.let { id -> imageTag?.let { tag -> id to tag } }?.let { (id, tag) ->
+            imageUrl(credentials, id, tag, 512)
         }
         return JellyfinTrack(
-            id = item.Id,
-            title = item.Name,
-            artist = item.Artists.joinToString().ifBlank { item.AlbumArtist.orEmpty() },
-            album = item.Album,
+            id = Id,
+            title = Name,
+            artist = Artists.joinToString().ifBlank { AlbumArtist.orEmpty() },
+            album = Album,
             streamUrl = streamUrl,
             artworkUrl = artworkUrl
         )
     }
+
+    private fun imageUrl(credentials: JellyfinCredentials, itemId: String, tag: String, maxWidth: Int): String =
+        authenticatedUrl(
+            credentials,
+            "Items/$itemId/Images/Primary",
+            mapOf("tag" to tag, "maxWidth" to maxWidth.toString(), "quality" to "90")
+        )
 
     private suspend inline fun <reified T> execute(
         baseUrl: String,

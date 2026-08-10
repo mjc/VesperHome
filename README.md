@@ -10,7 +10,7 @@ LTvLauncher is a native Kotlin launcher for Android TV. It uses XML Views, View 
 - Unified catalog for TV and sideloaded applications.
 - Favorites, custom categories, spacers, row and grid layouts, sorting, hiding, and manual ordering.
 - Native banners, icon fallbacks, and custom application banners.
-- Jellyfin random music playback with discovery, Quick Connect, artwork, and launcher controls.
+- Jellyfin random tracks, playlists, and album playback with discovery, Quick Connect, artwork, and launcher controls.
 - Configurable wallpapers, day and night scheduling, themes, status bar, and OLED clock screensaver.
 - TV input selection, notification panel and popups, brightness scheduling, and Home-button accessibility handling.
 - Timestamped backup, restore, import, sharing, and custom-asset recovery.

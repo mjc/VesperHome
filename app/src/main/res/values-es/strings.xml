@@ -243,6 +243,8 @@
     <string name="jellyfin_ready">Conectado a %1$s</string>
     <string name="play">Reproducir</string>
     <string name="pause">Pausar</string>
+    <string name="previous_track">Pista anterior</string>
+    <string name="next_track">Pista siguiente</string>
     <string name="random_next">Siguiente al azar</string>
     <string name="music_artwork">Carátula de la pista actual</string>
     <string name="connect_to_jellyfin_server">Conectar a %1$s en %2$s</string>
@@ -254,6 +256,26 @@
     <string name="jellyfin_quick_connect_expired">Quick Connect ha caducado. Inicia otra búsqueda para solicitar un código nuevo.</string>
     <string name="jellyfin_quick_connect_failed">Quick Connect falló o está desactivado en este servidor Jellyfin.</string>
     <string name="jellyfin_url_unreachable">No se pudo acceder a la URL del servidor Jellyfin.</string>
+    <string name="jellyfin_library">Biblioteca de Jellyfin</string>
+    <string name="choose_music">Elegir música</string>
+    <string name="choose_music_description">Reproduce canciones al azar o elige una lista o álbum para escuchar sus pistas en orden.</string>
+    <string name="jellyfin_collection_loading">Cargando listas y álbumes…</string>
+    <string name="jellyfin_collection_empty">Esta selección no contiene pistas de audio.</string>
+    <string name="jellyfin_no_music_collections">Este usuario de Jellyfin no tiene listas ni álbumes disponibles.</string>
+    <string name="jellyfin_collection_load_failed">No se pudieron cargar las listas y los álbumes de Jellyfin.</string>
+    <string name="jellyfin_collection_play_failed">No se pudo reproducir esta selección de Jellyfin.</string>
+    <string name="music_picker_hint">Cruceta para explorar  |  OK para reproducir  |  Atrás para cerrar</string>
+    <string name="playlist">Lista</string>
+    <string name="album">Álbum</string>
+    <string name="all_music">Toda la música</string>
+    <string name="random_songs">Canciones al azar</string>
+    <string name="random_songs_description">Mezclar toda tu biblioteca</string>
+    <string name="retry">Reintentar</string>
+    <plurals name="music_collection_track_count">
+        <item quantity="one">%d pista</item>
+        <item quantity="many">%d pistas</item>
+        <item quantity="other">%d pistas</item>
+    </plurals>
     <plurals name="application_count">
         <item quantity="one">%d aplicación</item>
         <item quantity="other">%d aplicaciones</item>
