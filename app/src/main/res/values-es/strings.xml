@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LTvLauncher</string>
+    <string name="app_name">Vesper Home</string>
     <string name="favorites">Favoritos</string>
     <string name="launch_failed">No se pudo abrir esta aplicación.</string>
     <string name="preference_update_failed">El lanzador no pudo guardar ese cambio.</string>
@@ -19,13 +19,13 @@
     <string name="hidden_apps_description">Selecciona una aplicación para restaurarla en el lanzador.</string>
     <string name="no_hidden_apps">No hay aplicaciones ocultas.</string>
     <string name="home_status_checking">Comprobando la aplicación de Inicio predeterminada…</string>
-    <string name="home_status_default">LTvLauncher es la aplicación de Inicio predeterminada.</string>
-    <string name="home_status_not_default">LTvLauncher no es la aplicación de Inicio predeterminada.</string>
+    <string name="home_status_default">Vesper Home es la aplicación de Inicio predeterminada.</string>
+    <string name="home_status_not_default">Vesper Home no es la aplicación de Inicio predeterminada.</string>
     <string name="set_default_launcher">Establecer como Inicio predeterminado</string>
     <string name="home_button_fix_value">Corrección del botón Inicio (Google TV): %1$s</string>
     <string name="home_button_fix_description">Activa esta opción solo cuando Google TV reemplace la aplicación de Inicio predeterminada. El servicio gestiona la tecla Inicio y no inspecciona el contenido de la pantalla.</string>
-    <string name="home_button_fix_service_name">Corrección del botón Inicio de LTvLauncher</string>
-    <string name="home_button_fix_service_description">Redirige el botón Inicio del mando del televisor a LTvLauncher. Este servicio no inspecciona el contenido de la pantalla.</string>
+    <string name="home_button_fix_service_name">Corrección del botón Inicio de Vesper Home</string>
+    <string name="home_button_fix_service_description">Redirige el botón Inicio del mando del televisor a Vesper Home. Este servicio no inspecciona el contenido de la pantalla.</string>
     <string name="home_button_fix_accessibility_title">Permiso de accesibilidad</string>
     <string name="home_button_fix_accessibility_guide">La pantalla de ajustes de accesibilidad no está disponible en este televisor. Ejecuta este comando desde un ordenador conectado. Conserva los demás servicios de accesibilidad activados:&#10;&#10;%1$s</string>
     <string name="system_settings">Ajustes del sistema</string>
@@ -96,7 +96,7 @@
     <string name="tv_input_label">%1$s (%2$s)</string>
     <string name="tv_input_label_disconnected">%1$s (%2$s, desconectada)</string>
     <string name="tv_input_open_failed">No se pudo abrir esta entrada de TV.</string>
-    <string name="notification_listener_name">Acceso a notificaciones de LTvLauncher</string>
+    <string name="notification_listener_name">Acceso a notificaciones de Vesper Home</string>
     <string name="notifications">Notificaciones</string>
     <string name="open_notifications">Abrir notificaciones</string>
     <string name="clear_all_notifications">Borrar todo</string>
@@ -108,7 +108,7 @@
     <string name="overlay_access_guide">La pantalla del permiso de superposición no está disponible en este televisor. Ejecuta este comando desde un ordenador conectado:&#10;&#10;%1$s</string>
     <string name="screensaver_and_clock">Salvapantallas y reloj</string>
     <string name="screensaver_description">Configura el reloj OLED, el comportamiento del botón Atrás y el salvapantallas del sistema.</string>
-    <string name="clock_screensaver_name">Reloj OLED de LTvLauncher</string>
+    <string name="clock_screensaver_name">Reloj OLED de Vesper Home</string>
     <string name="screensaver_clock_style">Estilo del reloj del salvapantallas</string>
     <string name="screensaver_clock_style_value">Estilo del reloj: %1$s</string>
     <string name="clock_style_minimal">Minimalista</string>
@@ -159,7 +159,7 @@
     <string name="backup_operation_failed">La operación de copia de seguridad falló.</string>
     <string name="backup_picker_unavailable">No hay ningún selector de archivos instalado para importar una copia.</string>
     <string name="about_and_diagnostics">Acerca de y diagnóstico</string>
-    <string name="about_description">Información de la aplicación, el dispositivo y sus capacidades para diagnosticar LTvLauncher.</string>
+    <string name="about_description">Información de la aplicación, el dispositivo y sus capacidades para diagnosticar Vesper Home.</string>
     <string name="about_version">Versión: %1$s (%2$d)</string>
     <string name="about_package">Paquete: %1$s</string>
     <string name="about_device">Dispositivo: %1$s</string>
@@ -237,7 +237,7 @@
     <string name="dp_value">%1$d dp</string>
     <string name="jellyfin_music">Música de Jellyfin</string>
     <string name="jellyfin_setup">Configuración de Jellyfin</string>
-    <string name="jellyfin_setup_description">Descubre un servidor Jellyfin en esta red y autoriza LTvLauncher con Quick Connect.</string>
+    <string name="jellyfin_setup_description">Descubre un servidor Jellyfin en esta red y autoriza Vesper Home con Quick Connect.</string>
     <string name="media_services_setup">Servicios multimedia</string>
     <string name="media_services_setup_description">Conecta la reproducción de Jellyfin y configura los calendarios de Sonarr y Radarr que aparecen en la pantalla de inicio.</string>
     <string name="connected_services">Servicios</string>

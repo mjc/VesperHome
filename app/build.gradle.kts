@@ -14,11 +14,11 @@ fun localBuildConfigValue(name: String): String =
     "\"${localProperties.getProperty(name).orEmpty().replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
-    namespace = "com.sergioasenjo.ltvlauncher"
+    namespace = "com.sergioasenjo.vesperhome"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.sergioasenjo.ltvlauncher"
+        applicationId = "com.sergioasenjo.vesperhome"
         minSdk = 23
         targetSdk = 36
         versionCode = 1

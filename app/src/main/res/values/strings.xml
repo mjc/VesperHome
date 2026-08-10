@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LTvLauncher</string>
+    <string name="app_name">Vesper Home</string>
     <string name="favorites">Favorites</string>
     <string name="launch_failed">This application could not be opened.</string>
     <string name="preference_update_failed">The launcher could not save that change.</string>
@@ -19,13 +19,13 @@
     <string name="hidden_apps_description">Select an application to restore it to the launcher.</string>
     <string name="no_hidden_apps">There are no hidden applications.</string>
     <string name="home_status_checking">Checking the default Home application…</string>
-    <string name="home_status_default">LTvLauncher is the default Home application.</string>
-    <string name="home_status_not_default">LTvLauncher is not the default Home application.</string>
+    <string name="home_status_default">Vesper Home is the default Home application.</string>
+    <string name="home_status_not_default">Vesper Home is not the default Home application.</string>
     <string name="set_default_launcher">Set as default Home</string>
     <string name="home_button_fix_value">Home button fix (Google TV): %1$s</string>
     <string name="home_button_fix_description">Enable this only when Google TV overrides the default Home application. The service handles the Home key and does not inspect screen content.</string>
-    <string name="home_button_fix_service_name">LTvLauncher Home button fix</string>
-    <string name="home_button_fix_service_description">Redirects the TV remote Home button to LTvLauncher. This service does not inspect screen content.</string>
+    <string name="home_button_fix_service_name">Vesper Home button fix</string>
+    <string name="home_button_fix_service_description">Redirects the TV remote Home button to Vesper Home. This service does not inspect screen content.</string>
     <string name="home_button_fix_accessibility_title">Accessibility permission</string>
     <string name="home_button_fix_accessibility_guide">The accessibility settings screen is unavailable on this TV. Run this command from a connected computer. It preserves other enabled accessibility services:\n\n%1$s</string>
     <string name="system_settings">System settings</string>
@@ -96,7 +96,7 @@
     <string name="tv_input_label">%1$s (%2$s)</string>
     <string name="tv_input_label_disconnected">%1$s (%2$s, disconnected)</string>
     <string name="tv_input_open_failed">This TV input could not be opened.</string>
-    <string name="notification_listener_name">LTvLauncher notification access</string>
+    <string name="notification_listener_name">Vesper Home notification access</string>
     <string name="notifications">Notifications</string>
     <string name="open_notifications">Open notifications</string>
     <string name="clear_all_notifications">Clear all</string>
@@ -108,7 +108,7 @@
     <string name="overlay_access_guide">The overlay permission screen is unavailable on this TV. Run this command from a connected computer:\n\n%1$s</string>
     <string name="screensaver_and_clock">Screensaver and clock</string>
     <string name="screensaver_description">Configure the OLED clock, Back-button behavior, and the system screensaver.</string>
-    <string name="clock_screensaver_name">LTvLauncher OLED clock</string>
+    <string name="clock_screensaver_name">Vesper Home OLED clock</string>
     <string name="screensaver_clock_style">Screensaver clock style</string>
     <string name="screensaver_clock_style_value">Clock style: %1$s</string>
     <string name="clock_style_minimal">Minimal</string>
@@ -159,7 +159,7 @@
     <string name="backup_operation_failed">The backup operation failed.</string>
     <string name="backup_picker_unavailable">No file picker is installed to import a backup.</string>
     <string name="about_and_diagnostics">About and diagnostics</string>
-    <string name="about_description">Application, device, and capability information for troubleshooting LTvLauncher.</string>
+    <string name="about_description">Application, device, and capability information for troubleshooting Vesper Home.</string>
     <string name="about_version">Version: %1$s (%2$d)</string>
     <string name="about_package">Package: %1$s</string>
     <string name="about_device">Device: %1$s</string>
@@ -237,7 +237,7 @@
     <string name="dp_value">%1$d dp</string>
     <string name="jellyfin_music">Jellyfin Music</string>
     <string name="jellyfin_setup">Jellyfin setup</string>
-    <string name="jellyfin_setup_description">Discover a Jellyfin server on this network, then authorize LTvLauncher with Quick Connect.</string>
+    <string name="jellyfin_setup_description">Discover a Jellyfin server on this network, then authorize Vesper Home with Quick Connect.</string>
     <string name="media_services_setup">Media services</string>
     <string name="media_services_setup_description">Connect Jellyfin playback and configure the Sonarr and Radarr calendars shown on your home screen.</string>
     <string name="connected_services">Services</string>

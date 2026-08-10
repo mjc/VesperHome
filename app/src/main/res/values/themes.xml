@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LtvLauncher" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.VesperHome" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorSurface">@color/dialog_surface</item>
         <item name="colorSurfaceContainerHigh">@color/dialog_surface_high</item>
@@ -12,26 +12,26 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <style name="Animation.LtvLauncher.SettingsPanel" parent="@android:style/Animation.Dialog">
+    <style name="Animation.VesperHome.SettingsPanel" parent="@android:style/Animation.Dialog">
         <item name="android:windowEnterAnimation">@anim/settings_panel_enter</item>
         <item name="android:windowExitAnimation">@anim/settings_panel_exit</item>
     </style>
 
-    <style name="Theme.LtvLauncher.SettingsPanel" parent="Theme.Material3.Dark.Dialog">
+    <style name="Theme.VesperHome.SettingsPanel" parent="Theme.Material3.Dark.Dialog">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorSurface">@color/dialog_surface</item>
         <item name="colorSurfaceContainerHigh">@color/dialog_surface_high</item>
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
         <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:windowAnimationStyle">@style/Animation.LtvLauncher.SettingsPanel</item>
+        <item name="android:windowAnimationStyle">@style/Animation.VesperHome.SettingsPanel</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowCloseOnTouchOutside">true</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.LtvLauncher.Clock" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.VesperHome.Clock" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:colorAccent">#FFFFFF</item>
         <item name="android:navigationBarColor">#000000</item>
         <item name="android:statusBarColor">#000000</item>

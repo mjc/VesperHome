@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sergioasenjo.ltvlauncher.benchmark"
+    namespace = "com.sergioasenjo.vesperhome.benchmark"
     compileSdk = 36
 
     defaultConfig {

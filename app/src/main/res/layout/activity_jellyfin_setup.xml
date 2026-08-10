@@ -169,13 +169,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-            <com.sergioasenjo.ltvlauncher.upcoming.MediaServiceFormView
+            <com.sergioasenjo.vesperhome.upcoming.MediaServiceFormView
                 android:id="@+id/sonarrPage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:visibility="gone" />
 
-            <com.sergioasenjo.ltvlauncher.upcoming.MediaServiceFormView
+            <com.sergioasenjo.vesperhome.upcoming.MediaServiceFormView
                 android:id="@+id/radarrPage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

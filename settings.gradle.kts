@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LtvLauncher"
+rootProject.name = "VesperHome"
 include(":app")
 include(":benchmark")
