@@ -28,7 +28,7 @@ class LauncherSettingsActionController(
             LauncherSettingsAction.MANAGE_CATEGORIES -> activity.open(CategoryManagementActivity::class.java)
             LauncherSettingsAction.MANAGE_HIDDEN_APPS -> activity.open(HiddenAppsActivity::class.java)
             LauncherSettingsAction.SORT_APPLICATIONS -> showSortDialog()
-            LauncherSettingsAction.SETUP_JELLYFIN -> activity.open(JellyfinSetupActivity::class.java)
+            LauncherSettingsAction.SETUP_MEDIA_SERVICES -> activity.open(JellyfinSetupActivity::class.java)
         }
     }
 

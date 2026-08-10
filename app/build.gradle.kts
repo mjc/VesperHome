@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
+}
+
+fun localBuildConfigValue(name: String): String =
+    "\"${localProperties.getProperty(name).orEmpty().replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.sergioasenjo.ltvlauncher"
@@ -14,12 +23,20 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "SONARR_URL", "\"\"")
+        buildConfigField("String", "SONARR_API_KEY", "\"\"")
+        buildConfigField("String", "RADARR_URL", "\"\"")
+        buildConfigField("String", "RADARR_API_KEY", "\"\"")
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            buildConfigField("String", "SONARR_URL", localBuildConfigValue("SONARR_URL"))
+            buildConfigField("String", "SONARR_API_KEY", localBuildConfigValue("SONARR_API_KEY"))
+            buildConfigField("String", "RADARR_URL", localBuildConfigValue("RADARR_URL"))
+            buildConfigField("String", "RADARR_API_KEY", localBuildConfigValue("RADARR_API_KEY"))
         }
         release {
             isMinifyEnabled = true
@@ -34,6 +51,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 

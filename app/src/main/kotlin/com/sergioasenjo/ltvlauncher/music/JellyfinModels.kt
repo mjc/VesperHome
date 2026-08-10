@@ -43,7 +43,8 @@ data class JellyfinLibraryItem(
     val Type: String,
     val ChildCount: Int? = null,
     val RecursiveItemCount: Int? = null,
-    val ImageTags: Map<String, String> = emptyMap()
+    val ImageTags: Map<String, String> = emptyMap(),
+    val ProviderIds: Map<String, String> = emptyMap()
 )
 
 @Serializable

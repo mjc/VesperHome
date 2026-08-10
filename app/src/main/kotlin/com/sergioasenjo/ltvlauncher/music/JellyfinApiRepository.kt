@@ -123,6 +123,31 @@ class JellyfinApiRepository(
             .map { it.toTrack(credentials) }
     }
 
+    suspend fun itemIdByProvider(
+        credentials: JellyfinCredentials,
+        provider: String,
+        providerId: Int,
+        itemType: String
+    ): String? {
+        val result: JellyfinLibraryItemsResult = execute(
+            credentials.baseUrl,
+            "Items",
+            token = credentials.accessToken,
+            query = mapOf(
+                "userId" to credentials.userId,
+                "recursive" to "true",
+                "includeItemTypes" to itemType,
+                "fields" to "ProviderIds",
+                "enableImages" to "false"
+            )
+        )
+        return result.Items.firstOrNull { item ->
+            item.ProviderIds.entries.any { (name, value) ->
+                name.equals(provider, ignoreCase = true) && value == providerId.toString()
+            }
+        }?.Id
+    }
+
     private fun mediaQuery(credentials: JellyfinCredentials): Map<String, String> = mapOf(
         "userId" to credentials.userId,
         "fields" to "PrimaryImageAspectRatio",

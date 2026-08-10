@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sergioasenjo.ltvlauncher.R
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingMediaItem
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingMediaType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,6 +115,16 @@ class JellyfinMusicViewModel(
 
     fun playNext() {
         player.playNext()
+    }
+
+    suspend fun jellyfinItemId(item: UpcomingMediaItem): String? {
+        val activeCredentials = credentials ?: return null
+        return apiRepository().itemIdByProvider(
+            activeCredentials,
+            item.providerId.provider.apiName,
+            item.providerId.value,
+            if (item.type == UpcomingMediaType.EPISODE) "Series" else "Movie"
+        )
     }
 
     fun loadCollections() {

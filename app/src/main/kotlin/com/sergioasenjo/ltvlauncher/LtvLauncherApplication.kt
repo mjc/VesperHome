@@ -19,6 +19,9 @@ import com.sergioasenjo.ltvlauncher.platform.HomeRepository
 import com.sergioasenjo.ltvlauncher.platform.PlatformHomeRepository
 import com.sergioasenjo.ltvlauncher.settings.LauncherSettingsRepository
 import com.sergioasenjo.ltvlauncher.status.NetworkStatusRepository
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingPreferencesRepository
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingRepository
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingServerConfig
 import com.sergioasenjo.ltvlauncher.wallpaper.WallpaperRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -51,6 +54,18 @@ class AppContainer(application: Application) {
     val jellyfinPreferencesRepository by lazy { JellyfinPreferencesRepository(application) }
     val jellyfinDiscoveryRepository by lazy { JellyfinDiscoveryRepository(json) }
     val jellyfinApiRepository by lazy { JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository) }
+    val upcomingPreferencesRepository by lazy {
+        UpcomingPreferencesRepository(
+            application,
+            UpcomingServerConfig(
+                BuildConfig.SONARR_URL,
+                BuildConfig.SONARR_API_KEY,
+                BuildConfig.RADARR_URL,
+                BuildConfig.RADARR_API_KEY
+            )
+        )
+    }
+    val upcomingRepository by lazy { UpcomingRepository(httpClient, json, upcomingPreferencesRepository) }
     val backupRepository by lazy {
         BackupRepository(application, database, launcherSettingsRepository, wallpaperRepository, json)
     }

@@ -295,7 +295,8 @@ class LauncherActivity : AppCompatActivity() {
     private fun initializeMusic() {
         if (musicInitialized || isFinishing || isDestroyed) return
         musicInitialized = true
-        musicController = JellyfinMusicController(this, contentBinding, musicViewModel) {
+        val upcomingRepository = (application as LtvLauncherApplication).container.upcomingRepository
+        musicController = JellyfinMusicController(this, contentBinding, musicViewModel, upcomingRepository) {
             viewModel.uiState.value.let { it.appearance.forWallpaper(it.wallpaper) }
         }
         lifecycleScope.launch {

@@ -9,17 +9,23 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
+import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ActivityJellyfinSetupBinding
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class JellyfinSetupActivity : AppCompatActivity() {
     private lateinit var binding: ActivityJellyfinSetupBinding
+    private lateinit var appearanceRenderer: MediaServicesAppearanceRenderer
+    private var serviceFieldsInitialized = false
     private val viewModel: JellyfinSetupViewModel by viewModels {
         val container = (application as LtvLauncherApplication).container
         JellyfinSetupViewModel.factory(
             container.jellyfinDiscoveryRepository,
             container.jellyfinApiRepository,
-            container.jellyfinPreferencesRepository
+            container.jellyfinPreferencesRepository,
+            container.upcomingRepository,
+            container.upcomingPreferencesRepository
         )
     }
 
@@ -27,42 +33,100 @@ class JellyfinSetupActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityJellyfinSetupBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        appearanceRenderer = MediaServicesAppearanceRenderer(binding)
+        val container = (application as LtvLauncherApplication).container
 
+        val jellyfin = binding.jellyfinPage
         val serverAdapter = JellyfinServerAdapter(viewModel::connect)
-        binding.servers.apply {
+        jellyfin.servers.apply {
             layoutManager = LinearLayoutManager(this@JellyfinSetupActivity)
             adapter = serverAdapter
             itemAnimator = null
         }
-        binding.discover.setOnClickListener { viewModel.discover() }
-        binding.connectManually.setOnClickListener {
-            viewModel.connectManually(binding.serverUrl.text.toString())
+        jellyfin.discover.setOnClickListener { viewModel.discover() }
+        jellyfin.connectManually.setOnClickListener {
+            viewModel.connectManually(jellyfin.serverUrl.text.toString())
         }
-        binding.disconnect.setOnClickListener { viewModel.disconnect() }
+        jellyfin.disconnect.setOnClickListener { viewModel.disconnect() }
+        binding.sonarrPage.configure(getString(R.string.sonarr), getString(R.string.sonarr_setup_description))
+        binding.radarrPage.configure(getString(R.string.radarr), getString(R.string.radarr_setup_description))
+        binding.sonarrPage.setOnSaveClick {
+            viewModel.saveSonarr(binding.sonarrPage.url, binding.sonarrPage.apiKey)
+        }
+        binding.radarrPage.setOnSaveClick {
+            viewModel.saveRadarr(binding.radarrPage.url, binding.radarrPage.apiKey)
+        }
+        binding.showJellyfin.setOnClickListener { showPage(ServicePage.JELLYFIN) }
+        binding.showSonarr.setOnClickListener { showPage(ServicePage.SONARR) }
+        binding.showRadarr.setOnClickListener { showPage(ServicePage.RADARR) }
+        showPage(ServicePage.JELLYFIN)
+        binding.showJellyfin.post { binding.showJellyfin.requestFocus() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    binding.discover.isEnabled = !state.discovering && !state.pairing
-                    binding.connectManually.isEnabled = !state.discovering && !state.pairing
-                    binding.progress.isVisible = state.discovering || state.pairing
-                    binding.quickConnectCode.isVisible = state.quickConnectCode != null
-                    binding.quickConnectCode.text = state.quickConnectCode.orEmpty()
-                    binding.quickConnectInstructions.isVisible = state.quickConnectCode != null
-                    binding.connectedStatus.isVisible = state.connectedServerName != null
-                    binding.connectedStatus.text = state.connectedServerName?.let {
-                        getString(com.sergioasenjo.ltvlauncher.R.string.jellyfin_ready, it)
-                    }.orEmpty()
-                    binding.disconnect.isVisible = state.connectedServerName != null
-                    binding.error.isVisible = state.errorRes != null
-                    binding.error.text = state.errorRes?.let(::getString).orEmpty()
-                    serverAdapter.submitList(state.servers) {
-                        if (state.servers.isNotEmpty() && currentFocus == null) {
-                            binding.servers.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                launch {
+                    combine(
+                        container.launcherSettingsRepository.appearance,
+                        container.wallpaperRepository.state
+                    ) { appearance, wallpaper -> appearance to wallpaper }.collect { (appearance, wallpaper) ->
+                        serverAdapter.setAppearance(appearanceRenderer.render(appearance, wallpaper))
+                    }
+                }
+                launch {
+                    viewModel.uiState.collect { state ->
+                        jellyfin.discover.isEnabled = !state.discovering && !state.pairing
+                        jellyfin.connectManually.isEnabled = !state.discovering && !state.pairing
+                        jellyfin.progress.isVisible = state.discovering || state.pairing
+                        jellyfin.quickConnectCode.isVisible = state.quickConnectCode != null
+                        jellyfin.quickConnectCode.text = state.quickConnectCode.orEmpty()
+                        jellyfin.quickConnectInstructions.isVisible = state.quickConnectCode != null
+                        jellyfin.connectedStatus.isVisible = state.connectedServerName != null
+                        jellyfin.connectedStatus.text = state.connectedServerName?.let {
+                            getString(R.string.jellyfin_ready, it)
+                        }.orEmpty()
+                        jellyfin.disconnect.isVisible = state.connectedServerName != null
+                        jellyfin.error.isVisible = state.errorRes != null
+                        jellyfin.error.text = state.errorRes?.let(::getString).orEmpty()
+                        jellyfin.servers.isVisible = state.servers.isNotEmpty()
+                        state.serviceConfig?.takeIf { !serviceFieldsInitialized }?.let { config ->
+                            serviceFieldsInitialized = true
+                            binding.sonarrPage.setValues(config.sonarrUrl, config.sonarrApiKey)
+                            binding.radarrPage.setValues(config.radarrUrl, config.radarrApiKey)
+                        }
+                        binding.sonarrPage.render(
+                            state.savingSonarr,
+                            serviceStatus(state.sonarrStatusRes, state.serviceConfig?.sonarrConfigured == true)
+                        )
+                        binding.radarrPage.render(
+                            state.savingRadarr,
+                            serviceStatus(state.radarrStatusRes, state.serviceConfig?.radarrConfigured == true)
+                        )
+                        serverAdapter.submitList(state.servers) {
+                            if (state.servers.isNotEmpty() && currentFocus == null) {
+                                jellyfin.servers.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun showPage(page: ServicePage) {
+        binding.jellyfinPage.root.isVisible = page == ServicePage.JELLYFIN
+        binding.sonarrPage.isVisible = page == ServicePage.SONARR
+        binding.radarrPage.isVisible = page == ServicePage.RADARR
+        binding.showJellyfin.isSelected = page == ServicePage.JELLYFIN
+        binding.showSonarr.isSelected = page == ServicePage.SONARR
+        binding.showRadarr.isSelected = page == ServicePage.RADARR
+    }
+
+    private fun serviceStatus(statusRes: Int?, configured: Boolean): String =
+        statusRes?.let(::getString) ?: if (configured) getString(R.string.media_service_configured) else ""
+
+    private enum class ServicePage {
+        JELLYFIN,
+        SONARR,
+        RADARR
     }
 }

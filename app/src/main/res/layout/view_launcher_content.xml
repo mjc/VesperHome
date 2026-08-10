@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginEnd="48dp"
-            android:layout_marginBottom="18dp"
+            android:layout_marginBottom="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -166,6 +166,64 @@
                 app:iconPadding="0dp"
                 app:iconSize="20dp"
                 app:iconTint="@color/action_button_text" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/upcomingSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="48dp"
+            android:layout_marginBottom="12dp"
+            android:clipChildren="false"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="18dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/upcomingAccent"
+                    android:layout_width="7dp"
+                    android:layout_height="7dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/accent_tick" />
+
+                <TextView
+                    android:id="@+id/upcomingTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-condensed"
+                    android:letterSpacing="0.14"
+                    android:text="@string/coming_next"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/upcomingCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="9dp"
+                    android:fontFamily="sans-serif-condensed"
+                    android:textColor="@color/accent"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/upcomingItems"
+                android:layout_width="match_parent"
+                android:layout_height="82dp"
+                android:layout_marginTop="3dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:focusable="false"
+                android:overScrollMode="never" />
 
         </LinearLayout>
 

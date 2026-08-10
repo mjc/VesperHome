@@ -273,7 +273,7 @@
                 android:textSize="11sp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/setupJellyfin"
+                android:id="@+id/setupMediaServices"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
                 android:layout_marginTop="6dp"
@@ -282,11 +282,11 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:paddingHorizontal="14dp"
-                android:text="@string/jellyfin_setup"
+                android:text="@string/media_services_setup"
                 android:textColor="@color/action_button_text"
                 android:textSize="14sp"
                 app:cornerRadius="8dp"
-                app:icon="@drawable/ic_jellyfin"
+                app:icon="@drawable/ic_media_services"
                 app:iconPadding="12dp"
                 app:iconSize="18dp"
                 app:iconTint="@color/action_button_text" />

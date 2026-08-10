@@ -32,7 +32,7 @@ enum class LauncherSettingsAction {
     MANAGE_CATEGORIES,
     MANAGE_HIDDEN_APPS,
     SORT_APPLICATIONS,
-    SETUP_JELLYFIN
+    SETUP_MEDIA_SERVICES
 }
 
 enum class LauncherSettingsPanelPage {
@@ -93,7 +93,7 @@ class LauncherSettingsPanel(
         bindAction(binding.manageCategories, LauncherSettingsAction.MANAGE_CATEGORIES)
         bindAction(binding.manageHiddenApps, LauncherSettingsAction.MANAGE_HIDDEN_APPS)
         bindAction(binding.sortApplications, LauncherSettingsAction.SORT_APPLICATIONS)
-        bindAction(binding.setupJellyfin, LauncherSettingsAction.SETUP_JELLYFIN)
+        bindAction(binding.setupMediaServices, LauncherSettingsAction.SETUP_MEDIA_SERVICES)
         binding.openAppearance.setOnClickListener { showAppearancePage() }
         binding.openWallpaper.setOnClickListener { showWallpaperPage() }
         binding.openStatusBar.setOnClickListener { showStatusBarPage() }

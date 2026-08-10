@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/media_service_workspace_background"
+    android:orientation="vertical"
+    android:paddingStart="36dp"
+    android:paddingTop="28dp"
+    android:paddingEnd="36dp"
+    android:paddingBottom="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
+        android:letterSpacing="0.16"
+        android:text="@string/playback_integration"
+        android:textAllCaps="true"
+        android:textColor="@color/accent"
+        android:textSize="11sp"
+        android:tag="accent"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/jellyfin"
+        android:textColor="@color/text_primary"
+        android:textSize="27sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/jellyfin_setup_description"
+        android:textColor="@color/text_secondary"
+        android:tag="secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/serverUrl"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@drawable/media_input_background"
+            android:hint="@string/jellyfin_server_url_hint"
+            android:imeOptions="actionDone"
+            android:inputType="textUri"
+            android:paddingHorizontal="15dp"
+            android:singleLine="true"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/connectManually"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="9dp"
+            android:backgroundTint="@color/action_button_background"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="17dp"
+            android:text="@string/connect_jellyfin_url"
+            android:textColor="@color/action_button_text"
+            app:cornerRadius="9dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/discover"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:backgroundTint="@color/action_button_background"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="17dp"
+            android:text="@string/discover_jellyfin_servers"
+            android:textColor="@color/action_button_text"
+            app:cornerRadius="9dp"
+            app:icon="@drawable/ic_jellyfin"
+            app:iconPadding="8dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/action_button_text" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/disconnect"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/action_button_background"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="17dp"
+            android:text="@string/disconnect_jellyfin"
+            android:textColor="@color/action_button_text"
+            android:visibility="gone"
+            app:cornerRadius="9dp" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="12dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/connectedStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/media_status_background"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:paddingHorizontal="13dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:tag="status"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/quickConnectCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="0.16"
+        android:textColor="@color/accent"
+        android:textSize="38sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/quickConnectInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="@string/quick_connect_instructions"
+        android:textColor="@color/text_secondary"
+        android:tag="secondary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/servers"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone" />
+
+</LinearLayout>

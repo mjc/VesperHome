@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sergioasenjo.ltvlauncher.R
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingPreferencesRepository
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingRepository
+import com.sergioasenjo.ltvlauncher.upcoming.UpcomingServerConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,13 +22,20 @@ data class JellyfinSetupUiState(
     val pairing: Boolean = false,
     val quickConnectCode: String? = null,
     val connectedServerName: String? = null,
-    val errorRes: Int? = null
+    val errorRes: Int? = null,
+    val serviceConfig: UpcomingServerConfig? = null,
+    val savingSonarr: Boolean = false,
+    val savingRadarr: Boolean = false,
+    val sonarrStatusRes: Int? = null,
+    val radarrStatusRes: Int? = null
 )
 
 class JellyfinSetupViewModel(
     private val discoveryRepository: JellyfinDiscoveryRepository,
     private val apiRepository: JellyfinApiRepository,
-    private val preferencesRepository: JellyfinPreferencesRepository
+    private val preferencesRepository: JellyfinPreferencesRepository,
+    private val upcomingRepository: UpcomingRepository,
+    private val upcomingPreferencesRepository: UpcomingPreferencesRepository
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(JellyfinSetupUiState())
     val uiState = mutableUiState.asStateFlow()
@@ -37,6 +47,11 @@ class JellyfinSetupViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     connectedServerName = credentials?.serverName
                 )
+            }
+        }
+        viewModelScope.launch {
+            upcomingPreferencesRepository.config.collect { config ->
+                mutableUiState.value = mutableUiState.value.copy(serviceConfig = config)
             }
         }
     }
@@ -147,6 +162,68 @@ class JellyfinSetupViewModel(
         }
     }
 
+    fun saveSonarr(url: String, apiKey: String) {
+        viewModelScope.launch {
+            if (url.isBlank() && apiKey.isBlank()) {
+                upcomingPreferencesRepository.saveSonarr("", "")
+                mutableUiState.value = mutableUiState.value.copy(
+                    savingSonarr = false,
+                    sonarrStatusRes = R.string.media_service_disabled
+                )
+                return@launch
+            }
+            if (url.isBlank() || apiKey.isBlank()) {
+                mutableUiState.value = mutableUiState.value.copy(
+                    sonarrStatusRes = R.string.media_service_url_key_required
+                )
+                return@launch
+            }
+            mutableUiState.value = mutableUiState.value.copy(savingSonarr = true, sonarrStatusRes = null)
+            val normalizedUrl = upcomingRepository.normalizeUrl(url)
+            val valid = upcomingRepository.validate(normalizedUrl, apiKey.trim(), "Sonarr")
+            if (valid) upcomingPreferencesRepository.saveSonarr(normalizedUrl, apiKey.trim())
+            mutableUiState.value = mutableUiState.value.copy(
+                savingSonarr = false,
+                sonarrStatusRes = if (valid) {
+                    R.string.media_service_connection_saved
+                } else {
+                    R.string.sonarr_connection_failed
+                }
+            )
+        }
+    }
+
+    fun saveRadarr(url: String, apiKey: String) {
+        viewModelScope.launch {
+            if (url.isBlank() && apiKey.isBlank()) {
+                upcomingPreferencesRepository.saveRadarr("", "")
+                mutableUiState.value = mutableUiState.value.copy(
+                    savingRadarr = false,
+                    radarrStatusRes = R.string.media_service_disabled
+                )
+                return@launch
+            }
+            if (url.isBlank() || apiKey.isBlank()) {
+                mutableUiState.value = mutableUiState.value.copy(
+                    radarrStatusRes = R.string.media_service_url_key_required
+                )
+                return@launch
+            }
+            mutableUiState.value = mutableUiState.value.copy(savingRadarr = true, radarrStatusRes = null)
+            val normalizedUrl = upcomingRepository.normalizeUrl(url)
+            val valid = upcomingRepository.validate(normalizedUrl, apiKey.trim(), "Radarr")
+            if (valid) upcomingPreferencesRepository.saveRadarr(normalizedUrl, apiKey.trim())
+            mutableUiState.value = mutableUiState.value.copy(
+                savingRadarr = false,
+                radarrStatusRes = if (valid) {
+                    R.string.media_service_connection_saved
+                } else {
+                    R.string.radarr_connection_failed
+                }
+            )
+        }
+    }
+
     companion object {
         private const val POLL_INTERVAL_MS = 2_000L
         private const val MAX_POLL_ATTEMPTS = 150
@@ -154,9 +231,19 @@ class JellyfinSetupViewModel(
         fun factory(
             discoveryRepository: JellyfinDiscoveryRepository,
             apiRepository: JellyfinApiRepository,
-            preferencesRepository: JellyfinPreferencesRepository
+            preferencesRepository: JellyfinPreferencesRepository,
+            upcomingRepository: UpcomingRepository,
+            upcomingPreferencesRepository: UpcomingPreferencesRepository
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { JellyfinSetupViewModel(discoveryRepository, apiRepository, preferencesRepository) }
+            initializer {
+                JellyfinSetupViewModel(
+                    discoveryRepository,
+                    apiRepository,
+                    preferencesRepository,
+                    upcomingRepository,
+                    upcomingPreferencesRepository
+                )
+            }
         }
     }
 }
