@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ActivityHiddenAppsBinding
+import com.sergioasenjo.ltvlauncher.settings.ManagementScreenAppearanceRenderer
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class HiddenAppsActivity : AppCompatActivity() {
@@ -26,6 +28,13 @@ class HiddenAppsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHiddenAppsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val container = (application as LtvLauncherApplication).container
+        val appearanceRenderer = ManagementScreenAppearanceRenderer(
+            binding.root,
+            binding.wallpaper,
+            binding.content,
+            listOf(binding.workspace)
+        )
 
         val appAdapter = AppAdapter(
             onAppClick = viewModel::restore,
@@ -44,6 +53,14 @@ class HiddenAppsActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(
+                        container.launcherSettingsRepository.appearance,
+                        container.wallpaperRepository.state
+                    ) { appearance, wallpaper -> appearance to wallpaper }.collect { (appearance, wallpaper) ->
+                        appAdapter.setAppearance(appearanceRenderer.render(appearance, wallpaper))
+                    }
+                }
                 launch {
                     viewModel.uiState.collect { state ->
                         val hiddenApps = state.apps

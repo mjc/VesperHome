@@ -1,5 +1,9 @@
 package com.sergioasenjo.ltvlauncher.categories
 
+import android.R.attr.state_focused
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -9,9 +13,12 @@ import coil3.asImage
 import coil3.load
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ItemCategoryMembershipBinding
+import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 
 class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) -> Unit) :
     ListAdapter<CategoryMembershipItem, CategoryMembershipAdapter.MembershipViewHolder>(MembershipDiffCallback) {
+    private var appearance = LauncherAppearance()
+
     init {
         setHasStableIds(true)
     }
@@ -24,7 +31,13 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
     }
 
     override fun onBindViewHolder(holder: MembershipViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), appearance)
+    }
+
+    fun setAppearance(appearance: LauncherAppearance) {
+        if (this.appearance == appearance) return
+        this.appearance = appearance
+        notifyItemRangeChanged(0, itemCount)
     }
 
     class MembershipViewHolder(
@@ -38,8 +51,26 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
             binding.root.setOnFocusChangeListener { view, focused -> view.isSelected = focused }
         }
 
-        fun bind(item: CategoryMembershipItem) {
+        fun bind(item: CategoryMembershipItem, appearance: LauncherAppearance) {
             this.item = item
+            val palette = appearance.palette
+            binding.root.background = StateListDrawable().apply {
+                addState(
+                    intArrayOf(state_focused),
+                    GradientDrawable().apply {
+                        cornerRadius = dp(binding.root, ITEM_RADIUS_DP).toFloat()
+                        setColor(palette.focusedSurface)
+                    }
+                )
+                addState(
+                    intArrayOf(),
+                    GradientDrawable().apply {
+                        cornerRadius = dp(binding.root, ITEM_RADIUS_DP).toFloat()
+                        setColor(palette.surface)
+                    }
+                )
+            }
+            binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
             binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
                 item.app.customBannerRevision?.let { revision ->
                     memoryCacheKey("custom-banner:${item.app.packageName}:$revision")
@@ -47,8 +78,20 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
                 placeholder(item.app.artwork.asImage())
             }
             binding.name.text = item.app.label
+            binding.name.setTextColor(
+                ColorStateList(
+                    arrayOf(intArrayOf(state_focused), intArrayOf()),
+                    intArrayOf(palette.focusedText, palette.primaryText)
+                )
+            )
             binding.membershipStatus.setText(
                 if (item.included) R.string.included_in_category else R.string.not_included_in_category
+            )
+            binding.membershipStatus.setTextColor(
+                ColorStateList(
+                    arrayOf(intArrayOf(state_focused), intArrayOf()),
+                    intArrayOf(palette.focusedText, if (item.included) palette.focus else palette.secondaryText)
+                )
             )
             val description = if (item.included) {
                 R.string.remove_app_from_category_description
@@ -56,6 +99,13 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
                 R.string.add_app_to_category_description
             }
             binding.root.contentDescription = binding.root.resources.getString(description, item.app.label)
+        }
+
+        private fun dp(view: android.view.View, value: Int): Int =
+            (value * view.resources.displayMetrics.density).toInt()
+
+        private companion object {
+            const val ITEM_RADIUS_DP = 9
         }
     }
 

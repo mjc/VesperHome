@@ -1,5 +1,8 @@
 package com.sergioasenjo.ltvlauncher.categories
 
+import android.R.attr.state_focused
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -7,9 +10,12 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ItemCategoryManagementBinding
+import com.sergioasenjo.ltvlauncher.settings.LauncherAppearance
 
 class CategoryManagementAdapter(private val onSectionClick: (SectionSummary) -> Unit) :
     ListAdapter<SectionSummary, CategoryManagementAdapter.SectionViewHolder>(SectionDiffCallback) {
+    private var appearance = LauncherAppearance()
+
     init {
         setHasStableIds(true)
     }
@@ -22,7 +28,13 @@ class CategoryManagementAdapter(private val onSectionClick: (SectionSummary) -> 
     }
 
     override fun onBindViewHolder(holder: SectionViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), appearance)
+    }
+
+    fun setAppearance(appearance: LauncherAppearance) {
+        if (this.appearance == appearance) return
+        this.appearance = appearance
+        notifyItemRangeChanged(0, itemCount)
     }
 
     class SectionViewHolder(
@@ -35,8 +47,20 @@ class CategoryManagementAdapter(private val onSectionClick: (SectionSummary) -> 
             binding.category.setOnClickListener { section?.let(onSectionClick) }
         }
 
-        fun bind(section: SectionSummary) {
+        fun bind(section: SectionSummary, appearance: LauncherAppearance) {
             this.section = section
+            val palette = appearance.palette
+            binding.category.backgroundTintList = ColorStateList(
+                arrayOf(intArrayOf(state_focused), intArrayOf()),
+                intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
+            )
+            val foreground = ColorStateList(
+                arrayOf(intArrayOf(state_focused), intArrayOf()),
+                intArrayOf(palette.focusedText, palette.primaryText)
+            )
+            binding.category.setTextColor(foreground)
+            binding.category.iconTint = foreground
+            binding.category.isSoundEffectsEnabled = appearance.keyClickSounds
             binding.category.text = when (section) {
                 is CategorySummary -> binding.root.resources.getQuantityString(
                     R.plurals.category_application_count,

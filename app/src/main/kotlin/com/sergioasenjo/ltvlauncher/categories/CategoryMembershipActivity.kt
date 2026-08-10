@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.ltvlauncher.LtvLauncherApplication
 import com.sergioasenjo.ltvlauncher.R
 import com.sergioasenjo.ltvlauncher.databinding.ActivityCategoryMembershipBinding
+import com.sergioasenjo.ltvlauncher.settings.ManagementScreenAppearanceRenderer
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class CategoryMembershipActivity : AppCompatActivity() {
@@ -33,6 +35,13 @@ class CategoryMembershipActivity : AppCompatActivity() {
         binding = ActivityCategoryMembershipBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.title.text = intent.getStringExtra(EXTRA_CATEGORY_NAME).orEmpty()
+        val container = (application as LtvLauncherApplication).container
+        val appearanceRenderer = ManagementScreenAppearanceRenderer(
+            binding.root,
+            binding.wallpaper,
+            binding.content,
+            listOf(binding.workspace)
+        )
 
         val membershipAdapter = CategoryMembershipAdapter(viewModel::toggle)
         binding.apps.apply {
@@ -43,6 +52,14 @@ class CategoryMembershipActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(
+                        container.launcherSettingsRepository.appearance,
+                        container.wallpaperRepository.state
+                    ) { appearance, wallpaper -> appearance to wallpaper }.collect { (appearance, wallpaper) ->
+                        membershipAdapter.setAppearance(appearanceRenderer.render(appearance, wallpaper))
+                    }
+                }
                 launch {
                     viewModel.uiState.collect { state ->
                         binding.emptyMessage.isVisible = !state.loading && state.apps.isEmpty()

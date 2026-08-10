@@ -1,98 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/launcher_background"
-    android:paddingStart="56dp"
-    android:paddingTop="44dp"
-    android:paddingEnd="56dp"
-    android:paddingBottom="44dp">
+    android:background="@drawable/launcher_background">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:letterSpacing="0.01"
-        android:text="@string/categories"
-        android:textColor="@color/text_primary"
-        android:textSize="32sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/wallpaper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/description"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/categories_description"
-        android:textColor="@color/text_secondary"
-        android:textSize="15sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title" />
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="52dp"
+        android:paddingTop="32dp"
+        android:paddingEnd="52dp"
+        android:paddingBottom="34dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/createCategory"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_marginTop="24dp"
-        android:backgroundTint="@color/action_button_background"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:paddingHorizontal="20dp"
-        android:text="@string/create_category"
-        android:textColor="@color/action_button_text"
-        app:cornerRadius="8dp"
-        app:icon="@drawable/ic_add"
-        app:iconPadding="10dp"
-        app:iconSize="20dp"
-        app:iconTint="@color/action_button_text"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/description" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:letterSpacing="0.18"
+            android:tag="accent"
+            android:text="@string/organize_home"
+            android:textAllCaps="true"
+            android:textColor="@color/accent"
+            android:textSize="11sp"
+            android:textStyle="bold" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/createSpacer"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_marginStart="12dp"
-        android:backgroundTint="@color/action_button_background"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:paddingHorizontal="20dp"
-        android:text="@string/create_spacer"
-        android:textColor="@color/action_button_text"
-        app:cornerRadius="8dp"
-        app:icon="@drawable/ic_add"
-        app:iconPadding="10dp"
-        app:iconSize="20dp"
-        app:iconTint="@color/action_button_text"
-        app:layout_constraintBottom_toBottomOf="@id/createCategory"
-        app:layout_constraintStart_toEndOf="@id/createCategory"
-        app:layout_constraintTop_toTopOf="@id/createCategory" />
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/categories"
+            android:textColor="@color/text_primary"
+            android:textSize="31sp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/categories"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        android:clipToPadding="false"
-        android:overScrollMode="never"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/createCategory" />
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:tag="secondary"
+            android:text="@string/categories_description"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
 
-    <TextView
-        android:id="@+id/emptyMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/no_categories"
-        android:textColor="@color/text_secondary"
-        android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/createCategory" />
+        <LinearLayout
+            android:id="@+id/workspace"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/management_workspace_background"
+            android:orientation="vertical"
+            android:padding="22dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/createCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="46dp"
+                    android:backgroundTint="@color/action_button_background"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingHorizontal="19dp"
+                    android:text="@string/create_category"
+                    android:textColor="@color/action_button_text"
+                    app:cornerRadius="9dp"
+                    app:icon="@drawable/ic_add"
+                    app:iconPadding="9dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/action_button_text" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/createSpacer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="@color/action_button_background"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingHorizontal="19dp"
+                    android:text="@string/create_spacer"
+                    android:textColor="@color/action_button_text"
+                    app:cornerRadius="9dp"
+                    app:icon="@drawable/ic_add"
+                    app:iconPadding="9dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/action_button_text" />
+
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="16dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/categories"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none" />
+
+                <TextView
+                    android:id="@+id/emptyMessage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:tag="secondary"
+                    android:text="@string/no_categories"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="15sp" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

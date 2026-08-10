@@ -197,6 +197,8 @@
     <string name="settings_open_failed">La pantalla de ajustes solicitada no está disponible en este dispositivo.</string>
     <string name="manage_categories">Gestionar categorías</string>
     <string name="categories">Categorías</string>
+    <string name="category">Categoría</string>
+    <string name="organize_home">Organizar inicio</string>
     <string name="categories_description">Configura, rellena y ordena las categorías y los separadores del lanzador.</string>
     <string name="create_category">Crear categoría</string>
     <string name="rename_category">Cambiar nombre</string>
