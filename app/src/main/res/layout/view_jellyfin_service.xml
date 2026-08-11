@@ -137,6 +137,19 @@
 
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/normalization"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="@color/action_button_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="17dp"
+        android:textColor="@color/action_button_text"
+        app:cornerRadius="9dp" />
+
     <TextView
         android:id="@+id/quickConnectCode"
         android:layout_width="wrap_content"

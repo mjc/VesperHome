@@ -7,12 +7,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.screensaver.DreamStateTracker
 import com.sergioasenjo.vesperhome.upcoming.UpcomingMediaItem
 import com.sergioasenjo.vesperhome.upcoming.UpcomingMediaType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 data class JellyfinMusicUiState(
@@ -34,7 +37,8 @@ data class JellyfinCollectionPickerState(
 class JellyfinMusicViewModel(
     application: Application,
     private val apiRepository: () -> JellyfinApiRepository,
-    preferencesRepository: JellyfinPreferencesRepository
+    preferencesRepository: JellyfinPreferencesRepository,
+    private val dreamStateTracker: DreamStateTracker
 ) : AndroidViewModel(application) {
     private val mutableUiState = MutableStateFlow(JellyfinMusicUiState())
     val uiState = mutableUiState.asStateFlow()
@@ -46,6 +50,8 @@ class JellyfinMusicViewModel(
     private var credentials: JellyfinCredentials? = null
     private var requestJob: Job? = null
     private var playlistRequestJob: Job? = null
+    private var hostStopJob: Job? = null
+    private var hostStopped = false
 
     init {
         viewModelScope.launch {
@@ -68,6 +74,11 @@ class JellyfinMusicViewModel(
                         mutableUiState.value.collectionPicker
                     }
                 )
+            }
+        }
+        viewModelScope.launch {
+            dreamStateTracker.dreaming.collectLatest { dreaming ->
+                if (!dreaming && hostStopped) scheduleHostStop()
             }
         }
     }
@@ -183,7 +194,26 @@ class JellyfinMusicViewModel(
         }
     }
 
+    fun onHostStarted() {
+        hostStopped = false
+        hostStopJob?.cancel()
+        hostStopJob = null
+    }
+
     fun onHostStopped() {
+        hostStopped = true
+        scheduleHostStop()
+    }
+
+    private fun scheduleHostStop() {
+        hostStopJob?.cancel()
+        hostStopJob = viewModelScope.launch {
+            delay(HOST_STOP_GRACE_PERIOD_MS)
+            if (hostStopped && !dreamStateTracker.dreaming.value) stopForHost()
+        }
+    }
+
+    private fun stopForHost() {
         requestJob?.cancel()
         requestJob = null
         playlistRequestJob?.cancel()
@@ -205,9 +235,12 @@ class JellyfinMusicViewModel(
         fun factory(
             application: Application,
             apiRepository: () -> JellyfinApiRepository,
-            preferencesRepository: JellyfinPreferencesRepository
+            preferencesRepository: JellyfinPreferencesRepository,
+            dreamStateTracker: DreamStateTracker
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { JellyfinMusicViewModel(application, apiRepository, preferencesRepository) }
+            initializer { JellyfinMusicViewModel(application, apiRepository, preferencesRepository, dreamStateTracker) }
         }
+
+        private const val HOST_STOP_GRACE_PERIOD_MS = 1_000L
     }
 }

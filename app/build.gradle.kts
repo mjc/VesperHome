@@ -10,12 +10,33 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
 }
 
+val releaseKeystore = file(
+    localProperties.getProperty("VESPER_RELEASE_STORE_FILE")
+        ?: "${System.getProperty("user.home")}/.android/vesper-home-release.jks"
+)
+val releasePasswordFile = file(
+    localProperties.getProperty("VESPER_RELEASE_PASSWORD_FILE")
+        ?: "${System.getProperty("user.home")}/.android/vesper-home-release.pass"
+)
+val releaseSigningAvailable = releaseKeystore.isFile && releasePasswordFile.isFile
+
 fun localBuildConfigValue(name: String): String =
     "\"${localProperties.getProperty(name).orEmpty().replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.sergioasenjo.vesperhome"
     compileSdk = 36
+
+    signingConfigs {
+        if (releaseSigningAvailable) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = releasePasswordFile.readText().trim()
+                keyAlias = "vesper-home"
+                keyPassword = storePassword
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.sergioasenjo.vesperhome"
@@ -39,6 +60,7 @@ android {
             buildConfigField("String", "RADARR_API_KEY", localBuildConfigValue("RADARR_API_KEY"))
         }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
@@ -98,4 +120,5 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
 }

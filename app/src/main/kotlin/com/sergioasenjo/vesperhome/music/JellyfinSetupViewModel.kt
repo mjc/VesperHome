@@ -22,6 +22,7 @@ data class JellyfinSetupUiState(
     val pairing: Boolean = false,
     val quickConnectCode: String? = null,
     val connectedServerName: String? = null,
+    val normalizationMode: JellyfinNormalizationMode = JellyfinNormalizationMode.OFF,
     val errorRes: Int? = null,
     val serviceConfig: UpcomingServerConfig? = null,
     val savingSonarr: Boolean = false,
@@ -47,6 +48,11 @@ class JellyfinSetupViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     connectedServerName = credentials?.serverName
                 )
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepository.normalizationMode.collect { mode ->
+                mutableUiState.value = mutableUiState.value.copy(normalizationMode = mode)
             }
         }
         viewModelScope.launch {
@@ -160,6 +166,10 @@ class JellyfinSetupViewModel(
                 errorRes = null
             )
         }
+    }
+
+    fun setNormalizationMode(mode: JellyfinNormalizationMode) {
+        viewModelScope.launch { preferencesRepository.setNormalizationMode(mode) }
     }
 
     fun saveSonarr(url: String, apiKey: String) {

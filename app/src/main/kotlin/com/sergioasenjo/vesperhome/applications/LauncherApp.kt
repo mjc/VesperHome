@@ -14,6 +14,7 @@ data class LauncherApp(
     val artworkFile: File? = null,
     val customBannerFile: File? = null,
     val customBannerRevision: Long? = null,
+    val customName: String? = null,
     val isFavorite: Boolean = false,
     val isHidden: Boolean = false,
     val manualOrder: Long? = null,

@@ -11,13 +11,21 @@ import com.sergioasenjo.vesperhome.R
 class ScreensaverController(
     private val activity: AppCompatActivity,
     private val currentSettings: () -> ScreensaverSettings,
+    private val systemRepository: SystemScreensaverRepository,
+    private val setStartDelay: (ScreensaverStartDelay) -> Unit,
+    private val setStandbyDelay: (ScreensaverStandbyDelay) -> Unit,
     private val setClockStyle: (ScreensaverClockStyle) -> Unit,
     private val setBackButtonAction: (BackButtonAction) -> Unit,
     private val chooseDateFormat: () -> Unit,
     private val chooseTimeFormat: () -> Unit
 ) {
+    private var appliedSettings: ScreensaverSettings? = null
+    private var permissionWarningShown = false
+
     fun handleSettingsAction(action: ScreensaverSettingsAction) {
         when (action) {
+            ScreensaverSettingsAction.ChooseStartDelay -> showStartDelayPicker()
+            ScreensaverSettingsAction.ChooseStandbyDelay -> showStandbyDelayPicker()
             ScreensaverSettingsAction.ChooseClockStyle -> showClockStylePicker()
             ScreensaverSettingsAction.ChooseBackButtonAction -> showBackActionPicker()
             ScreensaverSettingsAction.ChooseDateFormat -> chooseDateFormat()
@@ -26,12 +34,26 @@ class ScreensaverController(
         }
     }
 
-    fun handleBack() {
-        when (currentSettings().backButtonAction) {
-            BackButtonAction.NOTHING -> Unit
-            BackButtonAction.CLOCK -> activity.startActivity(Intent(activity, ClockActivity::class.java))
-            BackButtonAction.SCREENSAVER -> startConfiguredScreensaver()
+    fun applySystemConfiguration(settings: ScreensaverSettings) {
+        if (settings == appliedSettings) return
+        if (systemRepository.applyStartDelay(settings.startDelay)) {
+            appliedSettings = settings
+            permissionWarningShown = false
+        } else if (!permissionWarningShown) {
+            permissionWarningShown = true
+            Toast.makeText(activity, R.string.screensaver_permission_required, Toast.LENGTH_LONG).show()
         }
+    }
+
+    fun handleBack(): Boolean = when (currentSettings().backButtonAction) {
+        BackButtonAction.NOTHING -> false
+
+        BackButtonAction.CLOCK -> {
+            activity.startActivity(Intent(activity, ClockActivity::class.java))
+            true
+        }
+
+        BackButtonAction.SCREENSAVER -> startConfiguredScreensaver()
     }
 
     private fun showClockStylePicker() {
@@ -43,6 +65,37 @@ class ScreensaverController(
                 styles.indexOf(currentSettings().clockStyle)
             ) { dialog, index ->
                 setClockStyle(styles[index])
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun showStartDelayPicker() {
+        val values = ScreensaverStartDelay.entries
+        showChoice(
+            R.string.screensaver_start_delay,
+            values.map { activity.getString(it.labelRes) },
+            values.indexOf(currentSettings().startDelay)
+        ) {
+            setStartDelay(values[it])
+            applySystemConfiguration(currentSettings().copy(startDelay = values[it]))
+        }
+    }
+
+    private fun showStandbyDelayPicker() {
+        val values = ScreensaverStandbyDelay.entries
+        showChoice(
+            R.string.screensaver_standby_delay,
+            values.map { activity.getString(it.labelRes) },
+            values.indexOf(currentSettings().standbyDelay)
+        ) { setStandbyDelay(values[it]) }
+    }
+
+    private fun showChoice(title: Int, labels: List<String>, selected: Int, choose: (Int) -> Unit) {
+        AlertDialog.Builder(activity)
+            .setTitle(title)
+            .setSingleChoiceItems(labels.toTypedArray(), selected) { dialog, index ->
+                choose(index)
                 dialog.dismiss()
             }
             .show()
@@ -77,12 +130,14 @@ class ScreensaverController(
         }
     }
 
-    private fun startConfiguredScreensaver() {
+    private fun startConfiguredScreensaver(): Boolean {
         val intent = Intent(Intent.ACTION_MAIN)
             .setClassName("com.android.systemui", "com.android.systemui.Somnambulator")
-        if (!tryStartActivity(intent)) {
+        val started = tryStartActivity(intent)
+        if (!started) {
             Toast.makeText(activity, R.string.screensaver_start_failed, Toast.LENGTH_SHORT).show()
         }
+        return started
     }
 
     private fun tryStartActivity(intent: Intent): Boolean = try {
@@ -106,4 +161,20 @@ internal val BackButtonAction.labelRes: Int
         BackButtonAction.NOTHING -> R.string.back_action_nothing
         BackButtonAction.CLOCK -> R.string.back_action_clock
         BackButtonAction.SCREENSAVER -> R.string.back_action_screensaver
+    }
+
+internal val ScreensaverStartDelay.labelRes: Int
+    get() = when (this) {
+        ScreensaverStartDelay.MINUTES_5 -> R.string.timer_5_minutes
+        ScreensaverStartDelay.MINUTES_10 -> R.string.timer_10_minutes
+        ScreensaverStartDelay.MINUTES_15 -> R.string.timer_15_minutes
+        ScreensaverStartDelay.MINUTES_30 -> R.string.timer_30_minutes
+    }
+
+internal val ScreensaverStandbyDelay.labelRes: Int
+    get() = when (this) {
+        ScreensaverStandbyDelay.NEVER -> R.string.timer_never
+        ScreensaverStandbyDelay.MINUTES_15 -> R.string.timer_15_minutes
+        ScreensaverStandbyDelay.MINUTES_30 -> R.string.timer_30_minutes
+        ScreensaverStandbyDelay.MINUTES_60 -> R.string.timer_hour
     }

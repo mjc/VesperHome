@@ -6,13 +6,16 @@ import com.sergioasenjo.vesperhome.VesperHomeApplication
 import com.sergioasenjo.vesperhome.databinding.ViewClockBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ClockDreamService : DreamService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var clockController: ClockViewController? = null
+    private var standbyJob: Job? = null
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -25,6 +28,7 @@ class ClockDreamService : DreamService() {
         serviceScope.launch {
             settingsRepository.settings.collect { settings ->
                 clockController?.render(settings.screensaver, settings.statusBar)
+                scheduleStandby(settings.screensaver.standbyDelay)
             }
         }
     }
@@ -32,7 +36,17 @@ class ClockDreamService : DreamService() {
     override fun onDetachedFromWindow() {
         clockController?.release()
         clockController = null
+        standbyJob?.cancel()
         serviceScope.cancel()
         super.onDetachedFromWindow()
+    }
+
+    private fun scheduleStandby(delaySetting: ScreensaverStandbyDelay) {
+        standbyJob?.cancel()
+        val delayMillis = delaySetting.milliseconds ?: return
+        standbyJob = serviceScope.launch {
+            delay(delayMillis)
+            finish()
+        }
     }
 }

@@ -22,6 +22,8 @@ import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.screensaver.BackButtonAction
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverClockStyle
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettings
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStandbyDelay
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStartDelay
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsRepository
 import com.sergioasenjo.vesperhome.settings.LauncherTheme
@@ -150,6 +152,10 @@ class LauncherViewModel(
         updatePreference { managedApplicationsRepository.setHidden(app, hidden) }
     }
 
+    fun setCustomAppName(app: LauncherApp, customName: String?) {
+        updatePreference { managedApplicationsRepository.setCustomName(app, customName) }
+    }
+
     fun setCategoryMembership(category: LauncherCategory, app: LauncherApp, included: Boolean) {
         updateCategory {
             if (included) {
@@ -238,6 +244,14 @@ class LauncherViewModel(
 
     fun setBackButtonAction(action: BackButtonAction) {
         updatePreference { launcherSettingsRepository.setBackButtonAction(action) }
+    }
+
+    fun setScreensaverStartDelay(delay: ScreensaverStartDelay) {
+        updatePreference { launcherSettingsRepository.setScreensaverStartDelay(delay) }
+    }
+
+    fun setScreensaverStandbyDelay(delay: ScreensaverStandbyDelay) {
+        updatePreference { launcherSettingsRepository.setScreensaverStandbyDelay(delay) }
     }
 
     fun setBrightnessEnabled(enabled: Boolean) {

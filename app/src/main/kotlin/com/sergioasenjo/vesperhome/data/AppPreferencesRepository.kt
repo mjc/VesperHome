@@ -28,6 +28,10 @@ class AppPreferencesRepository(context: Context, private val appPreferenceDao: A
         appPreferenceDao.setHidden(app.packageName, isHidden)
     }
 
+    suspend fun setCustomName(app: LauncherApp, customName: String?) {
+        appPreferenceDao.setCustomName(app.packageName, customName)
+    }
+
     suspend fun setManualOrder(apps: List<LauncherApp>) {
         appPreferenceDao.setManualOrder(apps.map(LauncherApp::packageName))
     }

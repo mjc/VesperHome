@@ -43,6 +43,9 @@ interface AppPreferenceDao {
     )
     suspend fun updateCustomBanner(packageName: String, present: Boolean)
 
+    @Query("UPDATE app_preferences SET custom_name = :customName WHERE component_name = :packageName")
+    suspend fun updateCustomName(packageName: String, customName: String?)
+
     @Transaction
     suspend fun setFavorite(packageName: String, isFavorite: Boolean) {
         insertIfMissing(AppPreferenceEntity(packageName))
@@ -78,5 +81,11 @@ interface AppPreferenceDao {
     suspend fun setCustomBanner(packageName: String, present: Boolean) {
         insertIfMissing(AppPreferenceEntity(packageName))
         updateCustomBanner(packageName, present)
+    }
+
+    @Transaction
+    suspend fun setCustomName(packageName: String, customName: String?) {
+        insertIfMissing(AppPreferenceEntity(packageName))
+        updateCustomName(packageName, customName)
     }
 }

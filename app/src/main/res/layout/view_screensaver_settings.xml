@@ -34,10 +34,36 @@
             android:textSize="12sp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/clockStyle"
+            android:id="@+id/screensaverStartDelay"
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginTop="16dp"
+            android:backgroundTint="@color/panel_row_background"
+            android:gravity="start|center_vertical"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/action_button_text"
+            android:textSize="14sp"
+            app:cornerRadius="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/screensaverStandbyDelay"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:backgroundTint="@color/panel_row_background"
+            android:gravity="start|center_vertical"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/action_button_text"
+            android:textSize="14sp"
+            app:cornerRadius="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clockStyle"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
             android:backgroundTint="@color/panel_row_background"
             android:gravity="start|center_vertical"
             android:insetTop="0dp"

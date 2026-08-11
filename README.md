@@ -3,7 +3,7 @@
 > [!WARNING]
 > This project is a work in progress and is tailored to a specific Android TV setup. Compatibility and behavior may vary across devices and firmware.
 
-Vesper Home is a native Kotlin launcher for Android TV. It uses XML Views, View Binding, RecyclerView, Room, DataStore, and explicit D-pad focus handling without a Flutter or Compose runtime.
+Vesper Home is a launcher for Android TV.
 
 ## Features
 
@@ -37,9 +37,7 @@ Changing or disabling a device's existing launcher can make its interface inacce
 
 ## Credits
 
-Vesper Home is derived from [FLauncher](https://gitlab.com/flauncher/flauncher) by [etienn01](https://github.com/etienn01), the [FLauncher fork](https://github.com/osrosal/flauncher) by [osrosal](https://github.com/osrosal), and subsequent work by [LeanBitLab](https://github.com/LeanBitLab).
-
-This renamed native implementation contains substantial modifications made through August 10, 2026.
+Vesper Home is derived from [LTvLauncher](https://github.com/leanbitlab-org/LtvLauncher) by [LeanBitLab](https://github.com/leanbitlab-org). LTvLauncher builds on [FLauncher](https://gitlab.com/flauncher/flauncher) by [etienn01](https://github.com/etienn01) and the [FLauncher fork](https://github.com/osrosal/flauncher) by [osrosal](https://github.com/osrosal).
 
 ## License
 

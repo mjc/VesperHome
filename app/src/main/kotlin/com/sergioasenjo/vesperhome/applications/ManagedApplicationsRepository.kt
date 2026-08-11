@@ -26,8 +26,10 @@ class ManagedApplicationsRepository(
                 ?.let { appPreferencesRepository.customBannerFile(app.packageName) }
                 ?.takeIf { it.isFile }
             app.copy(
+                label = preference?.customName ?: app.label,
                 customBannerFile = customBannerFile,
                 customBannerRevision = customBannerFile?.let { preference.customBannerRevision },
+                customName = preference?.customName,
                 isFavorite = preference?.isFavorite == true,
                 isHidden = preference?.isHidden == true,
                 manualOrder = preference?.manualOrder,
@@ -49,6 +51,10 @@ class ManagedApplicationsRepository(
 
     suspend fun setHidden(app: LauncherApp, isHidden: Boolean) {
         appPreferencesRepository.setHidden(app, isHidden)
+    }
+
+    suspend fun setCustomName(app: LauncherApp, customName: String?) {
+        appPreferencesRepository.setCustomName(app, customName)
     }
 
     suspend fun setManualOrder(apps: List<LauncherApp>) {

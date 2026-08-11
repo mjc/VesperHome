@@ -57,7 +57,9 @@ data class JellyfinAudioItem(
     val AlbumId: String? = null,
     val AlbumPrimaryImageTag: String? = null,
     val ImageTags: Map<String, String> = emptyMap(),
-    val MediaType: String? = null
+    val MediaType: String? = null,
+    val NormalizationGain: Double? = null,
+    val AlbumNormalizationGain: Double? = null
 )
 
 data class JellyfinCredentials(val baseUrl: String, val accessToken: String, val userId: String, val serverName: String)
@@ -68,8 +70,16 @@ data class JellyfinTrack(
     val artist: String,
     val album: String?,
     val streamUrl: String,
-    val artworkUrl: String?
+    val artworkUrl: String?,
+    val trackGainDb: Double? = null,
+    val albumGainDb: Double? = null
 )
+
+enum class JellyfinNormalizationMode {
+    OFF,
+    TRACK,
+    ALBUM
+}
 
 enum class JellyfinCollectionType {
     PLAYLIST,

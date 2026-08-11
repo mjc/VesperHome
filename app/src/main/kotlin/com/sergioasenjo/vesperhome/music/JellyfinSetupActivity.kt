@@ -2,6 +2,7 @@ package com.sergioasenjo.vesperhome.music
 
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -48,6 +49,7 @@ class JellyfinSetupActivity : AppCompatActivity() {
             viewModel.connectManually(jellyfin.serverUrl.text.toString())
         }
         jellyfin.disconnect.setOnClickListener { viewModel.disconnect() }
+        jellyfin.normalization.setOnClickListener { showNormalizationPicker() }
         binding.sonarrPage.configure(getString(R.string.sonarr), getString(R.string.sonarr_setup_description))
         binding.radarrPage.configure(getString(R.string.radarr), getString(R.string.radarr_setup_description))
         binding.sonarrPage.setOnSaveClick {
@@ -85,6 +87,10 @@ class JellyfinSetupActivity : AppCompatActivity() {
                             getString(R.string.jellyfin_ready, it)
                         }.orEmpty()
                         jellyfin.disconnect.isVisible = state.connectedServerName != null
+                        jellyfin.normalization.text = getString(
+                            R.string.jellyfin_normalization_value,
+                            getString(state.normalizationMode.labelRes)
+                        )
                         jellyfin.error.isVisible = state.errorRes != null
                         jellyfin.error.text = state.errorRes?.let(::getString).orEmpty()
                         jellyfin.servers.isVisible = state.servers.isNotEmpty()
@@ -124,9 +130,30 @@ class JellyfinSetupActivity : AppCompatActivity() {
     private fun serviceStatus(statusRes: Int?, configured: Boolean): String =
         statusRes?.let(::getString) ?: if (configured) getString(R.string.media_service_configured) else ""
 
+    private fun showNormalizationPicker() {
+        val modes = JellyfinNormalizationMode.entries
+        AlertDialog.Builder(this)
+            .setTitle(R.string.jellyfin_normalization)
+            .setSingleChoiceItems(
+                modes.map { getString(it.labelRes) }.toTypedArray(),
+                modes.indexOf(viewModel.uiState.value.normalizationMode)
+            ) { dialog, index ->
+                viewModel.setNormalizationMode(modes[index])
+                dialog.dismiss()
+            }
+            .show()
+    }
+
     private enum class ServicePage {
         JELLYFIN,
         SONARR,
         RADARR
     }
 }
+
+private val JellyfinNormalizationMode.labelRes: Int
+    get() = when (this) {
+        JellyfinNormalizationMode.OFF -> R.string.jellyfin_normalization_off
+        JellyfinNormalizationMode.TRACK -> R.string.jellyfin_normalization_track
+        JellyfinNormalizationMode.ALBUM -> R.string.jellyfin_normalization_album
+    }

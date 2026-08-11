@@ -17,6 +17,8 @@ import com.sergioasenjo.vesperhome.music.JellyfinPreferencesRepository
 import com.sergioasenjo.vesperhome.notifications.NotificationRepository
 import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.platform.PlatformHomeRepository
+import com.sergioasenjo.vesperhome.screensaver.DreamStateTracker
+import com.sergioasenjo.vesperhome.screensaver.SystemScreensaverRepository
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsRepository
 import com.sergioasenjo.vesperhome.status.NetworkStatusRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
@@ -45,6 +47,8 @@ class AppContainer(application: Application) {
     val categoryRepository = CategoryRepository(database.categoryDao())
     val homeRepository: HomeRepository = PlatformHomeRepository(application)
     val launcherSettingsRepository = LauncherSettingsRepository(application)
+    val systemScreensaverRepository = SystemScreensaverRepository(application)
+    val dreamStateTracker = DreamStateTracker(application)
     val wallpaperRepository = WallpaperRepository(application)
     val networkStatusRepository = NetworkStatusRepository(application)
     val tvInputRepository = TvInputRepository(application)

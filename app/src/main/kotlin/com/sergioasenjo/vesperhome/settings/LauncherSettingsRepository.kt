@@ -13,6 +13,8 @@ import com.sergioasenjo.vesperhome.brightness.BrightnessSettings
 import com.sergioasenjo.vesperhome.screensaver.BackButtonAction
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverClockStyle
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettings
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStandbyDelay
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStartDelay
 import com.sergioasenjo.vesperhome.status.StatusBarSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -118,7 +120,12 @@ class LauncherSettingsRepository(private val context: Context) {
             ),
             screensaver = ScreensaverSettings(
                 clockStyle = preferences.enumValue(SCREENSAVER_CLOCK_STYLE, ScreensaverClockStyle.MINIMAL),
-                backButtonAction = preferences.enumValue(BACK_BUTTON_ACTION, BackButtonAction.NOTHING)
+                backButtonAction = preferences.enumValue(BACK_BUTTON_ACTION, BackButtonAction.NOTHING),
+                startDelay = preferences.enumValue(SCREENSAVER_START_DELAY, ScreensaverStartDelay.MINUTES_10),
+                standbyDelay = preferences.enumValue(
+                    SCREENSAVER_STANDBY_DELAY,
+                    ScreensaverStandbyDelay.MINUTES_30
+                )
             ),
             brightness = BrightnessSettings(
                 enabled = preferences[BRIGHTNESS_ENABLED] ?: false,
@@ -214,6 +221,14 @@ class LauncherSettingsRepository(private val context: Context) {
         setEnum(BACK_BUTTON_ACTION, action)
     }
 
+    suspend fun setScreensaverStartDelay(delay: ScreensaverStartDelay) {
+        setEnum(SCREENSAVER_START_DELAY, delay)
+    }
+
+    suspend fun setScreensaverStandbyDelay(delay: ScreensaverStandbyDelay) {
+        setEnum(SCREENSAVER_STANDBY_DELAY, delay)
+    }
+
     suspend fun setBrightnessEnabled(enabled: Boolean) {
         setBoolean(BRIGHTNESS_ENABLED, enabled)
     }
@@ -251,6 +266,8 @@ class LauncherSettingsRepository(private val context: Context) {
             preferences[STATUS_TIME_FORMAT] = restored.statusBar.timeFormat
             preferences[SCREENSAVER_CLOCK_STYLE] = restored.screensaver.clockStyle.name
             preferences[BACK_BUTTON_ACTION] = restored.screensaver.backButtonAction.name
+            preferences[SCREENSAVER_START_DELAY] = restored.screensaver.startDelay.name
+            preferences[SCREENSAVER_STANDBY_DELAY] = restored.screensaver.standbyDelay.name
             preferences[BRIGHTNESS_ENABLED] = restored.brightness.enabled
             preferences[BRIGHTNESS_MORNING] = restored.brightness.morningPercentage
             preferences[BRIGHTNESS_DAY] = restored.brightness.dayPercentage
@@ -302,6 +319,8 @@ class LauncherSettingsRepository(private val context: Context) {
         val STATUS_TIME_FORMAT = stringPreferencesKey("status_time_format")
         val SCREENSAVER_CLOCK_STYLE = stringPreferencesKey("screensaver_clock_style")
         val BACK_BUTTON_ACTION = stringPreferencesKey("back_button_action")
+        val SCREENSAVER_START_DELAY = stringPreferencesKey("screensaver_start_delay")
+        val SCREENSAVER_STANDBY_DELAY = stringPreferencesKey("screensaver_standby_delay")
         val BRIGHTNESS_ENABLED = booleanPreferencesKey("brightness_scheduler_enabled")
         val BRIGHTNESS_MORNING = intPreferencesKey("brightness_morning")
         val BRIGHTNESS_DAY = intPreferencesKey("brightness_day")

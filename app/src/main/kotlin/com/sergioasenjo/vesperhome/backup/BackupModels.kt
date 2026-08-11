@@ -9,6 +9,8 @@ import com.sergioasenjo.vesperhome.data.SpacerEntity
 import com.sergioasenjo.vesperhome.screensaver.BackButtonAction
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverClockStyle
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettings
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStandbyDelay
+import com.sergioasenjo.vesperhome.screensaver.ScreensaverStartDelay
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import com.sergioasenjo.vesperhome.settings.LauncherSettings
 import com.sergioasenjo.vesperhome.settings.LauncherTheme
@@ -62,7 +64,9 @@ internal data class SettingsBackup(
     val brightnessDay: Int,
     val brightnessAfternoon: Int,
     val brightnessEvening: Int,
-    val brightnessNight: Int
+    val brightnessNight: Int,
+    val screensaverStartDelay: String = ScreensaverStartDelay.MINUTES_10.name,
+    val screensaverStandbyDelay: String = ScreensaverStandbyDelay.MINUTES_30.name
 )
 
 @Serializable
@@ -75,7 +79,8 @@ internal data class AppPreferenceBackup(
     val isHidden: Boolean,
     val manualOrder: Long?,
     val lastUsedAt: Long?,
-    val hasCustomBanner: Boolean
+    val hasCustomBanner: Boolean,
+    val customName: String? = null
 )
 
 @Serializable
@@ -116,7 +121,8 @@ internal fun BackupSnapshot.toDocument(createdAt: Long): BackupDocument = Backup
             preference.isHidden,
             preference.manualOrder,
             preference.lastUsedAt,
-            preference.customBannerRevision != null
+            preference.customBannerRevision != null,
+            preference.customName
         )
     },
     categories = categories.map { category ->
@@ -150,13 +156,15 @@ internal fun BackupDocument.toSnapshot(): BackupSnapshot {
         wallpaper = wallpaper.toDomain(),
         appPreferences = appPreferences.map { preference ->
             requireValidComponent(preference.componentName)
+            preference.customName?.let { require(it.isNotBlank() && it.length <= MAX_APP_NAME_LENGTH) }
             AppPreferenceEntity(
                 componentName = preference.componentName,
                 isFavorite = preference.isFavorite,
                 isHidden = preference.isHidden,
                 manualOrder = preference.manualOrder,
                 lastUsedAt = preference.lastUsedAt,
-                customBannerRevision = restoredRevision.takeIf { preference.hasCustomBanner }
+                customBannerRevision = restoredRevision.takeIf { preference.hasCustomBanner },
+                customName = preference.customName
             )
         },
         categories = categories.map { category ->
@@ -211,7 +219,9 @@ private fun LauncherSettings.toBackup(): SettingsBackup = SettingsBackup(
     brightness.dayPercentage,
     brightness.afternoonPercentage,
     brightness.eveningPercentage,
-    brightness.nightPercentage
+    brightness.nightPercentage,
+    screensaver.startDelay.name,
+    screensaver.standbyDelay.name
 )
 
 private fun SettingsBackup.toDomain(): LauncherSettings {
@@ -249,8 +259,10 @@ private fun SettingsBackup.toDomain(): LauncherSettings {
             timeFormat
         ),
         screensaver = ScreensaverSettings(
-            enumValueOf<ScreensaverClockStyle>(screensaverClockStyle),
-            enumValueOf<BackButtonAction>(backButtonAction)
+            clockStyle = enumValueOf<ScreensaverClockStyle>(screensaverClockStyle),
+            backButtonAction = enumValueOf<BackButtonAction>(backButtonAction),
+            startDelay = enumValueOf<ScreensaverStartDelay>(screensaverStartDelay),
+            standbyDelay = enumValueOf<ScreensaverStandbyDelay>(screensaverStandbyDelay)
         ),
         brightness = BrightnessSettings(
             brightnessEnabled,
@@ -303,6 +315,7 @@ private const val MAX_CATEGORIES = 500
 private const val MAX_MEMBERSHIPS = 50_000
 private const val MAX_SPACERS = 500
 private const val MAX_CATEGORY_NAME_LENGTH = 100
+private const val MAX_APP_NAME_LENGTH = 100
 private const val MAX_COMPONENT_NAME_LENGTH = 500
 private const val MAX_DATE_TIME_PATTERN_LENGTH = 100
 private val PACKAGE_NAME_PATTERN = Regex("[A-Za-z0-9_.]+")

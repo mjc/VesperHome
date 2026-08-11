@@ -13,6 +13,8 @@ class ScreensaverSettingsPanelBinder(
     private val onAction: (ScreensaverSettingsAction) -> Unit
 ) {
     val buttons: List<MaterialButton> = listOf(
+        binding.screensaverStartDelay,
+        binding.screensaverStandbyDelay,
         binding.clockStyle,
         binding.backButtonAction,
         binding.dateFormat,
@@ -21,6 +23,8 @@ class ScreensaverSettingsPanelBinder(
     )
 
     init {
+        binding.screensaverStartDelay.setOnClickListener { onAction(ScreensaverSettingsAction.ChooseStartDelay) }
+        binding.screensaverStandbyDelay.setOnClickListener { onAction(ScreensaverSettingsAction.ChooseStandbyDelay) }
         binding.clockStyle.setOnClickListener { onAction(ScreensaverSettingsAction.ChooseClockStyle) }
         binding.backButtonAction.setOnClickListener { onAction(ScreensaverSettingsAction.ChooseBackButtonAction) }
         binding.dateFormat.setOnClickListener { onAction(ScreensaverSettingsAction.ChooseDateFormat) }
@@ -30,6 +34,14 @@ class ScreensaverSettingsPanelBinder(
 
     fun render(screensaver: ScreensaverSettings, dateTime: StatusBarSettings) {
         val context = binding.root.context
+        binding.screensaverStartDelay.text = context.getString(
+            R.string.screensaver_start_delay_value,
+            context.getString(screensaver.startDelay.labelRes)
+        )
+        binding.screensaverStandbyDelay.text = context.getString(
+            R.string.screensaver_standby_delay_value,
+            context.getString(screensaver.standbyDelay.labelRes)
+        )
         binding.clockStyle.text = context.getString(
             R.string.screensaver_clock_style_value,
             context.getString(screensaver.clockStyle.labelRes)

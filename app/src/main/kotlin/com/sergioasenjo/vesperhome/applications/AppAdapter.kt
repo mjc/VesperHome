@@ -22,7 +22,11 @@ class AppAdapter(
     private val onAppLongClick: (LauncherApp, AppAdapter) -> Unit,
     private val onManualOrderChanged: (List<LauncherApp>) -> Unit = {}
 ) : ListAdapter<LauncherApp, AppAdapter.AppViewHolder>(AppDiffCallback) {
-    private var movingPackageName: String? = null
+    private data class AppKey(val packageName: String, val user: android.os.UserHandle)
+
+    private var movingAppKey: AppKey? = null
+    private var movingOrder: List<LauncherApp>? = null
+    private var recyclerView: RecyclerView? = null
     private var itemHeight = 176
     private var itemWidth = 244
     private var movementStride = 1
@@ -45,7 +49,8 @@ class AppAdapter(
             onAppClick,
             { app -> onAppLongClick(app, this) },
             ::handleMoveKey,
-            ::boundaryDirection
+            ::boundaryDirection,
+            ::isMovementActive
         )
     }
 
@@ -54,7 +59,17 @@ class AppAdapter(
             width = itemWidth
             height = itemHeight
         }
-        holder.bind(getItem(position), getItem(position).packageName == movingPackageName, appearance)
+        holder.bind(getItem(position), isMoving(getItem(position)), appearance)
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+        super.onAttachedToRecyclerView(recyclerView)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        if (this.recyclerView === recyclerView) this.recyclerView = null
+        super.onDetachedFromRecyclerView(recyclerView)
     }
 
     override fun onViewRecycled(holder: AppViewHolder) {
@@ -71,8 +86,10 @@ class AppAdapter(
     }
 
     fun startMoving(app: LauncherApp) {
-        movingPackageName = app.packageName
-        notifyPackageChanged(app.packageName)
+        movingAppKey = app.key()
+        movingOrder = currentList.toList()
+        notifyAppChanged(app.key())
+        requestMovingAppFocus()
     }
 
     fun setAppearance(appearance: LauncherAppearance) {
@@ -81,13 +98,16 @@ class AppAdapter(
         notifyItemRangeChanged(0, itemCount)
     }
 
-    private fun handleMoveKey(app: LauncherApp, keyCode: Int): Boolean {
-        if (movingPackageName != app.packageName) return false
+    private fun handleMoveKey(keyCode: Int): Boolean {
+        val movingKey = movingAppKey ?: return false
         if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER ||
             keyCode == KeyEvent.KEYCODE_BACK
         ) {
-            movingPackageName = null
-            notifyPackageChanged(app.packageName)
+            val finalOrder = movingOrder ?: currentList
+            movingAppKey = null
+            movingOrder = null
+            submitList(finalOrder) { notifyAppChanged(movingKey) }
+            onManualOrderChanged(finalOrder)
             return true
         }
         val offset = when (keyCode) {
@@ -97,17 +117,21 @@ class AppAdapter(
             KeyEvent.KEYCODE_DPAD_DOWN -> if (movementStride > 1) movementStride else return false
             else -> return false
         }
-        val oldPosition = currentList.indexOfFirst { it.packageName == app.packageName }
-        val newPosition = (oldPosition + offset).coerceIn(0, currentList.lastIndex)
+        val order = movingOrder ?: currentList
+        val oldPosition = order.indexOfFirst { it.key() == movingKey }
+        if (oldPosition == RecyclerView.NO_POSITION) return true
+        val newPosition = (oldPosition + offset).coerceIn(0, order.lastIndex)
         if (oldPosition == newPosition) return true
-        val reordered = currentList.toMutableList().apply { add(newPosition, removeAt(oldPosition)) }
-        submitList(reordered)
-        onManualOrderChanged(reordered)
+        val reordered = order.toMutableList().apply { add(newPosition, removeAt(oldPosition)) }
+        movingOrder = reordered
+        submitList(reordered) { requestMovingAppFocus() }
         return true
     }
 
     private fun boundaryDirection(app: LauncherApp, keyCode: Int): Int {
-        val position = currentList.indexOfFirst { it.packageName == app.packageName }
+        val order = movingOrder ?: currentList
+        val targetKey = movingAppKey ?: app.key()
+        val position = order.indexOfFirst { it.key() == targetKey }
         if (position == RecyclerView.NO_POSITION) return 0
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT -> when {
@@ -117,10 +141,10 @@ class AppAdapter(
             }
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> when {
-                movementStride == 1 && position == currentList.lastIndex -> 1
+                movementStride == 1 && position == order.lastIndex -> 1
 
                 movementStride > 1 &&
-                    (position % movementStride == movementStride - 1 || position == currentList.lastIndex) -> 1
+                    (position % movementStride == movementStride - 1 || position == order.lastIndex) -> 1
 
                 else -> 0
             }
@@ -129,18 +153,35 @@ class AppAdapter(
         }
     }
 
-    private fun notifyPackageChanged(packageName: String) {
-        currentList.indexOfFirst { it.packageName == packageName }
+    private fun isMoving(app: LauncherApp): Boolean = movingAppKey == app.key()
+
+    private fun isMovementActive(): Boolean = movingAppKey != null
+
+    private fun requestMovingAppFocus() {
+        val movingKey = movingAppKey ?: return
+        val position = currentList.indexOfFirst { it.key() == movingKey }
+        if (position == RecyclerView.NO_POSITION) return
+        recyclerView?.apply {
+            scrollToPosition(position)
+            post { findViewHolderForAdapterPosition(position)?.itemView?.requestFocus() }
+        }
+    }
+
+    private fun notifyAppChanged(appKey: AppKey) {
+        currentList.indexOfFirst { it.key() == appKey }
             .takeIf { it != RecyclerView.NO_POSITION }
             ?.let(::notifyItemChanged)
     }
+
+    private fun LauncherApp.key(): AppKey = AppKey(packageName, user)
 
     class AppViewHolder(
         private val binding: ItemAppBinding,
         onAppClick: (LauncherApp) -> Unit,
         onAppLongClick: (LauncherApp) -> Unit,
-        onMoveKey: (LauncherApp, Int) -> Boolean,
-        boundaryDirection: (LauncherApp, Int) -> Int
+        onMoveKey: (Int) -> Boolean,
+        boundaryDirection: (LauncherApp, Int) -> Int,
+        isMovementActive: () -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private var app: LauncherApp? = null
         private var appearance = LauncherAppearance()
@@ -156,14 +197,27 @@ class AppAdapter(
                 app != null
             }
             binding.root.setOnKeyListener { _, keyCode, event ->
-                val direction = app?.let { boundaryDirection(it, keyCode) } ?: 0
+                val currentApp = app ?: return@setOnKeyListener false
+                val movementActive = isMovementActive()
+                val direction = boundaryDirection(currentApp, keyCode)
                 when {
+                    movementActive && keyCode in MOVE_CONTROL_KEYS -> {
+                        if (event.action == KeyEvent.ACTION_DOWN) {
+                            if (direction != 0 && event.repeatCount == 0) {
+                                animateEdgeBump(direction)
+                            } else {
+                                onMoveKey(keyCode)
+                            }
+                        }
+                        true
+                    }
+
                     direction != 0 -> {
                         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) animateEdgeBump(direction)
                         true
                     }
 
-                    event.action == KeyEvent.ACTION_DOWN -> app?.let { onMoveKey(it, keyCode) } == true
+                    event.action == KeyEvent.ACTION_DOWN -> onMoveKey(keyCode)
 
                     else -> false
                 }
@@ -286,6 +340,15 @@ class AppAdapter(
             const val FOCUS_STROKE_WIDTH_DP = 3
             const val MOVING_STROKE_WIDTH_DP = 4
             const val BANNER_CORNER_RADIUS_DP = 10
+            val MOVE_CONTROL_KEYS = setOf(
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_BACK
+            )
         }
     }
 
@@ -300,6 +363,7 @@ class AppAdapter(
                 oldItem.isHidden == newItem.isHidden &&
                 oldItem.artworkVersion == newItem.artworkVersion &&
                 oldItem.customBannerRevision == newItem.customBannerRevision &&
+                oldItem.customName == newItem.customName &&
                 oldItem.manualOrder == newItem.manualOrder &&
                 oldItem.lastUsedAt == newItem.lastUsedAt
     }

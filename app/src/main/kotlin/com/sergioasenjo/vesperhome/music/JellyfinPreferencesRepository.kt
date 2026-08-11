@@ -23,6 +23,11 @@ class JellyfinPreferencesRepository(private val context: Context) {
             null
         }
     }
+    val normalizationMode: Flow<JellyfinNormalizationMode> = context.jellyfinDataStore.data.map { preferences ->
+        preferences[NORMALIZATION_MODE]
+            ?.let { stored -> JellyfinNormalizationMode.entries.firstOrNull { it.name == stored } }
+            ?: JellyfinNormalizationMode.OFF
+    }
 
     suspend fun deviceId(): String {
         context.jellyfinDataStore.data.first()[DEVICE_ID]?.let { return it }
@@ -49,11 +54,16 @@ class JellyfinPreferencesRepository(private val context: Context) {
         }
     }
 
+    suspend fun setNormalizationMode(mode: JellyfinNormalizationMode) {
+        context.jellyfinDataStore.edit { it[NORMALIZATION_MODE] = mode.name }
+    }
+
     private companion object {
         val DEVICE_ID = stringPreferencesKey("device_id")
         val BASE_URL = stringPreferencesKey("base_url")
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val USER_ID = stringPreferencesKey("user_id")
         val SERVER_NAME = stringPreferencesKey("server_name")
+        val NORMALIZATION_MODE = stringPreferencesKey("normalization_mode")
     }
 }

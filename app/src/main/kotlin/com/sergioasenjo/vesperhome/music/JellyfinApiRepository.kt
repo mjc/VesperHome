@@ -169,7 +169,9 @@ class JellyfinApiRepository(
             artist = Artists.joinToString().ifBlank { AlbumArtist.orEmpty() },
             album = Album,
             streamUrl = streamUrl,
-            artworkUrl = artworkUrl
+            artworkUrl = artworkUrl,
+            trackGainDb = NormalizationGain,
+            albumGainDb = AlbumNormalizationGain
         )
     }
 

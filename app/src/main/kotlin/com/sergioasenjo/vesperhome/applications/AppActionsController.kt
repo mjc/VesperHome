@@ -1,6 +1,9 @@
 package com.sergioasenjo.vesperhome.applications
 
 import android.content.ActivityNotFoundException
+import android.text.InputFilter
+import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +16,7 @@ class AppActionsController(
     private val isReorderable: (AppAdapter) -> Boolean,
     private val onFavoriteChanged: (LauncherApp) -> Unit,
     private val onHidden: (LauncherApp) -> Unit,
+    private val onNameChanged: (LauncherApp, String?) -> Unit,
     private val onApplicationDetails: (LauncherApp) -> Unit,
     private val onUninstall: (LauncherApp) -> Unit,
     private val onCategoryMembershipChanged: (LauncherCategory, LauncherApp, Boolean) -> Unit,
@@ -29,16 +33,18 @@ class AppActionsController(
 
     fun show(app: LauncherApp, adapter: AppAdapter) {
         val favoriteAction = if (app.isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites
-        val actions = mutableListOf(
-            activity.getString(favoriteAction) to { onFavoriteChanged(app) },
-            activity.getString(R.string.hide_app) to { onHidden(app) },
-            activity.getString(R.string.choose_custom_banner) to { openBannerPicker(app) },
-            activity.getString(R.string.application_info) to { onApplicationDetails(app) },
-            activity.getString(R.string.uninstall_application) to { onUninstall(app) }
-        )
-        if (app.customBannerFile != null) {
-            actions.add(3, activity.getString(R.string.remove_custom_banner) to { onCustomBannerRemoved(app) })
+        val actions = mutableListOf(activity.getString(favoriteAction) to { onFavoriteChanged(app) })
+        actions += activity.getString(R.string.rename_application) to { showRenameDialog(app) }
+        if (app.customName != null) {
+            actions += activity.getString(R.string.reset_application_name) to { onNameChanged(app, null) }
         }
+        actions += activity.getString(R.string.hide_app) to { onHidden(app) }
+        actions += activity.getString(R.string.choose_custom_banner) to { openBannerPicker(app) }
+        if (app.customBannerFile != null) {
+            actions += activity.getString(R.string.remove_custom_banner) to { onCustomBannerRemoved(app) }
+        }
+        actions += activity.getString(R.string.application_info) to { onApplicationDetails(app) }
+        actions += activity.getString(R.string.uninstall_application) to { onUninstall(app) }
         if (isReorderable(adapter)) {
             actions += activity.getString(R.string.reorder_application) to { adapter.startMoving(app) }
         }
@@ -58,6 +64,29 @@ class AppActionsController(
             .show()
     }
 
+    private fun showRenameDialog(app: LauncherApp) {
+        val input = EditText(activity).apply {
+            hint = activity.getString(R.string.application_name)
+            filters = arrayOf(InputFilter.LengthFilter(MAX_APP_NAME_LENGTH))
+            setSingleLine()
+            setText(app.label)
+            selectAll()
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.rename_application)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(activity, R.string.application_name_required, Toast.LENGTH_SHORT).show()
+                } else {
+                    onNameChanged(app, name)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun openBannerPicker(app: LauncherApp) {
         pendingBannerApp = app
         try {
@@ -66,5 +95,9 @@ class AppActionsController(
             pendingBannerApp = null
             onPickerUnavailable()
         }
+    }
+
+    private companion object {
+        const val MAX_APP_NAME_LENGTH = 100
     }
 }

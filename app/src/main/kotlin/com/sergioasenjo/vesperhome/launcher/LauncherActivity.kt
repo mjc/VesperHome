@@ -60,6 +60,7 @@ class LauncherActivity : AppCompatActivity() {
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
     private var musicInitialized = false
+    private var preserveMusicOnStop = false
     private var fullyDrawnReported = false
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -84,7 +85,8 @@ class LauncherActivity : AppCompatActivity() {
         JellyfinMusicViewModel.factory(
             application as VesperHomeApplication,
             { container.jellyfinApiRepository },
-            container.jellyfinPreferencesRepository
+            container.jellyfinPreferencesRepository,
+            container.dreamStateTracker
         )
     }
 
@@ -123,6 +125,7 @@ class LauncherActivity : AppCompatActivity() {
             isReorderable = { contentRenderer.isReorderable(it) },
             onFavoriteChanged = viewModel::toggleFavorite,
             onHidden = { viewModel.setHidden(it, true) },
+            onNameChanged = viewModel::setCustomAppName,
             onApplicationDetails = viewModel::openApplicationDetails,
             onUninstall = viewModel::uninstall,
             onCategoryMembershipChanged = viewModel::setCategoryMembership,
@@ -176,19 +179,13 @@ class LauncherActivity : AppCompatActivity() {
             aboutController,
             ::showSortDialog
         )
-        screensaverController = ScreensaverController(
+        screensaverController = createScreensaverController(
             this,
-            currentSettings = { viewModel.uiState.value.screensaver },
-            setClockStyle = viewModel::setScreensaverClockStyle,
-            setBackButtonAction = viewModel::setBackButtonAction,
-            chooseDateFormat = {
-                statusBarController.handleSettingsAction(StatusBarSettingsAction.ChooseDateFormat)
-            },
-            chooseTimeFormat = {
-                statusBarController.handleSettingsAction(StatusBarSettingsAction.ChooseTimeFormat)
-            }
+            viewModel,
+            statusBarController,
+            container.systemScreensaverRepository
         )
-        onBackPressedDispatcher.addCallback(this) { screensaverController.handleBack() }
+        onBackPressedDispatcher.addCallback(this) { preserveMusicOnStop = screensaverController.handleBack() }
         settingsPanelPageToRestore = savedInstanceState
             ?.takeIf { it.getBoolean(STATE_SETTINGS_PANEL_OPEN) }
             ?.getString(STATE_SETTINGS_PANEL_PAGE)
@@ -231,6 +228,7 @@ class LauncherActivity : AppCompatActivity() {
                 launch {
                     viewModel.uiState.collect { state ->
                         brightnessController.render(state.brightness)
+                        screensaverController.applySystemConfiguration(state.screensaver)
                         settingsPanel?.render(
                             state.isDefaultLauncher,
                             homeButtonFixController.isEnabled(),
@@ -321,6 +319,7 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        musicViewModel.onHostStarted()
         if (::notificationController.isInitialized) notificationController.refreshPermissions()
         if (::brightnessController.isInitialized) {
             brightnessController.onResume()
@@ -332,7 +331,8 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        if (musicInitialized) musicController.onHostStopped()
+        if (musicInitialized && !preserveMusicOnStop) musicController.onHostStopped()
+        preserveMusicOnStop = false
         super.onStop()
     }
 
