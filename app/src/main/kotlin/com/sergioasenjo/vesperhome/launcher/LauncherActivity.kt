@@ -293,8 +293,14 @@ class LauncherActivity : AppCompatActivity() {
     private fun initializeMusic() {
         if (musicInitialized || isFinishing || isDestroyed) return
         musicInitialized = true
-        val upcomingRepository = (application as VesperHomeApplication).container.upcomingRepository
-        musicController = JellyfinMusicController(this, contentBinding, musicViewModel, upcomingRepository) {
+        val container = (application as VesperHomeApplication).container
+        musicController = JellyfinMusicController(
+            this,
+            contentBinding,
+            musicViewModel,
+            container.upcomingRepository,
+            container.networkStatusRepository
+        ) {
             viewModel.uiState.value.let { it.appearance.forWallpaper(it.wallpaper) }
         }
         lifecycleScope.launch {

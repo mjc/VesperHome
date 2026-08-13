@@ -49,6 +49,7 @@ class AppAdapter(
             onAppClick,
             { app -> onAppLongClick(app, this) },
             ::handleMoveKey,
+            ::handleHorizontalFocusKey,
             ::boundaryDirection,
             ::isMovementActive
         )
@@ -153,6 +154,19 @@ class AppAdapter(
         }
     }
 
+    private fun handleHorizontalFocusKey(app: LauncherApp, keyCode: Int): Boolean {
+        val position = currentList.indexOfFirst { it.key() == app.key() }
+        if (position == RecyclerView.NO_POSITION) return true
+        val targetPosition = position + if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1
+        val sameRow = movementStride == 1 || position / movementStride == targetPosition / movementStride
+        if (targetPosition !in currentList.indices || !sameRow) return true
+        recyclerView?.apply {
+            scrollToPosition(targetPosition)
+            post { findViewHolderForAdapterPosition(targetPosition)?.itemView?.requestFocus() }
+        }
+        return true
+    }
+
     private fun isMoving(app: LauncherApp): Boolean = movingAppKey == app.key()
 
     private fun isMovementActive(): Boolean = movingAppKey != null
@@ -180,6 +194,7 @@ class AppAdapter(
         onAppClick: (LauncherApp) -> Unit,
         onAppLongClick: (LauncherApp) -> Unit,
         onMoveKey: (Int) -> Boolean,
+        onHorizontalFocusKey: (LauncherApp, Int) -> Boolean,
         boundaryDirection: (LauncherApp, Int) -> Int,
         isMovementActive: () -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -207,6 +222,17 @@ class AppAdapter(
                                 animateEdgeBump(direction)
                             } else {
                                 onMoveKey(keyCode)
+                            }
+                        }
+                        true
+                    }
+
+                    keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        if (event.action == KeyEvent.ACTION_DOWN) {
+                            if (direction != 0) {
+                                if (event.repeatCount == 0) animateEdgeBump(direction)
+                            } else {
+                                onHorizontalFocusKey(currentApp, keyCode)
                             }
                         }
                         true

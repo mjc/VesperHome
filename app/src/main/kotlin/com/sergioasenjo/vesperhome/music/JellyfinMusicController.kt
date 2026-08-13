@@ -8,12 +8,17 @@ import androidx.lifecycle.lifecycleScope
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
+import com.sergioasenjo.vesperhome.status.NetworkStatusRepository
+import com.sergioasenjo.vesperhome.status.NetworkTransport
 import com.sergioasenjo.vesperhome.upcoming.UpcomingController
 import com.sergioasenjo.vesperhome.upcoming.UpcomingMediaItem
 import com.sergioasenjo.vesperhome.upcoming.UpcomingRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class JellyfinMusicController(
@@ -21,6 +26,7 @@ class JellyfinMusicController(
     private val binding: ViewLauncherContentBinding,
     private val viewModel: JellyfinMusicViewModel,
     upcomingRepository: UpcomingRepository,
+    private val networkStatusRepository: NetworkStatusRepository,
     private val currentAppearance: () -> LauncherAppearance
 ) {
     private var collectionDialog: JellyfinCollectionDialog? = null
@@ -36,7 +42,13 @@ class JellyfinMusicController(
     }
 
     suspend fun collectState(): Unit = coroutineScope {
-        launch { upcomingController.load() }
+        launch {
+            networkStatusRepository.observeStatus()
+                .map { it.transport != NetworkTransport.NONE }
+                .distinctUntilChanged()
+                .filter { it }
+                .collectLatest { upcomingController.load() }
+        }
         viewModel.uiState.collectLatest { state ->
             binding.renderJellyfinMusic(activity, state)
             collectionDialog?.render(state.collectionPicker)
