@@ -1,24 +1,67 @@
-# Vesper Home
+<img src=".github/assets/vesper-home-banner.png" alt="Vesper Home, a native Android TV launcher" width="100%">
 
-> [!WARNING]
-> This project is a work in progress and is tailored to a specific Android TV setup. Compatibility and behavior may vary across devices and firmware.
+<p align="center">
+  A fully native, ad-free Android TV launcher built for fast, predictable D-pad navigation.
+</p>
 
-Vesper Home is a launcher for Android TV.
+> [!NOTE]
+> Vesper Home is tailored to and tested on a Xiaomi TV A Pro (`MiTV-MOOR4`). The source is open, so anyone can compile it and adapt it to another Android TV setup.
 
 ## Features
 
-- Unified catalog for TV and sideloaded applications.
-- Favorites, custom categories, spacers, row and grid layouts, sorting, hiding, and manual ordering.
-- Native banners, icon fallbacks, and custom application banners.
-- Jellyfin random tracks, playlists, and album playback with discovery, Quick Connect, artwork, and launcher controls.
-- Configurable wallpapers, day and night scheduling, themes, status bar, and OLED clock screensaver.
-- TV input selection, notification panel and popups, brightness scheduling, and Home-button accessibility handling.
-- Timestamped backup, restore, import, sharing, and custom-asset recovery.
-- English and Spanish localization.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Apps, arranged your way</strong><br>
+      Organize TV and sideloaded apps with favorites, categories, spacers, rows, grids, sorting, hiding, and custom banners.
+    </td>
+    <td width="50%" valign="top">
+      <strong>Made for the remote</strong><br>
+      Move through every row with explicit D-pad focus, reliable focus restoration, edge feedback, and optional key sounds.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Jellyfin from Home</strong><br>
+      Discover and pair with Quick Connect, then play random tracks, playlists, and albums with artwork, queue browsing, and playback controls.
+    </td>
+    <td width="50%" valign="top">
+      <strong>Coming Next</strong><br>
+      See upcoming Sonarr episodes and Radarr releases on the home screen, with direct access to matching titles in Jellyfin.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Your screen</strong><br>
+      Choose light or dark themes, built-in or custom wallpapers, day and night scheduling, and focused-card animations.
+    </td>
+    <td width="50%" valign="top">
+      <strong>TV essentials</strong><br>
+      Keep inputs, network status, notifications, clock, and optional brightness scheduling close at hand.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Home and screensaver</strong><br>
+      Set Vesper Home as the launcher, use the optional Home Button Fix, and run an OLED-friendly clock screensaver.
+    </td>
+    <td width="50%" valign="top">
+      <strong>Portable and bilingual</strong><br>
+      Create, restore, import, and share timestamped backups. Use the interface in English or Spanish.
+    </td>
+  </tr>
+</table>
+
+## Set as Home
+
+Open **Vesper Home > Settings > Accessibility > Set as default launcher** and select Vesper Home in Android's Home app picker. If the device blocks changing the Home app, the optional **Home Button Fix** can redirect Home-button presses through an accessibility service.
+
+> [!CAUTION]
+> Do not disable the existing system launcher unless you know how to recover the device.
 
 ## Build
 
-The project requires JDK 17 and the Android SDK. Build with the repository Gradle wrapper:
+Install JDK 17 and the Android SDK, then use the repository Gradle wrapper:
 
 ```shell
 ./gradlew format
@@ -27,13 +70,7 @@ The project requires JDK 17 and the Android SDK. Build with the repository Gradl
 ./gradlew :app:assembleDebug
 ```
 
-The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk` with application ID `com.sergioasenjo.vesperhome.debug`.
-
-## Default Launcher
-
-Open Vesper Home settings and select the default-launcher action to open the Android Home application selector. Devices that prevent changing the Home application can optionally use the built-in accessibility-based Home Button Fix.
-
-Changing or disabling a device's existing launcher can make its interface inaccessible. Do not disable the existing Home application unless you understand the device-specific recovery procedure.
+The APK is written to `app/build/outputs/apk/debug/app-debug.apk` with application ID `com.sergioasenjo.vesperhome.debug`.
 
 ## Credits
 
