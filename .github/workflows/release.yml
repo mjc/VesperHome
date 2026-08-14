@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            printf 'Release tags must use vMAJOR.MINOR.PATCH.\n' >&2
+            exit 1
+          fi
+
+      - name: Checkout sources
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Prepare release signing
+        shell: bash
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.VESPER_RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_PASSWORD: ${{ secrets.VESPER_RELEASE_PASSWORD }}
+        run: |
+          if [[ -z "$RELEASE_KEYSTORE_BASE64" || -z "$RELEASE_PASSWORD" ]]; then
+            printf 'Release signing secrets are not configured.\n' >&2
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.android"
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/vesper-home-release.jks"
+          printf '%s' "$RELEASE_PASSWORD" > "$HOME/.android/vesper-home-release.pass"
+          chmod 600 "$HOME/.android/vesper-home-release.jks" "$HOME/.android/vesper-home-release.pass"
+
+      - name: Verify and build release APK
+        shell: bash
+        run: |
+          VESPER_VERSION_NAME="${GITHUB_REF_NAME#v}" \
+          VESPER_VERSION_CODE="$GITHUB_RUN_NUMBER" \
+          ./gradlew lint check :app:assembleRelease --no-daemon
+
+      - name: Prepare release asset
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/vesper-home-${GITHUB_REF_NAME}.apk"
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/vesper-home-${GITHUB_REF_NAME}.apk#Vesper Home ${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --generate-notes \
+            --title "Vesper Home ${GITHUB_REF_NAME}"
+
+      - name: Remove signing files
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.android/vesper-home-release.jks" "$HOME/.android/vesper-home-release.pass"

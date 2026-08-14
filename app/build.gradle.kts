@@ -19,6 +19,8 @@ val releasePasswordFile = file(
         ?: "${System.getProperty("user.home")}/.android/vesper-home-release.pass"
 )
 val releaseSigningAvailable = releaseKeystore.isFile && releasePasswordFile.isFile
+val releaseVersionName = providers.environmentVariable("VESPER_VERSION_NAME").orNull
+val releaseVersionCode = providers.environmentVariable("VESPER_VERSION_CODE").orNull?.toInt()
 
 fun localBuildConfigValue(name: String): String =
     "\"${localProperties.getProperty(name).orEmpty().replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -42,8 +44,8 @@ android {
         applicationId = "com.sergioasenjo.vesperhome"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = releaseVersionCode ?: 1
+        versionName = releaseVersionName ?: "1.0.0"
         buildConfigField("String", "SONARR_URL", "\"\"")
         buildConfigField("String", "SONARR_API_KEY", "\"\"")
         buildConfigField("String", "RADARR_URL", "\"\"")
