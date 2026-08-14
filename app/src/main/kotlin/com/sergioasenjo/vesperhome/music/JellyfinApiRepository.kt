@@ -150,7 +150,7 @@ class JellyfinApiRepository(
 
     private fun mediaQuery(credentials: JellyfinCredentials): Map<String, String> = mapOf(
         "userId" to credentials.userId,
-        "fields" to "PrimaryImageAspectRatio",
+        "fields" to "PrimaryImageAspectRatio,RunTimeTicks",
         "enableImages" to "true",
         "imageTypeLimit" to "1",
         "enableImageTypes" to "Primary"
@@ -170,6 +170,7 @@ class JellyfinApiRepository(
             album = Album,
             streamUrl = streamUrl,
             artworkUrl = artworkUrl,
+            durationMillis = RunTimeTicks?.div(TICKS_PER_MILLISECOND),
             trackGainDb = NormalizationGain,
             albumGainDb = AlbumNormalizationGain
         )
@@ -232,6 +233,7 @@ class JellyfinApiRepository(
     }
 
     private companion object {
+        const val TICKS_PER_MILLISECOND = 10_000L
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
     }
 }

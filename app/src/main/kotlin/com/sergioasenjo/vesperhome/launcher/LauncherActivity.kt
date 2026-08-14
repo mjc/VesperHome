@@ -362,7 +362,8 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (::statusBarController.isInitialized) statusBarController.onKeyEvent(event)
+        if (::statusBarController.isInitialized && statusBarController.onKeyEvent(event)) return true
+        if (::musicController.isInitialized && musicController.onKeyEvent(event)) return true
         return super.dispatchKeyEvent(event)
     }
 

@@ -58,6 +58,7 @@ data class JellyfinAudioItem(
     val AlbumPrimaryImageTag: String? = null,
     val ImageTags: Map<String, String> = emptyMap(),
     val MediaType: String? = null,
+    val RunTimeTicks: Long? = null,
     val NormalizationGain: Double? = null,
     val AlbumNormalizationGain: Double? = null
 )
@@ -71,6 +72,7 @@ data class JellyfinTrack(
     val album: String?,
     val streamUrl: String,
     val artworkUrl: String?,
+    val durationMillis: Long? = null,
     val trackGainDb: Double? = null,
     val albumGainDb: Double? = null
 )

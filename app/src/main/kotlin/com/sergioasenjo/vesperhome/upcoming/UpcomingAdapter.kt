@@ -5,7 +5,9 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.text.format.DateFormat
+import android.view.KeyEvent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -15,6 +17,7 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ItemUpcomingMediaBinding
+import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -24,6 +27,7 @@ import java.util.Locale
 class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
     ListAdapter<UpcomingMediaItem, UpcomingAdapter.UpcomingViewHolder>(DiffCallback) {
     private var appearance = LauncherAppearance()
+    private var recyclerView: RecyclerView? = null
 
     init {
         setHasStableIds(true)
@@ -33,8 +37,19 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UpcomingViewHolder = UpcomingViewHolder(
         ItemUpcomingMediaBinding.inflate(LayoutInflater.from(parent.context), parent, false),
-        onClick
+        onClick,
+        { event, source -> recyclerView?.handleContainedHorizontalFocus(event, source) ?: true }
     )
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+        super.onAttachedToRecyclerView(recyclerView)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        if (this.recyclerView === recyclerView) this.recyclerView = null
+        super.onDetachedFromRecyclerView(recyclerView)
+    }
 
     override fun onBindViewHolder(holder: UpcomingViewHolder, position: Int) {
         holder.bind(getItem(position), appearance)
@@ -51,8 +66,11 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
         notifyItemRangeChanged(0, itemCount)
     }
 
-    class UpcomingViewHolder(private val binding: ItemUpcomingMediaBinding, onClick: (UpcomingMediaItem) -> Unit) :
-        RecyclerView.ViewHolder(binding.root) {
+    class UpcomingViewHolder(
+        private val binding: ItemUpcomingMediaBinding,
+        onClick: (UpcomingMediaItem) -> Unit,
+        onHorizontalFocusKey: (KeyEvent, View) -> Boolean
+    ) : RecyclerView.ViewHolder(binding.root) {
         private val background = GradientDrawable()
         private val artworkBackground = GradientDrawable()
         private var appearance = LauncherAppearance()
@@ -64,6 +82,7 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
             binding.artworkBackground.background = artworkBackground
             binding.artworkBackground.clipToOutline = true
             binding.root.setOnClickListener { item?.let(onClick) }
+            binding.root.setOnKeyListener { view, _, event -> onHorizontalFocusKey(event, view) }
             binding.root.setOnFocusChangeListener { _, focused -> updateFocus(focused) }
         }
 

@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
+import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -129,8 +130,18 @@ class StatusBarController(
         }
     }
 
-    fun onKeyEvent(event: KeyEvent) {
+    fun onKeyEvent(event: KeyEvent): Boolean {
         if (settings.autoHide && event.action == KeyEvent.ACTION_DOWN) revealForInteraction()
+        return handleContainedHorizontalFocus(
+            event,
+            activity.currentFocus,
+            listOf(
+                binding.openLauncherSettings,
+                binding.statusInputs,
+                binding.statusNotifications,
+                binding.statusNetwork
+            )
+        )
     }
 
     fun release() {

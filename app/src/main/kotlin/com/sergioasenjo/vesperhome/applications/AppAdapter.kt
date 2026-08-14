@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
 import coil3.load
 import com.sergioasenjo.vesperhome.databinding.ItemAppBinding
+import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
 class AppAdapter(
@@ -49,7 +50,14 @@ class AppAdapter(
             onAppClick,
             { app -> onAppLongClick(app, this) },
             ::handleMoveKey,
-            ::handleHorizontalFocusKey,
+            { event, source, onEdge ->
+                recyclerView?.handleContainedHorizontalFocus(
+                    event,
+                    source,
+                    movementStride.takeIf { it > 1 },
+                    onEdge
+                ) ?: true
+            },
             ::boundaryDirection,
             ::isMovementActive
         )
@@ -154,19 +162,6 @@ class AppAdapter(
         }
     }
 
-    private fun handleHorizontalFocusKey(app: LauncherApp, keyCode: Int): Boolean {
-        val position = currentList.indexOfFirst { it.key() == app.key() }
-        if (position == RecyclerView.NO_POSITION) return true
-        val targetPosition = position + if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1
-        val sameRow = movementStride == 1 || position / movementStride == targetPosition / movementStride
-        if (targetPosition !in currentList.indices || !sameRow) return true
-        recyclerView?.apply {
-            scrollToPosition(targetPosition)
-            post { findViewHolderForAdapterPosition(targetPosition)?.itemView?.requestFocus() }
-        }
-        return true
-    }
-
     private fun isMoving(app: LauncherApp): Boolean = movingAppKey == app.key()
 
     private fun isMovementActive(): Boolean = movingAppKey != null
@@ -194,7 +189,7 @@ class AppAdapter(
         onAppClick: (LauncherApp) -> Unit,
         onAppLongClick: (LauncherApp) -> Unit,
         onMoveKey: (Int) -> Boolean,
-        onHorizontalFocusKey: (LauncherApp, Int) -> Boolean,
+        onHorizontalFocusKey: (KeyEvent, View, (Int) -> Unit) -> Boolean,
         boundaryDirection: (LauncherApp, Int) -> Int,
         isMovementActive: () -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -218,8 +213,8 @@ class AppAdapter(
                 when {
                     movementActive && keyCode in MOVE_CONTROL_KEYS -> {
                         if (event.action == KeyEvent.ACTION_DOWN) {
-                            if (direction != 0 && event.repeatCount == 0) {
-                                animateEdgeBump(direction)
+                            if (direction != 0) {
+                                if (event.repeatCount == 0) animateEdgeBump(direction)
                             } else {
                                 onMoveKey(keyCode)
                             }
@@ -228,14 +223,7 @@ class AppAdapter(
                     }
 
                     keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        if (event.action == KeyEvent.ACTION_DOWN) {
-                            if (direction != 0) {
-                                if (event.repeatCount == 0) animateEdgeBump(direction)
-                            } else {
-                                onHorizontalFocusKey(currentApp, keyCode)
-                            }
-                        }
-                        true
+                        onHorizontalFocusKey(event, binding.root, ::animateEdgeBump)
                     }
 
                     direction != 0 -> {

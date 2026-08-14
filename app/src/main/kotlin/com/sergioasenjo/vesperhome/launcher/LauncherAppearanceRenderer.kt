@@ -23,6 +23,29 @@ internal fun renderLauncherAppearance(
         cornerRadius = dp(binding.root, ARTWORK_CORNER_RADIUS_DP).toFloat()
         setColor(palette.surface)
     }
+    contentBinding.musicArtwork.setOnFocusChangeListener { view, focused ->
+        view.foreground = GradientDrawable().apply {
+            cornerRadius = dp(view, ARTWORK_CORNER_RADIUS_DP).toFloat()
+            setColor(if (focused) palette.focusedSurface.withAlpha(ARTWORK_FOCUS_FILL_ALPHA) else Color.TRANSPARENT)
+            setStroke(
+                if (focused && appearance.showFocusOutline) dp(view, ARTWORK_FOCUS_STROKE_DP) else 0,
+                palette.focus
+            )
+        }
+        val scale = if (focused) ARTWORK_FOCUSED_SCALE else 1f
+        view.animate().cancel()
+        if (appearance.selectorTransitionAnimations) {
+            view.animate().scaleX(scale).scaleY(scale).setDuration(SELECTOR_TRANSITION_MS).start()
+        } else {
+            view.scaleX = scale
+            view.scaleY = scale
+        }
+    }
+    contentBinding.musicArtwork.isSelected = contentBinding.musicArtwork.hasFocus()
+    contentBinding.musicArtwork.onFocusChangeListener?.onFocusChange(
+        contentBinding.musicArtwork,
+        contentBinding.musicArtwork.hasFocus()
+    )
     binding.title.setTextColor(palette.secondaryText)
     contentBinding.musicTitle.setTextColor(palette.primaryText)
     contentBinding.musicArtist.setTextColor(palette.secondaryText)
@@ -48,8 +71,14 @@ internal fun renderLauncherAppearance(
 }
 
 private const val ARTWORK_CORNER_RADIUS_DP = 10
+private const val ARTWORK_FOCUS_STROKE_DP = 3
+private const val ARTWORK_FOCUS_FILL_ALPHA = 96
+private const val ARTWORK_FOCUSED_SCALE = 1.1f
+private const val SELECTOR_TRANSITION_MS = 140L
 
 private fun dp(view: View, value: Int): Int = (value * view.resources.displayMetrics.density).toInt()
+
+private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 
 private fun View.setSoundEffectsEnabledRecursively(enabled: Boolean) {
     isSoundEffectsEnabled = enabled

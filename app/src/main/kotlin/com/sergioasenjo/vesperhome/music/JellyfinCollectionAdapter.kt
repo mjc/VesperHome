@@ -3,7 +3,9 @@ package com.sergioasenjo.vesperhome.music
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.view.KeyEvent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,6 +14,7 @@ import coil3.load
 import coil3.request.error
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ItemJellyfinCollectionBinding
+import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
 sealed interface JellyfinPickerItem {
@@ -25,6 +28,7 @@ class JellyfinCollectionAdapter(
     private val onRandomClick: () -> Unit
 ) : ListAdapter<JellyfinPickerItem, JellyfinCollectionAdapter.CollectionViewHolder>(DiffCallback) {
     private var appearance = LauncherAppearance()
+    private var recyclerView: RecyclerView? = null
 
     init {
         setHasStableIds(true)
@@ -38,8 +42,19 @@ class JellyfinCollectionAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionViewHolder = CollectionViewHolder(
         ItemJellyfinCollectionBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         onCollectionClick,
-        onRandomClick
+        onRandomClick,
+        { event, source -> recyclerView?.handleContainedHorizontalFocus(event, source, GRID_COLUMNS) ?: true }
     )
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+        super.onAttachedToRecyclerView(recyclerView)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        if (this.recyclerView === recyclerView) this.recyclerView = null
+        super.onDetachedFromRecyclerView(recyclerView)
+    }
 
     override fun onBindViewHolder(holder: CollectionViewHolder, position: Int) {
         holder.bind(getItem(position), appearance)
@@ -59,7 +74,8 @@ class JellyfinCollectionAdapter(
     class CollectionViewHolder(
         private val binding: ItemJellyfinCollectionBinding,
         private val onCollectionClick: (JellyfinMusicCollection) -> Unit,
-        private val onRandomClick: () -> Unit
+        private val onRandomClick: () -> Unit,
+        onHorizontalFocusKey: (KeyEvent, View) -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private val artworkBackground = GradientDrawable()
         private var item: JellyfinPickerItem? = null
@@ -75,6 +91,7 @@ class JellyfinCollectionAdapter(
                     null -> Unit
                 }
             }
+            binding.root.setOnKeyListener { view, _, event -> onHorizontalFocusKey(event, view) }
             binding.root.setOnFocusChangeListener { _, focused -> updateFocus(focused) }
         }
 
@@ -170,5 +187,9 @@ class JellyfinCollectionAdapter(
 
         override fun areContentsTheSame(oldItem: JellyfinPickerItem, newItem: JellyfinPickerItem): Boolean =
             oldItem == newItem
+    }
+
+    private companion object {
+        const val GRID_COLUMNS = 3
     }
 }

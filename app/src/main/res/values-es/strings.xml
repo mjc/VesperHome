@@ -290,6 +290,7 @@
     <string name="next_track">Pista siguiente</string>
     <string name="random_next">Siguiente al azar</string>
     <string name="music_artwork">Carátula de la pista actual</string>
+    <string name="open_current_queue">Abrir las pistas de la lista o el álbum actual</string>
     <string name="connect_to_jellyfin_server">Conectar a %1$s en %2$s</string>
     <string name="connect_jellyfin_url">URL de conexión</string>
     <string name="jellyfin_server_url_hint">https://jellyfin.example.com</string>
@@ -308,6 +309,10 @@
     <string name="jellyfin_collection_load_failed">No se pudieron cargar las listas y los álbumes de Jellyfin.</string>
     <string name="jellyfin_collection_play_failed">No se pudo reproducir esta selección de Jellyfin.</string>
     <string name="music_picker_hint">Cruceta para explorar  |  OK para reproducir  |  Atrás para cerrar</string>
+    <string name="music_queue_hint">Cruceta para explorar  |  OK para reproducir la pista  |  Atrás para cerrar</string>
+    <string name="now_playing">Sonando</string>
+    <string name="current_track">Actual</string>
+    <string name="queue_track_description">Pista %1$d, %2$s, %3$s, %4$s, %5$s</string>
     <string name="playlist">Lista</string>
     <string name="album">Álbum</string>
     <string name="all_music">Toda la música</string>

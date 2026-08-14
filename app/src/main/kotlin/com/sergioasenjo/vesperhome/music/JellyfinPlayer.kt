@@ -74,6 +74,12 @@ class JellyfinPlayer(
         player.play()
     }
 
+    fun playAt(index: Int) = withController { player ->
+        if (index !in 0 until player.mediaItemCount) return@withController
+        player.seekToDefaultPosition(index)
+        player.play()
+    }
+
     fun stop() = withController { player ->
         player.stop()
         player.clearMediaItems()
@@ -101,6 +107,7 @@ class JellyfinPlayer(
                 .setArtworkUri(artworkUrl?.let(Uri::parse))
                 .setExtras(
                     Bundle().apply {
+                        durationMillis?.let { putLong(JellyfinPlaybackMetadata.DURATION_MS, it) }
                         trackGainDb?.let { putDouble(JellyfinPlaybackMetadata.TRACK_GAIN_DB, it) }
                         albumGainDb?.let { putDouble(JellyfinPlaybackMetadata.ALBUM_GAIN_DB, it) }
                     }
@@ -116,9 +123,12 @@ class JellyfinPlayer(
         album = mediaMetadata.albumTitle?.toString(),
         streamUrl = localConfiguration?.uri.toString(),
         artworkUrl = mediaMetadata.artworkUri?.toString(),
+        durationMillis = mediaMetadata.extras?.long(JellyfinPlaybackMetadata.DURATION_MS),
         trackGainDb = mediaMetadata.extras?.gain(JellyfinPlaybackMetadata.TRACK_GAIN_DB),
         albumGainDb = mediaMetadata.extras?.gain(JellyfinPlaybackMetadata.ALBUM_GAIN_DB)
     )
 
     private fun Bundle.gain(key: String): Double? = getDouble(key).takeIf { containsKey(key) }
+
+    private fun Bundle.long(key: String): Long? = getLong(key).takeIf { containsKey(key) }
 }

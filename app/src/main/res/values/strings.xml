@@ -290,6 +290,7 @@
     <string name="next_track">Next track</string>
     <string name="random_next">Random next</string>
     <string name="music_artwork">Current track artwork</string>
+    <string name="open_current_queue">Open current playlist or album tracks</string>
     <string name="connect_to_jellyfin_server">Connect to %1$s at %2$s</string>
     <string name="connect_jellyfin_url">Connect URL</string>
     <string name="jellyfin_server_url_hint">https://jellyfin.example.com</string>
@@ -308,6 +309,10 @@
     <string name="jellyfin_collection_load_failed">Unable to load playlists and albums from Jellyfin.</string>
     <string name="jellyfin_collection_play_failed">Unable to play this Jellyfin selection.</string>
     <string name="music_picker_hint">D-pad to browse  |  OK to play  |  Back to close</string>
+    <string name="music_queue_hint">D-pad to browse  |  OK to play track  |  Back to close</string>
+    <string name="now_playing">Playing</string>
+    <string name="current_track">Current</string>
+    <string name="queue_track_description">Track %1$d, %2$s, %3$s, %4$s, %5$s</string>
     <string name="playlist">Playlist</string>
     <string name="album">Album</string>
     <string name="all_music">All music</string>

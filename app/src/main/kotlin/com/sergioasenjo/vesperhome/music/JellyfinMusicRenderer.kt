@@ -15,6 +15,11 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
     musicPrevious.visibility = if (configured && state.collectionPlayback) View.VISIBLE else View.GONE
     musicNext.visibility = if (configured && state.collectionPlayback) View.VISIBLE else View.GONE
     musicRandom.visibility = if (configured) View.VISIBLE else View.GONE
+    musicArtwork.isFocusable = state.activeCollection != null && state.queue.isNotEmpty()
+    musicArtwork.isClickable = musicArtwork.isFocusable
+    musicArtwork.contentDescription = context.getString(
+        if (musicArtwork.isFocusable) R.string.open_current_queue else R.string.music_artwork
+    )
     musicLoading.visibility = if (state.loading) View.VISIBLE else View.GONE
     musicPlayPause.setIconResource(if (state.playing) R.drawable.ic_pause else R.drawable.ic_play)
     musicPlayPause.contentDescription = context.getString(if (state.playing) R.string.pause else R.string.play)

@@ -23,6 +23,8 @@ data class JellyfinMusicUiState(
     val track: JellyfinTrack? = null,
     val playing: Boolean = false,
     val collectionPlayback: Boolean = false,
+    val activeCollection: JellyfinMusicCollection? = null,
+    val queue: List<JellyfinTrack> = emptyList(),
     val loading: Boolean = false,
     val errorRes: Int? = null,
     val collectionPicker: JellyfinCollectionPickerState = JellyfinCollectionPickerState()
@@ -67,6 +69,8 @@ class JellyfinMusicViewModel(
                     serverName = updatedCredentials?.serverName,
                     track = if (credentialsChanged) null else mutableUiState.value.track,
                     collectionPlayback = if (credentialsChanged) false else mutableUiState.value.collectionPlayback,
+                    activeCollection = if (credentialsChanged) null else mutableUiState.value.activeCollection,
+                    queue = if (credentialsChanged) emptyList() else mutableUiState.value.queue,
                     errorRes = null,
                     collectionPicker = if (credentialsChanged) {
                         JellyfinCollectionPickerState()
@@ -98,7 +102,11 @@ class JellyfinMusicViewModel(
     fun playGlobalRandom() {
         val activeCredentials = credentials ?: return
         requestJob?.cancel()
-        mutableUiState.value = mutableUiState.value.copy(collectionPlayback = false)
+        mutableUiState.value = mutableUiState.value.copy(
+            collectionPlayback = false,
+            activeCollection = null,
+            queue = emptyList()
+        )
         requestJob = viewModelScope.launch {
             mutableUiState.value = mutableUiState.value.copy(loading = true, errorRes = null)
             try {
@@ -126,6 +134,11 @@ class JellyfinMusicViewModel(
 
     fun playNext() {
         player.playNext()
+    }
+
+    fun playQueueTrack(track: JellyfinTrack) {
+        val index = mutableUiState.value.queue.indexOfFirst { it.id == track.id }
+        if (index >= 0) player.playAt(index)
     }
 
     suspend fun jellyfinItemId(item: UpcomingMediaItem): String? {
@@ -180,6 +193,8 @@ class JellyfinMusicViewModel(
                 mutableUiState.value = mutableUiState.value.copy(
                     track = tracks.first(),
                     collectionPlayback = true,
+                    activeCollection = collection,
+                    queue = tracks,
                     loading = false
                 )
                 player.play(tracks)
@@ -222,6 +237,8 @@ class JellyfinMusicViewModel(
         mutableUiState.value = mutableUiState.value.copy(
             track = null,
             collectionPlayback = false,
+            activeCollection = null,
+            queue = emptyList(),
             loading = false,
             collectionPicker = mutableUiState.value.collectionPicker.copy(loading = false)
         )
