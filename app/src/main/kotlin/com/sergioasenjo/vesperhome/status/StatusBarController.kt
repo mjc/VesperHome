@@ -19,7 +19,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
+import com.sergioasenjo.vesperhome.media.MediaSearchActivity
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
+import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -29,6 +31,7 @@ class StatusBarController(
     private val activity: AppCompatActivity,
     private val binding: ActivityLauncherBinding,
     private val networkStatusRepository: NetworkStatusRepository,
+    private val upcomingPreferencesRepository: UpcomingPreferencesRepository,
     private val currentSettings: () -> StatusBarSettings,
     private val setAutoHide: (Boolean) -> Unit,
     private val setShowDate: (Boolean) -> Unit,
@@ -64,11 +67,21 @@ class StatusBarController(
 
     init {
         binding.statusNetwork.setOnClickListener(::openWifiSettings)
+        binding.statusMediaSearch.setOnClickListener {
+            activity.startActivity(Intent(activity, MediaSearchActivity::class.java))
+        }
         activity.lifecycleScope.launch {
             activity.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                networkStatusRepository.observeStatus().collect { status ->
-                    networkStatus = status
-                    renderNetwork()
+                launch {
+                    networkStatusRepository.observeStatus().collect { status ->
+                        networkStatus = status
+                        renderNetwork()
+                    }
+                }
+                launch {
+                    upcomingPreferencesRepository.config.collect { config ->
+                        binding.statusMediaSearch.visibility = if (config.configured) View.VISIBLE else View.GONE
+                    }
                 }
             }
         }
@@ -137,6 +150,7 @@ class StatusBarController(
             activity.currentFocus,
             listOf(
                 binding.openLauncherSettings,
+                binding.statusMediaSearch,
                 binding.statusInputs,
                 binding.statusNotifications,
                 binding.statusNetwork
@@ -206,7 +220,7 @@ class StatusBarController(
     private fun applyAppearance() {
         val palette = appearance.palette
         binding.statusDateTime.setTextColor(palette.primaryText)
-        binding.statusNetwork.backgroundTintList = ColorStateList(
+        val background = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(palette.focusedSurface, Color.TRANSPARENT)
         )
@@ -214,8 +228,11 @@ class StatusBarController(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(palette.focusedText, palette.primaryText)
         )
-        binding.statusNetwork.setTextColor(iconColors)
-        binding.statusNetwork.iconTint = iconColors
+        listOf(binding.statusMediaSearch, binding.statusNetwork).forEach { button ->
+            button.backgroundTintList = background
+            button.setTextColor(iconColors)
+            button.iconTint = iconColors
+        }
     }
 
     private fun showFormatPicker(

@@ -67,6 +67,25 @@
                 android:layout_weight="1" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/statusMediaSearch"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="@color/action_button_background"
+                android:contentDescription="@string/open_media_search"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_search"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="18dp"
+                app:iconTint="@color/action_button_text" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/statusInputs"
                 android:layout_width="38dp"
                 android:layout_height="38dp"

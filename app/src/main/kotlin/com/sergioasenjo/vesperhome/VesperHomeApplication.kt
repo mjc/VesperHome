@@ -11,6 +11,10 @@ import com.sergioasenjo.vesperhome.data.AppPreferencesRepository
 import com.sergioasenjo.vesperhome.data.CategoryRepository
 import com.sergioasenjo.vesperhome.data.LauncherDatabase
 import com.sergioasenjo.vesperhome.inputs.TvInputRepository
+import com.sergioasenjo.vesperhome.media.ArrApiClient
+import com.sergioasenjo.vesperhome.media.MediaSearchPreferencesRepository
+import com.sergioasenjo.vesperhome.media.MediaSearchRepository
+import com.sergioasenjo.vesperhome.media.TrackedMediaRepository
 import com.sergioasenjo.vesperhome.music.JellyfinApiRepository
 import com.sergioasenjo.vesperhome.music.JellyfinDiscoveryRepository
 import com.sergioasenjo.vesperhome.music.JellyfinPreferencesRepository
@@ -70,6 +74,12 @@ class AppContainer(application: Application) {
         )
     }
     val upcomingRepository by lazy { UpcomingRepository(httpClient, json, upcomingPreferencesRepository) }
+    private val arrApiClient by lazy { ArrApiClient(httpClient, json, upcomingPreferencesRepository) }
+    private val mediaSearchPreferencesRepository by lazy { MediaSearchPreferencesRepository(application) }
+    val mediaSearchRepository by lazy {
+        MediaSearchRepository(arrApiClient, mediaSearchPreferencesRepository, database.trackedMediaDao())
+    }
+    val trackedMediaRepository by lazy { TrackedMediaRepository(arrApiClient, database.trackedMediaDao()) }
     val backupRepository by lazy {
         BackupRepository(application, database, launcherSettingsRepository, wallpaperRepository, json)
     }

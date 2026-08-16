@@ -97,6 +97,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".media.MediaSearchActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".screensaver.ClockActivity"
             android:exported="false"
             android:theme="@style/Theme.VesperHome.Clock" />

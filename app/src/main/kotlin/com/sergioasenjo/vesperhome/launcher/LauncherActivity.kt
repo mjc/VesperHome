@@ -62,6 +62,7 @@ class LauncherActivity : AppCompatActivity() {
     private var musicInitialized = false
     private var preserveMusicOnStop = false
     private var fullyDrawnReported = false
+    private val backActionGuard = LauncherBackActionGuard()
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -138,6 +139,7 @@ class LauncherActivity : AppCompatActivity() {
             activity = this,
             binding = binding,
             networkStatusRepository = container.networkStatusRepository,
+            upcomingPreferencesRepository = container.upcomingPreferencesRepository,
             currentSettings = { viewModel.uiState.value.statusBar },
             setAutoHide = viewModel::setStatusBarAutoHide,
             setShowDate = viewModel::setStatusBarShowDate,
@@ -185,7 +187,9 @@ class LauncherActivity : AppCompatActivity() {
             statusBarController,
             container.systemScreensaverRepository
         )
-        onBackPressedDispatcher.addCallback(this) { preserveMusicOnStop = screensaverController.handleBack() }
+        onBackPressedDispatcher.addCallback(this) {
+            if (backActionGuard.consumeIntentionalBack()) preserveMusicOnStop = screensaverController.handleBack()
+        }
         settingsPanelPageToRestore = savedInstanceState
             ?.takeIf { it.getBoolean(STATE_SETTINGS_PANEL_OPEN) }
             ?.getString(STATE_SETTINGS_PANEL_PAGE)
@@ -325,6 +329,7 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        backActionGuard.onResume()
         musicViewModel.onHostStarted()
         if (::notificationController.isInitialized) notificationController.refreshPermissions()
         if (::brightnessController.isInitialized) {
@@ -337,6 +342,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        backActionGuard.onStop()
         if (musicInitialized && !preserveMusicOnStop) musicController.onHostStopped()
         preserveMusicOnStop = false
         super.onStop()
@@ -362,6 +368,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        backActionGuard.onKeyEvent(event, hasWindowFocus())
         if (::statusBarController.isInitialized && statusBarController.onKeyEvent(event)) return true
         if (::musicController.isInitialized && musicController.onKeyEvent(event)) return true
         return super.dispatchKeyEvent(event)
