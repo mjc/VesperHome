@@ -43,10 +43,11 @@ class ClockDreamService : DreamService() {
 
     private fun scheduleStandby(delaySetting: ScreensaverStandbyDelay) {
         standbyJob?.cancel()
+        isScreenBright = true
         val delayMillis = delaySetting.milliseconds ?: return
         standbyJob = serviceScope.launch {
             delay(delayMillis)
-            finish()
+            isScreenBright = false
         }
     }
 }
