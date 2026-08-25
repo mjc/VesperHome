@@ -31,6 +31,12 @@
     </td>
   </tr>
   <tr>
+    <td colspan="2" valign="top">
+      <strong>Search and add from the TV</strong><br>
+      Search Sonarr and Radarr without leaving the launcher, choose monitoring and quality options, follow download progress under Added from TV, and open available titles directly in Jellyfin.
+    </td>
+  </tr>
+  <tr>
     <td width="50%" valign="top">
       <strong>Your screen</strong><br>
       Choose light or dark themes, built-in or custom wallpapers, day and night scheduling, and focused-card animations.
@@ -51,6 +57,12 @@
     </td>
   </tr>
 </table>
+
+## Media Services
+
+Open **Vesper Home > Settings > Integrations > Media services** to connect Jellyfin and configure Sonarr or Radarr. Once Sonarr or Radarr is connected, use the search button in the launcher status bar to find movies and series, select the root folder, quality profile, monitoring mode, tags, and download options, then add the title from the TV.
+
+Titles added this way appear under **Added from TV**, where Vesper shows availability and download progress. Select a tracked title to open its matching movie or series directly in the connected Jellyfin TV app.
 
 ## Set as Home
 
