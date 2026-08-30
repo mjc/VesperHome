@@ -23,6 +23,7 @@ import com.sergioasenjo.vesperhome.notifications.NotificationRepository
 import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.platform.PlatformHomeRepository
 import com.sergioasenjo.vesperhome.profiles.ProfileRepository
+import com.sergioasenjo.vesperhome.security.PinRepository
 import com.sergioasenjo.vesperhome.screensaver.DreamStateTracker
 import com.sergioasenjo.vesperhome.screensaver.SystemScreensaverRepository
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsRepository
@@ -87,5 +88,6 @@ class AppContainer(application: Application) {
     }
     val safetyBackupSettingsRepository by lazy { SafetyBackupSettingsRepository(application) }
     val profileRepository by lazy { ProfileRepository(application, backupRepository, json) }
+    val pinRepository by lazy { PinRepository(application) }
     val diagnosticsRepository = DiagnosticsRepository(application, homeRepository)
 }

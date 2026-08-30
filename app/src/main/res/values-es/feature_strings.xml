@@ -29,4 +29,28 @@
     <string name="profile_renamed">Perfil renombrado.</string>
     <string name="profile_deleted">Perfil eliminado.</string>
     <string name="profile_operation_failed">La operación del perfil falló. Los nombres deben ser únicos.</string>
+
+    <string name="pin_and_security">PIN y seguridad</string>
+    <string name="set_pin">Establecer un PIN de 4 a 8 dígitos</string>
+    <string name="confirm_pin">Confirmar PIN</string>
+    <string name="enter_pin">Introducir PIN</string>
+    <string name="change_pin">Cambiar PIN</string>
+    <string name="remove_pin">Eliminar PIN</string>
+    <string name="remove_pin_confirmation">¿Eliminar el PIN? También se borrarán los bloqueos de aplicaciones y la protección de acciones.</string>
+    <string name="pin_removed">PIN eliminado.</string>
+    <string name="pin_changed">PIN cambiado.</string>
+    <string name="pin_mismatch">Los PIN no coinciden.</string>
+    <string name="incorrect_pin">PIN incorrecto.</string>
+    <string name="pin_length_error">Introduce entre 4 y 8 dígitos.</string>
+    <string name="pin_operation_failed">No se pudo guardar el PIN.</string>
+    <string name="pin_temporarily_blocked">Demasiados intentos incorrectos. El PIN está bloqueado durante 30 segundos.</string>
+    <string name="pin_try_again_later">Inténtalo de nuevo en %1$d segundos.</string>
+    <string name="pin_protection_value">%1$s: %2$s</string>
+    <string name="protect_media_integrations">Proteger integraciones multimedia</string>
+    <string name="protect_app_management">Proteger gestión de aplicaciones</string>
+    <string name="protect_backups_profiles">Proteger copias y perfiles</string>
+    <string name="lock_application">Bloquear aplicación con PIN</string>
+    <string name="unlock_application">Quitar bloqueo por PIN</string>
+    <string name="application_locked">Aplicación bloqueada.</string>
+    <string name="application_unlocked">Aplicación desbloqueada.</string>
 </resources>

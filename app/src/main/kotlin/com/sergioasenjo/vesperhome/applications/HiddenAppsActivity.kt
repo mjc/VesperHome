@@ -12,12 +12,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.VesperHomeApplication
 import com.sergioasenjo.vesperhome.databinding.ActivityHiddenAppsBinding
+import com.sergioasenjo.vesperhome.security.PinController
 import com.sergioasenjo.vesperhome.settings.ManagementScreenAppearanceRenderer
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class HiddenAppsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHiddenAppsBinding
+    private lateinit var pinController: PinController
     private var displayedHiddenApps = false
     private val viewModel: HiddenAppsViewModel by viewModels {
         val container = (application as VesperHomeApplication).container
@@ -29,6 +31,7 @@ class HiddenAppsActivity : AppCompatActivity() {
         binding = ActivityHiddenAppsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         val container = (application as VesperHomeApplication).container
+        pinController = PinController(this, lifecycleScope, container.pinRepository)
         val appearanceRenderer = ManagementScreenAppearanceRenderer(
             binding.root,
             binding.wallpaper,
@@ -37,8 +40,8 @@ class HiddenAppsActivity : AppCompatActivity() {
         )
 
         val appAdapter = AppAdapter(
-            onAppClick = viewModel::restore,
-            onAppLongClick = { app, _ -> viewModel.restore(app) }
+            onAppClick = { app -> pinController.authorizeAppManagement { viewModel.restore(app) } },
+            onAppLongClick = { app, _ -> pinController.authorizeAppManagement { viewModel.restore(app) } }
         )
         appAdapter.setItemSize(dp(244), dp(176))
         binding.apps.apply {

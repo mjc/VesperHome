@@ -29,4 +29,28 @@
     <string name="profile_renamed">Profile renamed.</string>
     <string name="profile_deleted">Profile deleted.</string>
     <string name="profile_operation_failed">The profile operation failed. Profile names must be unique.</string>
+
+    <string name="pin_and_security">PIN and security</string>
+    <string name="set_pin">Set a 4 to 8 digit PIN</string>
+    <string name="confirm_pin">Confirm PIN</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="remove_pin">Remove PIN</string>
+    <string name="remove_pin_confirmation">Remove the PIN? Application locks and protected-action settings will also be cleared.</string>
+    <string name="pin_removed">PIN removed.</string>
+    <string name="pin_changed">PIN changed.</string>
+    <string name="pin_mismatch">The PINs did not match.</string>
+    <string name="incorrect_pin">Incorrect PIN.</string>
+    <string name="pin_length_error">Enter between 4 and 8 digits.</string>
+    <string name="pin_operation_failed">The PIN could not be saved.</string>
+    <string name="pin_temporarily_blocked">Too many incorrect attempts. PIN entry is blocked for 30 seconds.</string>
+    <string name="pin_try_again_later">Try again in %1$d seconds.</string>
+    <string name="pin_protection_value">%1$s: %2$s</string>
+    <string name="protect_media_integrations">Protect media integrations</string>
+    <string name="protect_app_management">Protect app management</string>
+    <string name="protect_backups_profiles">Protect backups and profiles</string>
+    <string name="lock_application">Lock application with PIN</string>
+    <string name="unlock_application">Remove PIN lock</string>
+    <string name="application_locked">Application locked.</string>
+    <string name="application_unlocked">Application unlocked.</string>
 </resources>

@@ -28,6 +28,7 @@ enum class LauncherSettingsAction {
     OPEN_HOME_BUTTON_FIX,
     BACKUP_AND_RESTORE,
     MANAGE_PROFILES,
+    PIN_AND_SECURITY,
     ABOUT_AND_DIAGNOSTICS,
     OPEN_SYSTEM_SETTINGS,
     MANAGE_CATEGORIES,
@@ -90,6 +91,7 @@ class LauncherSettingsPanel(
         bindAction(binding.homeButtonFix, LauncherSettingsAction.OPEN_HOME_BUTTON_FIX)
         bindAction(binding.backupAndRestore, LauncherSettingsAction.BACKUP_AND_RESTORE)
         bindAction(binding.manageProfiles, LauncherSettingsAction.MANAGE_PROFILES)
+        bindAction(binding.pinAndSecurity, LauncherSettingsAction.PIN_AND_SECURITY)
         bindAction(binding.aboutAndDiagnostics, LauncherSettingsAction.ABOUT_AND_DIAGNOSTICS)
         bindAction(binding.openSystemSettings, LauncherSettingsAction.OPEN_SYSTEM_SETTINGS)
         bindAction(binding.manageCategories, LauncherSettingsAction.MANAGE_CATEGORIES)

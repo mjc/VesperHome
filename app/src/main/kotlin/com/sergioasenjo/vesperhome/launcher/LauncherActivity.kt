@@ -31,6 +31,7 @@ import com.sergioasenjo.vesperhome.notifications.NotificationController
 import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettingsAction
+import com.sergioasenjo.vesperhome.security.PinController
 import com.sergioasenjo.vesperhome.settings.LauncherSettings
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanel
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanelPage
@@ -57,6 +58,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var backupController: BackupController
     private lateinit var aboutController: AboutController
     private lateinit var profileController: ProfileController
+    private lateinit var pinController: PinController
     private lateinit var settingsActionController: LauncherSettingsActionController
     private lateinit var musicController: JellyfinMusicController
     private var settingsPanel: LauncherSettingsPanel? = null
@@ -98,7 +100,9 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val container = (application as VesperHomeApplication).container
         homeButtonFixController = HomeButtonFixController(this)
+        pinController = PinController(this, lifecycleScope, container.pinRepository)
         brightnessController = BrightnessController(
             activity = this,
             scope = lifecycleScope,
@@ -127,17 +131,23 @@ class LauncherActivity : AppCompatActivity() {
             activity = this,
             categories = { viewModel.uiState.value.categories },
             isReorderable = { contentRenderer.isReorderable(it) },
-            onFavoriteChanged = viewModel::toggleFavorite,
-            onHidden = { viewModel.setHidden(it, true) },
-            onNameChanged = viewModel::setCustomAppName,
+            onFavoriteChanged = { app -> protectAppManagement { viewModel.toggleFavorite(app) } },
+            onHidden = { app -> protectAppManagement { viewModel.setHidden(app, true) } },
+            onNameChanged = { app, name -> protectAppManagement { viewModel.setCustomAppName(app, name) } },
             onApplicationDetails = viewModel::openApplicationDetails,
-            onUninstall = viewModel::uninstall,
-            onCategoryMembershipChanged = viewModel::setCategoryMembership,
-            onCustomBannerSelected = viewModel::importCustomBanner,
-            onCustomBannerRemoved = viewModel::removeCustomBanner,
+            onUninstall = { app -> protectAppManagement { viewModel.uninstall(app) } },
+            onCategoryMembershipChanged = { category, app, included ->
+                protectAppManagement { viewModel.setCategoryMembership(category, app, included) }
+            },
+            onCustomBannerSelected = { app, uri ->
+                protectAppManagement { viewModel.importCustomBanner(app, uri) }
+            },
+            onCustomBannerRemoved = { app -> protectAppManagement { viewModel.removeCustomBanner(app) } },
+            isPinLocked = pinController::isAppLocked,
+            onPinLockChanged = pinController::toggleAppLock,
+            onReorder = { adapter, app -> protectAppManagement { adapter.startMoving(app) } },
             onPickerUnavailable = { showMessage(R.string.custom_banner_picker_unavailable) }
         )
-        val container = (application as VesperHomeApplication).container
         statusBarController = StatusBarController(
             activity = this,
             binding = binding,
@@ -196,6 +206,7 @@ class LauncherActivity : AppCompatActivity() {
             backupController,
             aboutController,
             profileController,
+            pinController,
             ::showSortDialog
         )
         screensaverController = createScreensaverController(
@@ -239,10 +250,12 @@ class LauncherActivity : AppCompatActivity() {
             context = this,
             binding = contentBinding,
             emptyStateFocusTarget = binding.openLauncherSettings,
-            onAppClick = viewModel::launch,
+            onAppClick = { app -> pinController.authorizeApp(app) { viewModel.launch(app) } },
             onAppLongClick = ::showAppActions,
-            onManualOrderChanged = viewModel::setManualAppOrder,
-            onCategoryOrderChanged = viewModel::setCategoryAppOrder
+            onManualOrderChanged = { apps -> protectAppManagement { viewModel.setManualAppOrder(apps) } },
+            onCategoryOrderChanged = { categoryId, apps ->
+                protectAppManagement { viewModel.setCategoryAppOrder(categoryId, apps) }
+            }
         )
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -421,6 +434,10 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun showSortDialog() {
         showApplicationSortDialog(this, viewModel.uiState.value.applicationSortMode, viewModel::setApplicationSortMode)
+    }
+
+    private fun protectAppManagement(action: () -> Unit) {
+        pinController.authorizeAppManagement(action)
     }
 
     private fun showAppActions(app: LauncherApp, adapter: AppAdapter) = appActionsController.show(app, adapter)

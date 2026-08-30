@@ -22,6 +22,9 @@ class AppActionsController(
     private val onCategoryMembershipChanged: (LauncherCategory, LauncherApp, Boolean) -> Unit,
     private val onCustomBannerSelected: (LauncherApp, android.net.Uri) -> Unit,
     private val onCustomBannerRemoved: (LauncherApp) -> Unit,
+    private val isPinLocked: (LauncherApp) -> Boolean,
+    private val onPinLockChanged: (LauncherApp) -> Unit,
+    private val onReorder: (AppAdapter, LauncherApp) -> Unit,
     private val onPickerUnavailable: () -> Unit
 ) {
     private var pendingBannerApp: LauncherApp? = null
@@ -45,8 +48,11 @@ class AppActionsController(
         }
         actions += activity.getString(R.string.application_info) to { onApplicationDetails(app) }
         actions += activity.getString(R.string.uninstall_application) to { onUninstall(app) }
+        actions += activity.getString(
+            if (isPinLocked(app)) R.string.unlock_application else R.string.lock_application
+        ) to { onPinLockChanged(app) }
         if (isReorderable(adapter)) {
-            actions += activity.getString(R.string.reorder_application) to { adapter.startMoving(app) }
+            actions += activity.getString(R.string.reorder_application) to { onReorder(adapter, app) }
         }
         categories().forEach { category ->
             val included = category.apps.any { it.packageName == app.packageName }
