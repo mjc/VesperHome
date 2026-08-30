@@ -53,4 +53,14 @@
     <string name="unlock_application">Quitar bloqueo por PIN</string>
     <string name="application_locked">Aplicación bloqueada.</string>
     <string name="application_unlocked">Aplicación desbloqueada.</string>
+
+    <string name="check_for_updates">Buscar actualizaciones</string>
+    <string name="release_update_description">Comprueba la última versión estable de GitHub. Vesper Home no descargará ni abrirá la versión.</string>
+    <string name="release_check_failed">No se pudo cargar la última versión. Comprueba la conexión de red e inténtalo de nuevo.</string>
+    <string name="release_update_available">Hay una versión más reciente disponible.</string>
+    <string name="release_up_to_date">Esta es la versión más reciente.</string>
+    <string name="release_versions">Instalada: %1$s  |  Más reciente: %2$s</string>
+    <string name="release_date">Publicada: %1$s</string>
+    <string name="release_no_notes">No se proporcionaron notas de la versión.</string>
+    <string name="check_again">Comprobar de nuevo</string>
 </resources>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:paddingHorizontal="14dp"
+        android:letterSpacing="0.14"
+        android:tag="accent"
+        android:text="@string/system"
+        android:textAllCaps="true"
+        android:textColor="@color/accent"
+        android:textSize="11sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/backupAndRestore"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="@color/panel_row_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="14dp"
+        android:text="@string/backup_and_restore"
+        android:textColor="@color/action_button_text"
+        android:textSize="14sp"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_backup"
+        app:iconPadding="12dp"
+        app:iconSize="18dp"
+        app:iconTint="@color/action_button_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/pinAndSecurity"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:backgroundTint="@color/panel_row_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="14dp"
+        android:text="@string/pin_and_security"
+        android:textColor="@color/action_button_text"
+        android:textSize="14sp"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_tune"
+        app:iconPadding="12dp"
+        app:iconSize="18dp"
+        app:iconTint="@color/action_button_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/checkForUpdates"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:backgroundTint="@color/panel_row_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="14dp"
+        android:text="@string/check_for_updates"
+        android:textColor="@color/action_button_text"
+        android:textSize="14sp"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_info"
+        app:iconPadding="12dp"
+        app:iconSize="18dp"
+        app:iconTint="@color/action_button_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/aboutAndDiagnostics"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:backgroundTint="@color/panel_row_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="14dp"
+        android:text="@string/about_and_diagnostics"
+        android:textColor="@color/action_button_text"
+        android:textSize="14sp"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_info"
+        app:iconPadding="12dp"
+        app:iconSize="18dp"
+        app:iconTint="@color/action_button_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/openSystemSettings"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:backgroundTint="@color/panel_row_background"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="14dp"
+        android:text="@string/system_settings"
+        android:textColor="@color/action_button_text"
+        android:textSize="14sp"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_tune"
+        app:iconPadding="12dp"
+        app:iconSize="18dp"
+        app:iconTint="@color/action_button_text" />
+
+</LinearLayout>

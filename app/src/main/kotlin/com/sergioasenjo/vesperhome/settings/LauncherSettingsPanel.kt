@@ -29,6 +29,7 @@ enum class LauncherSettingsAction {
     BACKUP_AND_RESTORE,
     MANAGE_PROFILES,
     PIN_AND_SECURITY,
+    CHECK_FOR_UPDATES,
     ABOUT_AND_DIAGNOSTICS,
     OPEN_SYSTEM_SETTINGS,
     MANAGE_CATEGORIES,
@@ -57,7 +58,7 @@ class LauncherSettingsPanel(
     private val onDismissed: () -> Unit
 ) {
     private val binding = DialogLauncherSettingsBinding.inflate(android.view.LayoutInflater.from(context))
-    private val appearanceBinder = AppearanceSettingsPanelBinder(binding, onAppearanceAction)
+    private val appearanceBinder = AppearanceSettingsPanelBinder(binding.appearancePage, onAppearanceAction)
     private val wallpaperBinder = WallpaperSettingsPanelBinder(binding.wallpaperPage, onWallpaperAction)
     private val statusBarBinder = StatusBarSettingsPanelBinder(binding.statusBarPage, onStatusBarAction)
     private val screensaverBinder = ScreensaverSettingsPanelBinder(binding.screensaverPage, onScreensaverAction)
@@ -89,11 +90,12 @@ class LauncherSettingsPanel(
     init {
         bindAction(binding.setDefaultLauncher, LauncherSettingsAction.SET_DEFAULT_HOME)
         bindAction(binding.homeButtonFix, LauncherSettingsAction.OPEN_HOME_BUTTON_FIX)
-        bindAction(binding.backupAndRestore, LauncherSettingsAction.BACKUP_AND_RESTORE)
+        bindAction(binding.systemActions.backupAndRestore, LauncherSettingsAction.BACKUP_AND_RESTORE)
         bindAction(binding.manageProfiles, LauncherSettingsAction.MANAGE_PROFILES)
-        bindAction(binding.pinAndSecurity, LauncherSettingsAction.PIN_AND_SECURITY)
-        bindAction(binding.aboutAndDiagnostics, LauncherSettingsAction.ABOUT_AND_DIAGNOSTICS)
-        bindAction(binding.openSystemSettings, LauncherSettingsAction.OPEN_SYSTEM_SETTINGS)
+        bindAction(binding.systemActions.pinAndSecurity, LauncherSettingsAction.PIN_AND_SECURITY)
+        bindAction(binding.systemActions.checkForUpdates, LauncherSettingsAction.CHECK_FOR_UPDATES)
+        bindAction(binding.systemActions.aboutAndDiagnostics, LauncherSettingsAction.ABOUT_AND_DIAGNOSTICS)
+        bindAction(binding.systemActions.openSystemSettings, LauncherSettingsAction.OPEN_SYSTEM_SETTINGS)
         bindAction(binding.manageCategories, LauncherSettingsAction.MANAGE_CATEGORIES)
         bindAction(binding.manageHiddenApps, LauncherSettingsAction.MANAGE_HIDDEN_APPS)
         bindAction(binding.sortApplications, LauncherSettingsAction.SORT_APPLICATIONS)
@@ -210,13 +212,13 @@ class LauncherSettingsPanel(
         binding.statusBarPage.root.visibility = View.GONE
         binding.screensaverPage.root.visibility = View.GONE
         binding.brightnessPage.root.visibility = View.GONE
-        binding.appearancePage.visibility = View.VISIBLE
-        binding.appearancePage.scrollTo(0, 0)
-        if (requestFocus) binding.theme.post { binding.theme.requestFocus() }
+        binding.appearancePage.root.visibility = View.VISIBLE
+        binding.appearancePage.root.scrollTo(0, 0)
+        if (requestFocus) binding.appearancePage.theme.post { binding.appearancePage.theme.requestFocus() }
     }
 
     private fun showMainPage(requestFocus: Boolean = true) {
-        binding.appearancePage.visibility = View.GONE
+        binding.appearancePage.root.visibility = View.GONE
         binding.wallpaperPage.root.visibility = View.GONE
         binding.statusBarPage.root.visibility = View.GONE
         binding.screensaverPage.root.visibility = View.GONE
@@ -225,11 +227,11 @@ class LauncherSettingsPanel(
         if (requestFocus) binding.openAppearance.post { binding.openAppearance.requestFocus() }
     }
 
-    private fun isAppearancePageVisible(): Boolean = binding.appearancePage.visibility == View.VISIBLE
+    private fun isAppearancePageVisible(): Boolean = binding.appearancePage.root.visibility == View.VISIBLE
 
     private fun showWallpaperPage(requestFocus: Boolean = true) {
         binding.mainPage.visibility = View.GONE
-        binding.appearancePage.visibility = View.GONE
+        binding.appearancePage.root.visibility = View.GONE
         binding.statusBarPage.root.visibility = View.GONE
         binding.screensaverPage.root.visibility = View.GONE
         binding.brightnessPage.root.visibility = View.GONE
@@ -246,7 +248,7 @@ class LauncherSettingsPanel(
 
     private fun showStatusBarPage(requestFocus: Boolean = true) {
         binding.mainPage.visibility = View.GONE
-        binding.appearancePage.visibility = View.GONE
+        binding.appearancePage.root.visibility = View.GONE
         binding.wallpaperPage.root.visibility = View.GONE
         binding.screensaverPage.root.visibility = View.GONE
         binding.brightnessPage.root.visibility = View.GONE
@@ -259,7 +261,7 @@ class LauncherSettingsPanel(
 
     private fun showScreensaverPage(requestFocus: Boolean = true) {
         binding.mainPage.visibility = View.GONE
-        binding.appearancePage.visibility = View.GONE
+        binding.appearancePage.root.visibility = View.GONE
         binding.wallpaperPage.root.visibility = View.GONE
         binding.statusBarPage.root.visibility = View.GONE
         binding.brightnessPage.root.visibility = View.GONE
@@ -272,7 +274,7 @@ class LauncherSettingsPanel(
 
     private fun showBrightnessPage(requestFocus: Boolean = true) {
         binding.mainPage.visibility = View.GONE
-        binding.appearancePage.visibility = View.GONE
+        binding.appearancePage.root.visibility = View.GONE
         binding.wallpaperPage.root.visibility = View.GONE
         binding.statusBarPage.root.visibility = View.GONE
         binding.screensaverPage.root.visibility = View.GONE
@@ -323,7 +325,7 @@ class LauncherSettingsPanel(
 
     private fun requestInitialFocus() {
         val firstAction = when {
-            isAppearancePageVisible() -> binding.theme
+            isAppearancePageVisible() -> binding.appearancePage.theme
 
             isWallpaperPageVisible() -> binding.wallpaperPage.timeBasedWallpaper
 

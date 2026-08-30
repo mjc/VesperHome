@@ -3,13 +3,10 @@ package com.sergioasenjo.vesperhome.launcher
 import android.os.Bundle
 import android.os.Looper
 import android.view.KeyEvent
-import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.emoji2.text.DefaultEmojiCompatConfig
-import androidx.emoji2.text.EmojiCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -18,8 +15,6 @@ import com.sergioasenjo.vesperhome.VesperHomeApplication
 import com.sergioasenjo.vesperhome.about.AboutController
 import com.sergioasenjo.vesperhome.accessibility.HomeButtonFixController
 import com.sergioasenjo.vesperhome.applications.AppActionsController
-import com.sergioasenjo.vesperhome.applications.AppAdapter
-import com.sergioasenjo.vesperhome.applications.LauncherApp
 import com.sergioasenjo.vesperhome.backup.BackupController
 import com.sergioasenjo.vesperhome.brightness.BrightnessController
 import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
@@ -32,11 +27,10 @@ import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettingsAction
 import com.sergioasenjo.vesperhome.security.PinController
-import com.sergioasenjo.vesperhome.settings.LauncherSettings
-import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanel
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanelPage
 import com.sergioasenjo.vesperhome.status.StatusBarController
 import com.sergioasenjo.vesperhome.status.StatusBarSettingsAction
+import com.sergioasenjo.vesperhome.update.ReleaseUpdateController
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperRenderer
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperSettingsAction
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperSettingsCoordinator
@@ -59,14 +53,15 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var aboutController: AboutController
     private lateinit var profileController: ProfileController
     private lateinit var pinController: PinController
+    private lateinit var releaseUpdateController: ReleaseUpdateController
     private lateinit var settingsActionController: LauncherSettingsActionController
+    private lateinit var stateRenderer: LauncherStateRenderer
     private lateinit var musicController: JellyfinMusicController
-    private var settingsPanel: LauncherSettingsPanel? = null
+    private lateinit var settingsHost: LauncherSettingsHost
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
     private var musicInitialized = false
     private var preserveMusicOnStop = false
-    private var fullyDrawnReported = false
     private val backActionGuard = LauncherBackActionGuard()
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -111,11 +106,13 @@ class LauncherActivity : AppCompatActivity() {
             setBrightness = viewModel::setBrightness,
             onPeriodChanged = {
                 val state = viewModel.uiState.value
-                settingsPanel?.renderBrightness(
-                    state.brightness,
-                    brightnessController.hasPermission(),
-                    state.appearance
-                )
+                if (::settingsHost.isInitialized) {
+                    settingsHost.panel.renderBrightness(
+                        state.brightness,
+                        brightnessController.hasPermission(),
+                        state.appearance
+                    )
+                }
             }
         )
         wallpaperRenderer = WallpaperRenderer(binding.root, binding.wallpaper)
@@ -195,7 +192,14 @@ class LauncherActivity : AppCompatActivity() {
             scope = lifecycleScope,
             repository = container.profileRepository,
             settingsRepository = container.launcherSettingsRepository,
-            currentSettings = { viewModel.uiState.value.toProfileSettings() },
+            currentSettings = { viewModel.uiState.value.toLauncherSettings() },
+            currentAppearance = { viewModel.uiState.value.appearance },
+            onDismissed = { binding.openLauncherSettings.requestFocus() }
+        )
+        releaseUpdateController = ReleaseUpdateController(
+            activity = this,
+            scope = lifecycleScope,
+            repository = container.releaseUpdateRepository,
             currentAppearance = { viewModel.uiState.value.appearance },
             onDismissed = { binding.openLauncherSettings.requestFocus() }
         )
@@ -207,7 +211,19 @@ class LauncherActivity : AppCompatActivity() {
             aboutController,
             profileController,
             pinController,
+            releaseUpdateController,
             ::showSortDialog
+        )
+        settingsHost = LauncherSettingsHost(
+            context = this,
+            homeButtonFixEnabled = homeButtonFixController::isEnabled,
+            brightnessController = brightnessController,
+            onAction = settingsActionController::handle,
+            onAppearanceAction = viewModel::handleAppearanceAction,
+            onWallpaperAction = ::handleWallpaperAction,
+            onStatusBarAction = ::handleStatusBarAction,
+            onScreensaverAction = ::handleScreensaverAction,
+            onDismissed = { binding.openLauncherSettings.requestFocus() }
         )
         screensaverController = createScreensaverController(
             this,
@@ -218,26 +234,13 @@ class LauncherActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this) {
             if (backActionGuard.consumeIntentionalBack()) preserveMusicOnStop = screensaverController.handleBack()
         }
-        settingsPanelPageToRestore = savedInstanceState
-            ?.takeIf { it.getBoolean(STATE_SETTINGS_PANEL_OPEN) }
-            ?.getString(STATE_SETTINGS_PANEL_PAGE)
-            ?.let { storedPage -> LauncherSettingsPanelPage.entries.firstOrNull { it.name == storedPage } }
+        settingsPanelPageToRestore = restoredSettingsPage(savedInstanceState)
 
         binding.openLauncherSettings.setOnClickListener {
             initializeLauncher()
             viewModel.refreshHomeStatus()
             val state = viewModel.uiState.value
-            getOrCreateSettingsPanel().show(
-                state.isDefaultLauncher,
-                homeButtonFixController.isEnabled(),
-                state.applicationSortMode,
-                state.appearance,
-                state.wallpaper,
-                state.statusBar,
-                state.screensaver,
-                state.brightness,
-                brightnessController.hasPermission()
-            )
+            settingsHost.show(state)
         }
         binding.root.postOnAnimation(::initializeLauncher)
     }
@@ -251,68 +254,37 @@ class LauncherActivity : AppCompatActivity() {
             binding = contentBinding,
             emptyStateFocusTarget = binding.openLauncherSettings,
             onAppClick = { app -> pinController.authorizeApp(app) { viewModel.launch(app) } },
-            onAppLongClick = ::showAppActions,
+            onAppLongClick = appActionsController::show,
             onManualOrderChanged = { apps -> protectAppManagement { viewModel.setManualAppOrder(apps) } },
             onCategoryOrderChanged = { categoryId, apps ->
                 protectAppManagement { viewModel.setCategoryAppOrder(categoryId, apps) }
             }
         )
+        stateRenderer = LauncherStateRenderer(
+            activity = this,
+            binding = binding,
+            contentBinding = contentBinding,
+            contentRenderer = contentRenderer,
+            wallpaperRenderer = wallpaperRenderer,
+            brightnessController = brightnessController,
+            screensaverController = screensaverController,
+            homeButtonFixController = homeButtonFixController,
+            statusBarController = statusBarController,
+            tvInputController = tvInputController,
+            notificationController = notificationController,
+            backupController = backupController,
+            aboutController = aboutController,
+            profileController = profileController,
+            releaseUpdateController = releaseUpdateController,
+            currentSettingsPanel = { settingsHost.panel },
+            currentMusicController = { if (::musicController.isInitialized) musicController else null },
+            showSettingsPanel = settingsHost::show,
+            initialPageToRestore = settingsPanelPageToRestore
+        )
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.uiState.collect { state ->
-                        brightnessController.render(state.brightness)
-                        screensaverController.applySystemConfiguration(state.screensaver)
-                        settingsPanel?.render(
-                            state.isDefaultLauncher,
-                            homeButtonFixController.isEnabled(),
-                            state.applicationSortMode,
-                            state.appearance,
-                            state.wallpaper,
-                            state.statusBar,
-                            state.screensaver,
-                            state.brightness,
-                            brightnessController.hasPermission()
-                        )
-                        val homeAppearance = state.appearance.forWallpaper(state.wallpaper)
-                        if (::musicController.isInitialized) {
-                            musicController.setAppearance(homeAppearance)
-                            musicController.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
-                        }
-                        renderLauncherAppearance(binding, contentBinding, homeAppearance)
-                        statusBarController.render(state.statusBar, homeAppearance)
-                        tvInputController.render(state.statusBar.showInputs, homeAppearance)
-                        notificationController.render(state.statusBar, homeAppearance, state.appearance)
-                        backupController.renderAppearance()
-                        aboutController.renderAppearance()
-                        profileController.render(state.toProfileSettings(), homeAppearance)
-                        wallpaperRenderer.render(state.wallpaper, state.appearance.palette)
-                        contentRenderer.render(state.copy(appearance = homeAppearance))
-                        if (!state.loading) {
-                            settingsPanelPageToRestore?.let { page ->
-                                getOrCreateSettingsPanel().show(
-                                    state.isDefaultLauncher,
-                                    homeButtonFixController.isEnabled(),
-                                    state.applicationSortMode,
-                                    state.appearance,
-                                    state.wallpaper,
-                                    state.statusBar,
-                                    state.screensaver,
-                                    state.brightness,
-                                    brightnessController.hasPermission(),
-                                    page
-                                )
-                                settingsPanelPageToRestore = null
-                            }
-                        }
-                        if (!state.loading && state.isDefaultLauncher == false && currentFocus == null) {
-                            binding.openLauncherSettings.post { binding.openLauncherSettings.requestFocus() }
-                        }
-                        if (!state.loading && !fullyDrawnReported) {
-                            fullyDrawnReported = true
-                            binding.root.postOnAnimation(::reportFullyDrawnAndInitializeEmojiCompat)
-                        }
-                    }
+                    viewModel.uiState.collect(stateRenderer::render)
                 }
                 launch {
                     viewModel.events.collect { event ->
@@ -351,19 +323,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun reportFullyDrawnAndInitializeEmojiCompat() {
-        reportFullyDrawn()
-        binding.root.postDelayed(::initializeEmojiCompat, EMOJI_INITIALIZATION_DELAY_MS)
-    }
-
-    private fun initializeEmojiCompat() {
-        if (isFinishing || isDestroyed) return
-        val config = DefaultEmojiCompatConfig.create(applicationContext) ?: return
-        config.setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
-        EmojiCompat.init(config)
-        EmojiCompat.get().load()
-    }
-
     override fun onResume() {
         super.onResume()
         backActionGuard.onResume()
@@ -372,7 +331,11 @@ class LauncherActivity : AppCompatActivity() {
         if (::brightnessController.isInitialized) {
             brightnessController.onResume()
             val state = viewModel.uiState.value
-            settingsPanel?.renderBrightness(state.brightness, brightnessController.hasPermission(), state.appearance)
+            settingsHost.panel.renderBrightness(
+                state.brightness,
+                brightnessController.hasPermission(),
+                state.appearance
+            )
         }
         if (::aboutController.isInitialized) aboutController.refresh()
         if (launcherInitialized) viewModel.refreshHomeStatus()
@@ -386,7 +349,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        settingsPanel?.takeIf { it.isShowing }?.let { panel ->
+        settingsHost.panel.takeIf { it.isShowing }?.let { panel ->
             outState.putBoolean(STATE_SETTINGS_PANEL_OPEN, true)
             outState.putString(STATE_SETTINGS_PANEL_PAGE, panel.currentPage.name)
         }
@@ -394,13 +357,14 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        settingsPanel?.release()
+        settingsHost.release()
         statusBarController.release()
         notificationController.release()
         brightnessController.release()
         backupController.release()
         aboutController.release()
         profileController.release()
+        releaseUpdateController.release()
         if (::musicController.isInitialized) musicController.release()
         super.onDestroy()
     }
@@ -411,17 +375,6 @@ class LauncherActivity : AppCompatActivity() {
         if (::musicController.isInitialized && musicController.onKeyEvent(event)) return true
         return super.dispatchKeyEvent(event)
     }
-
-    private fun getOrCreateSettingsPanel(): LauncherSettingsPanel = settingsPanel ?: LauncherSettingsPanel(
-        context = this,
-        onAction = settingsActionController::handle,
-        onAppearanceAction = viewModel::handleAppearanceAction,
-        onWallpaperAction = ::handleWallpaperAction,
-        onStatusBarAction = ::handleStatusBarAction,
-        onScreensaverAction = ::handleScreensaverAction,
-        onBrightnessAction = brightnessController::handleSettingsAction,
-        onDismissed = { binding.openLauncherSettings.requestFocus() }
-    ).also { settingsPanel = it }
 
     private fun handleWallpaperAction(action: WallpaperSettingsAction) = wallpaperSettingsCoordinator.handle(action)
 
@@ -439,24 +392,4 @@ class LauncherActivity : AppCompatActivity() {
     private fun protectAppManagement(action: () -> Unit) {
         pinController.authorizeAppManagement(action)
     }
-
-    private fun showAppActions(app: LauncherApp, adapter: AppAdapter) = appActionsController.show(app, adapter)
-
-    private fun showMessage(messageRes: Int) = Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
-
-    private companion object {
-        const val EMOJI_INITIALIZATION_DELAY_MS = 3_000L
-        const val STATE_SETTINGS_PANEL_OPEN = "settings_panel_open"
-        const val STATE_SETTINGS_PANEL_PAGE = "settings_panel_page"
-    }
 }
-
-private fun LauncherUiState.toProfileSettings(): LauncherSettings = LauncherSettings(
-    applicationSortMode = applicationSortMode,
-    appearance = appearance,
-    statusBar = statusBar,
-    screensaver = screensaver,
-    brightness = brightness,
-    showComingNext = showComingNext,
-    showJellyfinMusic = showJellyfinMusic
-)

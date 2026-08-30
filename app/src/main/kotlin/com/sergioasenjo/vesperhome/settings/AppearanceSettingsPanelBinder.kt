@@ -2,7 +2,7 @@ package com.sergioasenjo.vesperhome.settings
 
 import com.google.android.material.button.MaterialButton
 import com.sergioasenjo.vesperhome.R
-import com.sergioasenjo.vesperhome.databinding.DialogLauncherSettingsBinding
+import com.sergioasenjo.vesperhome.databinding.ViewAppearanceSettingsBinding
 
 enum class AppearanceSettingAction {
     THEME,
@@ -15,7 +15,7 @@ enum class AppearanceSettingAction {
 }
 
 class AppearanceSettingsPanelBinder(
-    private val binding: DialogLauncherSettingsBinding,
+    private val binding: ViewAppearanceSettingsBinding,
     private val onAction: (AppearanceSettingAction) -> Unit
 ) {
     val buttons: List<MaterialButton> = listOf(

@@ -260,6 +260,24 @@
                 app:iconSize="18dp"
                 app:iconTint="@color/action_button_text" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/manageProfiles"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
+                android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
+                android:text="@string/layout_profiles"
+                android:textColor="@color/action_button_text"
+                android:textSize="14sp"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_category"
+                app:iconPadding="12dp"
+                app:iconSize="18dp"
+                app:iconTint="@color/action_button_text" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -291,241 +309,16 @@
                 app:iconSize="18dp"
                 app:iconTint="@color/action_button_text" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/manageProfiles"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/layout_profiles"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_category"
-                app:iconPadding="12dp"
-                app:iconSize="18dp"
-                app:iconTint="@color/action_button_text" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:paddingHorizontal="14dp"
-                android:letterSpacing="0.14"
-                android:tag="accent"
-                android:text="@string/system"
-                android:textAllCaps="true"
-                android:textColor="@color/accent"
-                android:textSize="11sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/backupAndRestore"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/backup_and_restore"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_backup"
-                app:iconPadding="12dp"
-                app:iconSize="18dp"
-                app:iconTint="@color/action_button_text" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/pinAndSecurity"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/pin_and_security"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_lock"
-                app:iconPadding="12dp"
-                app:iconSize="18dp"
-                app:iconTint="@color/action_button_text" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/aboutAndDiagnostics"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/about_and_diagnostics"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_info"
-                app:iconPadding="12dp"
-                app:iconSize="18dp"
-                app:iconTint="@color/action_button_text" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/openSystemSettings"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/system_settings"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_tune"
-                app:iconPadding="12dp"
-                app:iconSize="18dp"
-                app:iconTint="@color/action_button_text" />
+            <include
+                android:id="@+id/systemActions"
+                layout="@layout/view_launcher_settings_system_actions" />
 
         </LinearLayout>
     </ScrollView>
 
-    <ScrollView
+    <include
         android:id="@+id/appearancePage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:overScrollMode="never"
-        android:scrollbars="none"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="24dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="24dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/appearance"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:tag="secondary"
-                android:text="@string/appearance_description"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/theme"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="16dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/showAppNames"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/showCategoryTitles"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/showFocusOutline"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/appCardFocusAnimations"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/selectorTransitionAnimations"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/keyClickSounds"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/panel_row_background"
-                android:gravity="start|center_vertical"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingHorizontal="14dp"
-                android:textColor="@color/action_button_text"
-                android:textSize="14sp"
-                app:cornerRadius="8dp" />
-
-        </LinearLayout>
-    </ScrollView>
+        layout="@layout/view_appearance_settings" />
 
     <include
         android:id="@+id/wallpaperPage"

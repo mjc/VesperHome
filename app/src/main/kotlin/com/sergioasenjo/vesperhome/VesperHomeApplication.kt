@@ -23,14 +23,15 @@ import com.sergioasenjo.vesperhome.notifications.NotificationRepository
 import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.platform.PlatformHomeRepository
 import com.sergioasenjo.vesperhome.profiles.ProfileRepository
-import com.sergioasenjo.vesperhome.security.PinRepository
 import com.sergioasenjo.vesperhome.screensaver.DreamStateTracker
 import com.sergioasenjo.vesperhome.screensaver.SystemScreensaverRepository
+import com.sergioasenjo.vesperhome.security.PinRepository
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsRepository
 import com.sergioasenjo.vesperhome.status.NetworkStatusRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingServerConfig
+import com.sergioasenjo.vesperhome.update.ReleaseUpdateRepository
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -89,5 +90,8 @@ class AppContainer(application: Application) {
     val safetyBackupSettingsRepository by lazy { SafetyBackupSettingsRepository(application) }
     val profileRepository by lazy { ProfileRepository(application, backupRepository, json) }
     val pinRepository by lazy { PinRepository(application) }
+    val releaseUpdateRepository by lazy {
+        ReleaseUpdateRepository(httpClient, json, BuildConfig.VERSION_NAME)
+    }
     val diagnosticsRepository = DiagnosticsRepository(application, homeRepository)
 }
