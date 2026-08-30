@@ -55,6 +55,14 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
         holder.bind(getItem(position), appearance)
     }
 
+    override fun onBindViewHolder(holder: UpcomingViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.contains(DATE_LABEL_PAYLOAD)) {
+            holder.bindDateLabel(getItem(position))
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     override fun onViewRecycled(holder: UpcomingViewHolder) {
         holder.recycle()
         super.onViewRecycled(holder)
@@ -64,6 +72,10 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
         if (this.appearance == appearance) return
         this.appearance = appearance
         notifyItemRangeChanged(0, itemCount)
+    }
+
+    fun refreshDateLabels() {
+        notifyItemRangeChanged(0, itemCount, DATE_LABEL_PAYLOAD)
     }
 
     class UpcomingViewHolder(
@@ -90,7 +102,6 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
             this.item = item
             this.appearance = appearance
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
-            binding.whenText.text = formatWhen(binding.root.context, item)
             binding.whenText.setTextColor(appearance.palette.focus)
             binding.title.text = item.title
             binding.title.setTextColor(appearance.palette.primaryText)
@@ -105,13 +116,18 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
                 placeholder(R.drawable.ic_upcoming)
                 error(R.drawable.ic_upcoming)
             }
+            bindDateLabel(item)
+            updateFocus(binding.root.hasFocus())
+        }
+
+        fun bindDateLabel(item: UpcomingMediaItem) {
+            binding.whenText.text = formatWhen(binding.root.context, item)
             binding.root.contentDescription = binding.root.context.getString(
                 R.string.upcoming_open_jellyfin,
                 binding.whenText.text,
                 item.title,
                 binding.detail.text
             )
-            updateFocus(binding.root.hasFocus())
         }
 
         fun recycle() {
@@ -161,6 +177,8 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
     }
 
     private companion object {
+        val DATE_LABEL_PAYLOAD = Any()
+
         fun formatWhen(context: Context, item: UpcomingMediaItem): String {
             val day = dayLabel(context, item.startsAtMillis)
             val timing = if (item.type == UpcomingMediaType.EPISODE) {

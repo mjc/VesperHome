@@ -38,6 +38,7 @@ class UpcomingController(
             items.size,
             items.size
         )
+        adapter.refreshDateLabels()
         adapter.submitList(items)
     }
 
