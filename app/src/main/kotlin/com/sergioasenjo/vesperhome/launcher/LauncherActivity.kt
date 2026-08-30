@@ -28,8 +28,10 @@ import com.sergioasenjo.vesperhome.inputs.TvInputController
 import com.sergioasenjo.vesperhome.music.JellyfinMusicController
 import com.sergioasenjo.vesperhome.music.JellyfinMusicViewModel
 import com.sergioasenjo.vesperhome.notifications.NotificationController
+import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverSettingsAction
+import com.sergioasenjo.vesperhome.settings.LauncherSettings
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanel
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsPanelPage
 import com.sergioasenjo.vesperhome.status.StatusBarController
@@ -54,6 +56,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var brightnessController: BrightnessController
     private lateinit var backupController: BackupController
     private lateinit var aboutController: AboutController
+    private lateinit var profileController: ProfileController
     private lateinit var settingsActionController: LauncherSettingsActionController
     private lateinit var musicController: JellyfinMusicController
     private var settingsPanel: LauncherSettingsPanel? = null
@@ -163,13 +166,26 @@ class LauncherActivity : AppCompatActivity() {
             activity = this,
             scope = lifecycleScope,
             repository = container.backupRepository,
+            settingsRepository = container.safetyBackupSettingsRepository,
             currentAppearance = { viewModel.uiState.value.appearance },
             requestImport = { backupPicker.launch("*/*") },
-            onRestored = { binding.openLauncherSettings.requestFocus() }
+            onRestored = {
+                lifecycleScope.launch { container.profileRepository.reload() }
+                binding.openLauncherSettings.requestFocus()
+            }
         )
         aboutController = AboutController(
             activity = this,
             diagnosticsRepository = container.diagnosticsRepository,
+            currentAppearance = { viewModel.uiState.value.appearance },
+            onDismissed = { binding.openLauncherSettings.requestFocus() }
+        )
+        profileController = ProfileController(
+            activity = this,
+            scope = lifecycleScope,
+            repository = container.profileRepository,
+            settingsRepository = container.launcherSettingsRepository,
+            currentSettings = { viewModel.uiState.value.toProfileSettings() },
             currentAppearance = { viewModel.uiState.value.appearance },
             onDismissed = { binding.openLauncherSettings.requestFocus() }
         )
@@ -179,6 +195,7 @@ class LauncherActivity : AppCompatActivity() {
             homeButtonFixController,
             backupController,
             aboutController,
+            profileController,
             ::showSortDialog
         )
         screensaverController = createScreensaverController(
@@ -245,13 +262,17 @@ class LauncherActivity : AppCompatActivity() {
                             brightnessController.hasPermission()
                         )
                         val homeAppearance = state.appearance.forWallpaper(state.wallpaper)
-                        if (::musicController.isInitialized) musicController.setAppearance(homeAppearance)
+                        if (::musicController.isInitialized) {
+                            musicController.setAppearance(homeAppearance)
+                            musicController.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
+                        }
                         renderLauncherAppearance(binding, contentBinding, homeAppearance)
                         statusBarController.render(state.statusBar, homeAppearance)
                         tvInputController.render(state.statusBar.showInputs, homeAppearance)
                         notificationController.render(state.statusBar, homeAppearance, state.appearance)
                         backupController.renderAppearance()
                         aboutController.renderAppearance()
+                        profileController.render(state.toProfileSettings(), homeAppearance)
                         wallpaperRenderer.render(state.wallpaper, state.appearance.palette)
                         contentRenderer.render(state.copy(appearance = homeAppearance))
                         if (!state.loading) {
@@ -306,6 +327,9 @@ class LauncherActivity : AppCompatActivity() {
             container.networkStatusRepository
         ) {
             viewModel.uiState.value.let { it.appearance.forWallpaper(it.wallpaper) }
+        }
+        viewModel.uiState.value.let { state ->
+            musicController.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
         }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -363,6 +387,7 @@ class LauncherActivity : AppCompatActivity() {
         brightnessController.release()
         backupController.release()
         aboutController.release()
+        profileController.release()
         if (::musicController.isInitialized) musicController.release()
         super.onDestroy()
     }
@@ -408,3 +433,13 @@ class LauncherActivity : AppCompatActivity() {
         const val STATE_SETTINGS_PANEL_PAGE = "settings_panel_page"
     }
 }
+
+private fun LauncherUiState.toProfileSettings(): LauncherSettings = LauncherSettings(
+    applicationSortMode = applicationSortMode,
+    appearance = appearance,
+    statusBar = statusBar,
+    screensaver = screensaver,
+    brightness = brightness,
+    showComingNext = showComingNext,
+    showJellyfinMusic = showJellyfinMusic
+)

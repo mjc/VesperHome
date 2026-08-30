@@ -17,6 +17,8 @@ class UpcomingController(
 ) {
     private val adapter = UpcomingAdapter(onItemSelected)
     private var appearance = LauncherAppearance()
+    private var enabled = true
+    private var items: List<UpcomingMediaItem> = emptyList()
 
     init {
         binding.upcomingItems.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -25,14 +27,15 @@ class UpcomingController(
     }
 
     suspend fun load() {
-        val items = try {
+        if (!enabled) return
+        items = try {
             repository.upcoming()
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
             emptyList()
         }
-        binding.upcomingSection.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+        renderVisibility()
         binding.upcomingCount.text = binding.root.resources.getQuantityString(
             R.plurals.upcoming_item_count,
             items.size,
@@ -42,6 +45,13 @@ class UpcomingController(
         adapter.submitList(items)
     }
 
+    fun setEnabled(enabled: Boolean): Boolean {
+        if (this.enabled == enabled) return false
+        this.enabled = enabled
+        renderVisibility()
+        return enabled
+    }
+
     fun setAppearance(appearance: LauncherAppearance) {
         if (this.appearance == appearance) return
         this.appearance = appearance
@@ -49,5 +59,9 @@ class UpcomingController(
         binding.upcomingTitle.setTextColor(appearance.palette.primaryText)
         binding.upcomingCount.setTextColor(appearance.palette.focus)
         adapter.setAppearance(appearance)
+    }
+
+    private fun renderVisibility() {
+        binding.upcomingSection.visibility = if (enabled && items.isNotEmpty()) View.VISIBLE else View.GONE
     }
 }

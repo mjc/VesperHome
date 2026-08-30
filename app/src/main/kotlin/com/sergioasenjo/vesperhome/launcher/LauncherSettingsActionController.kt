@@ -8,6 +8,7 @@ import com.sergioasenjo.vesperhome.applications.HiddenAppsActivity
 import com.sergioasenjo.vesperhome.backup.BackupController
 import com.sergioasenjo.vesperhome.categories.CategoryManagementActivity
 import com.sergioasenjo.vesperhome.music.JellyfinSetupActivity
+import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsAction
 
 class LauncherSettingsActionController(
@@ -16,6 +17,7 @@ class LauncherSettingsActionController(
     private val homeButtonFixController: HomeButtonFixController,
     private val backupController: BackupController,
     private val aboutController: AboutController,
+    private val profileController: ProfileController,
     private val showSortDialog: () -> Unit
 ) {
     fun handle(action: LauncherSettingsAction) {
@@ -23,6 +25,7 @@ class LauncherSettingsActionController(
             LauncherSettingsAction.SET_DEFAULT_HOME -> viewModel.requestDefaultLauncher()
             LauncherSettingsAction.OPEN_HOME_BUTTON_FIX -> homeButtonFixController.openAccessibilitySettings()
             LauncherSettingsAction.BACKUP_AND_RESTORE -> backupController.show()
+            LauncherSettingsAction.MANAGE_PROFILES -> profileController.show()
             LauncherSettingsAction.ABOUT_AND_DIAGNOSTICS -> aboutController.show()
             LauncherSettingsAction.OPEN_SYSTEM_SETTINGS -> viewModel.openSystemSettings()
             LauncherSettingsAction.MANAGE_CATEGORIES -> activity.open(CategoryManagementActivity::class.java)

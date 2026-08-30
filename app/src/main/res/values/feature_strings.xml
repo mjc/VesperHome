@@ -10,4 +10,23 @@
     <string name="safety_backup_before_restore">Safety backup: before restore</string>
     <string name="safety_backup_scheduled">Automatic safety backup</string>
     <string name="select_safety_backup_actions">Press Select to restore or delete</string>
+
+    <string name="layout_profiles">Layout profiles</string>
+    <string name="default_profile">Default</string>
+    <string name="layout_profiles_description">Each profile keeps its own layout, app order, appearance, wallpaper, screensaver settings, and home sections.</string>
+    <string name="create_profile">Create profile from current layout</string>
+    <string name="profile_show_coming_next_value">Show Coming Next: %1$s</string>
+    <string name="profile_show_jellyfin_music_value">Show Jellyfin Music: %1$s</string>
+    <string name="active_profile">Active profile</string>
+    <string name="select_profile_actions">Press Select for profile actions</string>
+    <string name="profile_name">Profile name</string>
+    <string name="switch_profile">Switch to profile</string>
+    <string name="rename_profile">Rename profile</string>
+    <string name="delete_profile">Delete profile</string>
+    <string name="delete_profile_confirmation">Delete %1$s? Its saved layout will be removed.</string>
+    <string name="profile_created">Profile created and selected.</string>
+    <string name="profile_switched">Profile switched.</string>
+    <string name="profile_renamed">Profile renamed.</string>
+    <string name="profile_deleted">Profile deleted.</string>
+    <string name="profile_operation_failed">The profile operation failed. Profile names must be unique.</string>
 </resources>

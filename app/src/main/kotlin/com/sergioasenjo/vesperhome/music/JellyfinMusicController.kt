@@ -1,7 +1,9 @@
 package com.sergioasenjo.vesperhome.music
 
 import android.view.KeyEvent
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -70,6 +72,13 @@ class JellyfinMusicController(
         upcomingController.setAppearance(appearance)
     }
 
+    fun setSectionVisibility(showMusic: Boolean, showComingNext: Boolean) {
+        binding.jellyfinPanel.visibility = if (showMusic) View.VISIBLE else View.GONE
+        if (upcomingController.setEnabled(showComingNext)) {
+            activity.lifecycleScope.launch { upcomingController.load() }
+        }
+    }
+
     fun onKeyEvent(event: KeyEvent): Boolean = handleContainedHorizontalFocus(
         event,
         activity.currentFocus,
@@ -80,7 +89,7 @@ class JellyfinMusicController(
             binding.musicPlayPause,
             binding.musicNext,
             binding.musicRandom
-        )
+        ).filter(View::isShown)
     )
 
     fun onHostStopped() {

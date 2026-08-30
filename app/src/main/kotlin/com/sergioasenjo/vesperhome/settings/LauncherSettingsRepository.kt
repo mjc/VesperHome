@@ -90,7 +90,9 @@ data class LauncherSettings(
     val appearance: LauncherAppearance = LauncherAppearance(),
     val statusBar: StatusBarSettings = StatusBarSettings(),
     val screensaver: ScreensaverSettings = ScreensaverSettings(),
-    val brightness: BrightnessSettings = BrightnessSettings()
+    val brightness: BrightnessSettings = BrightnessSettings(),
+    val showComingNext: Boolean = true,
+    val showJellyfinMusic: Boolean = true
 )
 
 class LauncherSettingsRepository(private val context: Context) {
@@ -135,7 +137,9 @@ class LauncherSettingsRepository(private val context: Context) {
                     preferences[BRIGHTNESS_AFTERNOON] ?: BrightnessPeriod.AFTERNOON.defaultPercentage,
                 eveningPercentage = preferences[BRIGHTNESS_EVENING] ?: BrightnessPeriod.EVENING.defaultPercentage,
                 nightPercentage = preferences[BRIGHTNESS_NIGHT] ?: BrightnessPeriod.NIGHT.defaultPercentage
-            )
+            ),
+            showComingNext = preferences[SHOW_COMING_NEXT] ?: true,
+            showJellyfinMusic = preferences[SHOW_JELLYFIN_MUSIC] ?: true
         )
     }
     val applicationSortMode: Flow<ApplicationSortMode> = settings.map { it.applicationSortMode }
@@ -244,6 +248,14 @@ class LauncherSettingsRepository(private val context: Context) {
         setInteger(key, percentage.coerceIn(MIN_BRIGHTNESS_PERCENTAGE, MAX_BRIGHTNESS_PERCENTAGE))
     }
 
+    suspend fun setShowComingNext(show: Boolean) {
+        setBoolean(SHOW_COMING_NEXT, show)
+    }
+
+    suspend fun setShowJellyfinMusic(show: Boolean) {
+        setBoolean(SHOW_JELLYFIN_MUSIC, show)
+    }
+
     suspend fun restore(restored: LauncherSettings) {
         context.launcherSettingsDataStore.edit { preferences ->
             preferences[APPLICATION_SORT_MODE] = restored.applicationSortMode.name
@@ -274,6 +286,8 @@ class LauncherSettingsRepository(private val context: Context) {
             preferences[BRIGHTNESS_AFTERNOON] = restored.brightness.afternoonPercentage
             preferences[BRIGHTNESS_EVENING] = restored.brightness.eveningPercentage
             preferences[BRIGHTNESS_NIGHT] = restored.brightness.nightPercentage
+            preferences[SHOW_COMING_NEXT] = restored.showComingNext
+            preferences[SHOW_JELLYFIN_MUSIC] = restored.showJellyfinMusic
         }
     }
 
@@ -327,6 +341,8 @@ class LauncherSettingsRepository(private val context: Context) {
         val BRIGHTNESS_AFTERNOON = intPreferencesKey("brightness_afternoon")
         val BRIGHTNESS_EVENING = intPreferencesKey("brightness_evening")
         val BRIGHTNESS_NIGHT = intPreferencesKey("brightness_night")
+        val SHOW_COMING_NEXT = booleanPreferencesKey("show_coming_next")
+        val SHOW_JELLYFIN_MUSIC = booleanPreferencesKey("show_jellyfin_music")
         const val DEFAULT_DATE_FORMAT = "EEE, MMM d"
         const val MIN_BRIGHTNESS_PERCENTAGE = 5
         const val MAX_BRIGHTNESS_PERCENTAGE = 100

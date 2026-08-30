@@ -7,6 +7,7 @@ import com.sergioasenjo.vesperhome.applications.ApplicationRepository
 import com.sergioasenjo.vesperhome.applications.ManagedApplicationsRepository
 import com.sergioasenjo.vesperhome.applications.PlatformApplicationRepository
 import com.sergioasenjo.vesperhome.backup.BackupRepository
+import com.sergioasenjo.vesperhome.backup.SafetyBackupSettingsRepository
 import com.sergioasenjo.vesperhome.data.AppPreferencesRepository
 import com.sergioasenjo.vesperhome.data.CategoryRepository
 import com.sergioasenjo.vesperhome.data.LauncherDatabase
@@ -21,6 +22,7 @@ import com.sergioasenjo.vesperhome.music.JellyfinPreferencesRepository
 import com.sergioasenjo.vesperhome.notifications.NotificationRepository
 import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.platform.PlatformHomeRepository
+import com.sergioasenjo.vesperhome.profiles.ProfileRepository
 import com.sergioasenjo.vesperhome.screensaver.DreamStateTracker
 import com.sergioasenjo.vesperhome.screensaver.SystemScreensaverRepository
 import com.sergioasenjo.vesperhome.settings.LauncherSettingsRepository
@@ -83,5 +85,7 @@ class AppContainer(application: Application) {
     val backupRepository by lazy {
         BackupRepository(application, database, launcherSettingsRepository, wallpaperRepository, json)
     }
+    val safetyBackupSettingsRepository by lazy { SafetyBackupSettingsRepository(application) }
+    val profileRepository by lazy { ProfileRepository(application, backupRepository, json) }
     val diagnosticsRepository = DiagnosticsRepository(application, homeRepository)
 }

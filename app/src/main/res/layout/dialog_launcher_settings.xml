@@ -291,6 +291,24 @@
                 app:iconSize="18dp"
                 app:iconTint="@color/action_button_text" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/manageProfiles"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/panel_row_background"
+                android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
+                android:text="@string/layout_profiles"
+                android:textColor="@color/action_button_text"
+                android:textSize="14sp"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_category"
+                app:iconPadding="12dp"
+                app:iconSize="18dp"
+                app:iconTint="@color/action_button_text" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

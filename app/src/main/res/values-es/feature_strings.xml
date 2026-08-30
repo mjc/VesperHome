@@ -10,4 +10,23 @@
     <string name="safety_backup_before_restore">Copia de seguridad: antes de restaurar</string>
     <string name="safety_backup_scheduled">Copia de seguridad automática</string>
     <string name="select_safety_backup_actions">Pulsa Seleccionar para restaurar o eliminar</string>
+
+    <string name="layout_profiles">Perfiles de diseño</string>
+    <string name="default_profile">Predeterminado</string>
+    <string name="layout_profiles_description">Cada perfil conserva su diseño, orden de aplicaciones, apariencia, fondo, salvapantallas y secciones de inicio.</string>
+    <string name="create_profile">Crear perfil desde el diseño actual</string>
+    <string name="profile_show_coming_next_value">Mostrar Próximamente: %1$s</string>
+    <string name="profile_show_jellyfin_music_value">Mostrar Música de Jellyfin: %1$s</string>
+    <string name="active_profile">Perfil activo</string>
+    <string name="select_profile_actions">Pulsa Seleccionar para ver acciones</string>
+    <string name="profile_name">Nombre del perfil</string>
+    <string name="switch_profile">Cambiar a este perfil</string>
+    <string name="rename_profile">Renombrar perfil</string>
+    <string name="delete_profile">Eliminar perfil</string>
+    <string name="delete_profile_confirmation">¿Eliminar %1$s? Se borrará su diseño guardado.</string>
+    <string name="profile_created">Perfil creado y seleccionado.</string>
+    <string name="profile_switched">Perfil cambiado.</string>
+    <string name="profile_renamed">Perfil renombrado.</string>
+    <string name="profile_deleted">Perfil eliminado.</string>
+    <string name="profile_operation_failed">La operación del perfil falló. Los nombres deben ser únicos.</string>
 </resources>
