@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="safety_backup_frequency">Copias de seguridad automáticas</string>
+    <string name="safety_backup_frequency_value">Copias de seguridad automáticas: %1$s</string>
+    <string name="safety_backup_off">Desactivadas</string>
+    <string name="safety_backup_daily">Cada día</string>
+    <string name="safety_backup_weekly">Cada semana</string>
+    <string name="safety_backup_monthly">Cada mes</string>
+    <string name="safety_backup_schedule_saved">Programación de copias de seguridad guardada.</string>
+    <string name="safety_backup_before_restore">Copia de seguridad: antes de restaurar</string>
+    <string name="safety_backup_scheduled">Copia de seguridad automática</string>
+    <string name="select_safety_backup_actions">Pulsa Seleccionar para restaurar o eliminar</string>
+</resources>

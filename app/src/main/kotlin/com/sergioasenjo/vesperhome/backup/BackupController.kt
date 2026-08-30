@@ -12,28 +12,32 @@ import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class BackupController(
     private val activity: Activity,
     private val scope: CoroutineScope,
     private val repository: BackupRepository,
+    private val settingsRepository: SafetyBackupSettingsRepository,
     private val currentAppearance: () -> LauncherAppearance,
     private val requestImport: () -> Unit,
     private val onRestored: () -> Unit
 ) {
     private var entries: List<BackupFileEntry> = emptyList()
     private var busy = false
+    private var frequency = SafetyBackupFrequency.OFF
     private val panel = BackupPanel(
         activity,
         onCreate = ::createBackup,
         onImport = ::openImportPicker,
+        onFrequencySelected = ::showFrequencyPicker,
         onSelected = ::showActions,
         onDismissed = onRestored
     )
 
     fun show() {
-        panel.show(entries, busy = true, currentAppearance())
+        panel.show(entries, frequency, busy = true, currentAppearance())
         refresh()
     }
 
@@ -44,7 +48,7 @@ class BackupController(
     }
 
     fun renderAppearance() {
-        if (panel.isShowing) panel.render(entries, busy, currentAppearance())
+        if (panel.isShowing) panel.render(entries, frequency, busy, currentAppearance())
     }
 
     fun release() {
@@ -71,6 +75,7 @@ class BackupController(
         scope.launch {
             try {
                 entries = repository.listBackups()
+                frequency = settingsRepository.frequency.first()
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
@@ -86,16 +91,27 @@ class BackupController(
         AlertDialog.Builder(activity)
             .setTitle(entry.file.name)
             .setItems(
-                arrayOf(
-                    activity.getString(R.string.restore_backup),
-                    activity.getString(R.string.share_backup),
-                    activity.getString(R.string.delete_backup)
-                )
+                if (entry.kind == BackupKind.SAFETY) {
+                    arrayOf(
+                        activity.getString(R.string.restore_backup),
+                        activity.getString(R.string.delete_backup)
+                    )
+                } else {
+                    arrayOf(
+                        activity.getString(R.string.restore_backup),
+                        activity.getString(R.string.share_backup),
+                        activity.getString(R.string.delete_backup)
+                    )
+                }
             ) { _, index ->
-                when (index) {
-                    0 -> confirmRestore(entry)
-                    1 -> shareBackup(entry)
-                    2 -> confirmDelete(entry)
+                if (entry.kind == BackupKind.SAFETY) {
+                    if (index == 0) confirmRestore(entry) else confirmDelete(entry)
+                } else {
+                    when (index) {
+                        0 -> confirmRestore(entry)
+                        1 -> shareBackup(entry)
+                        2 -> confirmDelete(entry)
+                    }
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -152,6 +168,24 @@ class BackupController(
         }
     }
 
+    private fun showFrequencyPicker() {
+        val options = SafetyBackupFrequency.entries
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.safety_backup_frequency)
+            .setSingleChoiceItems(
+                options.map { activity.getString(it.labelRes) }.toTypedArray(),
+                options.indexOf(frequency)
+            ) { dialog, index ->
+                dialog.dismiss()
+                runOperation(R.string.safety_backup_schedule_saved) {
+                    frequency = options[index]
+                    settingsRepository.setFrequency(frequency)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun runOperation(successMessage: Int, operation: suspend () -> Unit) {
         if (busy) return
         busy = true
@@ -173,7 +207,7 @@ class BackupController(
     }
 
     private fun render() {
-        if (panel.isShowing) panel.render(entries, busy, currentAppearance())
+        if (panel.isShowing) panel.render(entries, frequency, busy, currentAppearance())
     }
 
     private fun showMessage(messageRes: Int) {

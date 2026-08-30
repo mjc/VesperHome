@@ -45,7 +45,17 @@ class BackupAdapter(private val onSelected: (BackupFileEntry) -> Unit) :
             this.entry = entry
             this.appearance = appearance
             val context = binding.root.context
-            binding.name.text = entry.file.name
+            binding.name.text = when (entry.kind) {
+                BackupKind.MANUAL -> entry.file.name
+
+                BackupKind.SAFETY -> context.getString(
+                    if (entry.safetyReason == SafetyBackupReason.BEFORE_RESTORE) {
+                        R.string.safety_backup_before_restore
+                    } else {
+                        R.string.safety_backup_scheduled
+                    }
+                )
+            }
             binding.details.text = context.getString(
                 R.string.backup_details,
                 DateFormat.getMediumDateFormat(context).format(Date(entry.createdAt)),
@@ -56,6 +66,13 @@ class BackupAdapter(private val onSelected: (BackupFileEntry) -> Unit) :
                 R.string.backup_content_description,
                 binding.name.text,
                 binding.details.text
+            )
+            binding.actionHint.setText(
+                if (entry.kind == BackupKind.SAFETY) {
+                    R.string.select_safety_backup_actions
+                } else {
+                    R.string.select_backup_actions
+                }
             )
             renderBackground(binding.root.hasFocus())
         }

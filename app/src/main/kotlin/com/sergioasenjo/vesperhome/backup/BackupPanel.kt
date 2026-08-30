@@ -17,6 +17,7 @@ class BackupPanel(
     context: Context,
     onCreate: () -> Unit,
     onImport: () -> Unit,
+    onFrequencySelected: () -> Unit,
     onSelected: (BackupFileEntry) -> Unit,
     private val onDismissed: () -> Unit
 ) {
@@ -43,17 +44,28 @@ class BackupPanel(
         binding.backups.itemAnimator = null
         binding.createBackup.setOnClickListener { onCreate() }
         binding.importBackup.setOnClickListener { onImport() }
+        binding.safetyBackupFrequency.setOnClickListener { onFrequencySelected() }
     }
 
     val isShowing: Boolean
         get() = dialog.isShowing
 
-    fun show(entries: List<BackupFileEntry>, busy: Boolean, appearance: LauncherAppearance) {
-        render(entries, busy, appearance)
+    fun show(
+        entries: List<BackupFileEntry>,
+        frequency: SafetyBackupFrequency,
+        busy: Boolean,
+        appearance: LauncherAppearance
+    ) {
+        render(entries, frequency, busy, appearance)
         if (!dialog.isShowing) dialog.show()
     }
 
-    fun render(entries: List<BackupFileEntry>, busy: Boolean, appearance: LauncherAppearance) {
+    fun render(
+        entries: List<BackupFileEntry>,
+        frequency: SafetyBackupFrequency,
+        busy: Boolean,
+        appearance: LauncherAppearance
+    ) {
         adapter.setAppearance(appearance)
         adapter.submitList(entries)
         binding.progress.visibility = if (busy) View.VISIBLE else View.GONE
@@ -61,6 +73,11 @@ class BackupPanel(
         binding.backups.visibility = if (!busy && entries.isNotEmpty()) View.VISIBLE else View.GONE
         binding.createBackup.isEnabled = !busy
         binding.importBackup.isEnabled = !busy
+        binding.safetyBackupFrequency.isEnabled = !busy
+        binding.safetyBackupFrequency.text = binding.root.context.getString(
+            R.string.safety_backup_frequency_value,
+            binding.root.context.getString(frequency.labelRes)
+        )
         applyAppearance(appearance)
     }
 
@@ -75,7 +92,9 @@ class BackupPanel(
         binding.title.setTextColor(palette.primaryText)
         binding.description.setTextColor(palette.secondaryText)
         binding.emptyMessage.setTextColor(palette.secondaryText)
-        listOf(binding.createBackup, binding.importBackup).forEach { button -> renderButton(button, appearance) }
+        listOf(binding.createBackup, binding.importBackup, binding.safetyBackupFrequency).forEach { button ->
+            renderButton(button, appearance)
+        }
     }
 
     private fun renderButton(button: MaterialButton, appearance: LauncherAppearance) {

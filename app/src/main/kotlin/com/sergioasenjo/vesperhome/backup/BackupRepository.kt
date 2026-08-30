@@ -1,7 +1,6 @@
 package com.sergioasenjo.vesperhome.backup
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.room.withTransaction
 import com.sergioasenjo.vesperhome.data.LauncherDatabase
@@ -10,12 +9,7 @@ import com.sergioasenjo.vesperhome.wallpaper.WallpaperRepository
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperSelection
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperTarget
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -33,40 +27,107 @@ class BackupRepository(
 ) {
     private val applicationContext = context.applicationContext
     private val backupDirectory = File(applicationContext.filesDir, BACKUP_DIRECTORY)
+    private val safetyBackupDirectory = File(applicationContext.filesDir, SAFETY_BACKUP_DIRECTORY)
+    private val profileDirectory = File(applicationContext.filesDir, PROFILE_DIRECTORY)
     private val bannerDirectory = File(applicationContext.filesDir, BANNER_DIRECTORY)
     private val wallpaperDirectory = File(applicationContext.filesDir, WALLPAPER_DIRECTORY)
 
     suspend fun listBackups(): List<BackupFileEntry> = withContext(Dispatchers.IO) {
-        backupDirectory.listFiles()
+        val manual = backupDirectory.listFiles()
             .orEmpty()
             .filter { it.isFile && it.name.startsWith(BACKUP_PREFIX) && it.name.endsWith(BACKUP_EXTENSION) }
             .map { file -> BackupFileEntry(file, file.lastModified(), file.length()) }
+        val safety = safetyBackupDirectory.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.name.startsWith(SAFETY_BACKUP_PREFIX) && it.name.endsWith(BACKUP_EXTENSION) }
+            .map { file ->
+                BackupFileEntry(
+                    file,
+                    file.lastModified(),
+                    file.length(),
+                    BackupKind.SAFETY,
+                    safetyBackupReason(file)
+                )
+            }
+        (manual + safety)
             .sortedByDescending(BackupFileEntry::createdAt)
     }
 
     suspend fun createBackup(): BackupFileEntry = withContext(Dispatchers.IO) {
+        createArchive(backupDirectory, BACKUP_PREFIX, BackupKind.MANUAL)
+    }
+
+    suspend fun createSafetyBackup(reason: SafetyBackupReason): BackupFileEntry = withContext(Dispatchers.IO) {
+        val entry = createArchive(
+            safetyBackupDirectory,
+            "$SAFETY_BACKUP_PREFIX${reason.name.lowercase(Locale.US)}_",
+            BackupKind.SAFETY,
+            reason
+        )
+        trimFiles(safetyBackupDirectory, BACKUP_EXTENSION, MAX_SAFETY_BACKUPS)
+        entry
+    }
+
+    private suspend fun createArchive(
+        directory: File,
+        prefix: String,
+        kind: BackupKind,
+        reason: SafetyBackupReason? = null
+    ): BackupFileEntry {
         val createdAt = System.currentTimeMillis()
+        directory.mkdirs()
+        return writeArchive(
+            uniqueDatedBackupFile(directory, prefix, BACKUP_EXTENSION, createdAt),
+            createdAt,
+            kind,
+            reason
+        )
+    }
+
+    internal suspend fun saveProfileState(destination: File) = withContext(Dispatchers.IO) {
+        require(isProfileStateFile(destination))
+        destination.parentFile?.mkdirs()
+        writeArchive(destination, System.currentTimeMillis(), BackupKind.MANUAL)
+    }
+
+    internal suspend fun restoreProfileState(source: File) = withContext(Dispatchers.IO) {
+        require(isProfileStateFile(source))
+        restoreArchive(source)
+    }
+
+    private suspend fun writeArchive(
+        destination: File,
+        createdAt: Long,
+        kind: BackupKind,
+        reason: SafetyBackupReason? = null
+    ): BackupFileEntry {
         val snapshot = captureSnapshot()
-        val document = snapshot.toDocument(createdAt)
-        val assets = collectCurrentAssets(snapshot)
+        val profileFiles = collectProfileFiles(destination)
+        val document = snapshot.toDocument(createdAt, profileFiles.map { it.first })
+        val assets = collectCurrentAssets(snapshot) + profileFiles
         require(assets.sumOf { it.second.length() } <= MAX_ARCHIVE_BYTES) { "Backup assets are too large" }
-        backupDirectory.mkdirs()
-        val destination = uniqueBackupFile(createdAt)
-        val temporaryFile = File.createTempFile("backup-", ".tmp", backupDirectory)
+        val directory = requireNotNull(destination.parentFile)
+        val temporaryFile = File.createTempFile("backup-", ".tmp", directory)
         try {
             ZipOutputStream(temporaryFile.outputStream().buffered()).use { output ->
                 val metadata = json.encodeToString(document).toByteArray(Charsets.UTF_8)
                 require(metadata.size <= MAX_METADATA_BYTES)
                 output.writeEntry(METADATA_ENTRY, metadata.inputStream(), createdAt)
                 assets.forEach { (entryName, file) ->
-                    require(file.isFile && file.length() <= MAX_ASSET_BYTES) {
-                        "A backup image is missing or too large"
+                    val maximum = if (entryName.startsWith(PROFILE_ENTRY_PREFIX)) {
+                        MAX_ARCHIVE_BYTES
+                    } else {
+                        MAX_ASSET_BYTES
+                    }
+                    require(file.isFile && file.length() <= maximum) {
+                        "A backup asset is missing or too large"
                     }
                     file.inputStream().buffered().use { input -> output.writeEntry(entryName, input, createdAt) }
                 }
             }
-            check(temporaryFile.renameTo(destination)) { "The backup file could not be finalized" }
-            BackupFileEntry(destination, destination.lastModified(), destination.length())
+            replaceFile(temporaryFile, destination)
+            destination.setLastModified(createdAt)
+            return BackupFileEntry(destination, createdAt, destination.length(), kind, reason)
         } finally {
             temporaryFile.delete()
         }
@@ -84,7 +145,12 @@ class BackupRepository(
             val prepared = readArchive(temporaryFile)
             prepared.stageDirectory.deleteRecursively()
             backupDirectory.mkdirs()
-            val destination = uniqueBackupFile(prepared.document.createdAt)
+            val destination = uniqueDatedBackupFile(
+                backupDirectory,
+                BACKUP_PREFIX,
+                BACKUP_EXTENSION,
+                prepared.document.createdAt
+            )
             val stagedDestination = File(backupDirectory, ".${destination.name}.tmp")
             try {
                 temporaryFile.inputStream().use { input -> stagedDestination.outputStream().use(input::copyTo) }
@@ -100,8 +166,13 @@ class BackupRepository(
     }
 
     suspend fun restoreBackup(entry: BackupFileEntry) = withContext(Dispatchers.IO) {
-        require(entry.file.parentFile?.canonicalFile == backupDirectory.canonicalFile)
-        val prepared = readArchive(entry.file)
+        require(isManagedBackup(entry.file))
+        createSafetyBackup(SafetyBackupReason.BEFORE_RESTORE)
+        restoreArchive(entry.file)
+    }
+
+    private suspend fun restoreArchive(source: File) {
+        val prepared = readArchive(source)
         val previousSnapshot = captureSnapshot()
         val previousAssets = File.createTempFile("asset-rollback-", ".tmp", applicationContext.cacheDir).also {
             it.delete()
@@ -109,8 +180,10 @@ class BackupRepository(
         }
         copyDirectoryIfPresent(bannerDirectory, File(previousAssets, BANNER_DIRECTORY))
         copyDirectoryIfPresent(wallpaperDirectory, File(previousAssets, WALLPAPER_DIRECTORY))
+        copyDirectoryIfPresent(profileDirectory, File(previousAssets, PROFILE_DIRECTORY))
         try {
             installAssets(prepared.stageDirectory, prepared.snapshot)
+            installProfiles(prepared.stageDirectory, prepared.document)
             replaceDatabase(prepared.snapshot)
             launcherSettingsRepository.restore(prepared.snapshot.settings)
             wallpaperRepository.restore(prepared.snapshot.wallpaper)
@@ -120,6 +193,7 @@ class BackupRepository(
                     File(previousAssets, BANNER_DIRECTORY),
                     File(previousAssets, WALLPAPER_DIRECTORY)
                 )
+                installProfileDirectory(File(previousAssets, PROFILE_DIRECTORY))
                 replaceDatabase(previousSnapshot)
                 launcherSettingsRepository.restore(previousSnapshot.settings)
                 wallpaperRepository.restore(previousSnapshot.wallpaper)
@@ -132,7 +206,7 @@ class BackupRepository(
     }
 
     suspend fun deleteBackup(entry: BackupFileEntry): Boolean = withContext(Dispatchers.IO) {
-        entry.file.parentFile?.canonicalFile == backupDirectory.canonicalFile && entry.file.delete()
+        isManagedBackup(entry.file) && entry.file.delete()
     }
 
     private suspend fun captureSnapshot(): BackupSnapshot = BackupSnapshot(
@@ -161,6 +235,17 @@ class BackupRepository(
             .distinct()
             .forEach { packageName -> assets += bannerEntry(packageName) to bannerFile(packageName) }
         return assets
+    }
+
+    private fun collectProfileFiles(destination: File): List<Pair<String, File>> {
+        if (destination.parentFile?.canonicalFile == profileDirectory.canonicalFile) return emptyList()
+        return profileDirectory.listFiles()
+            .orEmpty()
+            .filter { file ->
+                file.isFile && (file.name == PROFILE_REGISTRY_FILE || file.name.matches(PROFILE_ARCHIVE_PATTERN))
+            }
+            .sortedBy(File::getName)
+            .map { file -> "$PROFILE_ENTRY_PREFIX/${file.name}" to file }
     }
 
     private suspend fun replaceDatabase(snapshot: BackupSnapshot) {
@@ -202,13 +287,18 @@ class BackupRepository(
                             metadata = output.toByteArray()
                         }
 
-                        entry.name.startsWith(ASSET_ENTRY_PREFIX) -> {
-                            require(isSafeAssetEntry(entry.name)) { "Unsafe backup entry" }
+                        entry.name.startsWith(ASSET_ENTRY_PREFIX) || entry.name.startsWith(PROFILE_ENTRY_PREFIX) -> {
+                            require(isSafeStoredEntry(entry.name)) { "Unsafe backup entry" }
                             val destination = File(stageDirectory, entry.name)
                             require(destination.canonicalPath.startsWith(stageDirectory.canonicalPath + File.separator))
                             destination.parentFile?.mkdirs()
                             destination.outputStream().buffered().use { output ->
-                                copyLimited(input, output, MAX_ASSET_BYTES, budget)
+                                val maximum = if (entry.name.startsWith(PROFILE_ENTRY_PREFIX)) {
+                                    MAX_ARCHIVE_BYTES
+                                } else {
+                                    MAX_ASSET_BYTES
+                                }
+                                copyLimited(input, output, maximum, budget)
                             }
                         }
 
@@ -222,9 +312,10 @@ class BackupRepository(
             )
             require(document.createdAt > 0)
             val snapshot = document.toSnapshot()
-            val expectedAssets = expectedAssetEntries(document)
-            require(extractedEntries - METADATA_ENTRY == expectedAssets) { "Backup assets do not match metadata" }
-            expectedAssets.forEach { entryName -> validateImage(File(stageDirectory, entryName)) }
+            val expectedEntries = expectedArchiveEntries(document)
+            require(extractedEntries - METADATA_ENTRY == expectedEntries) { "Backup assets do not match metadata" }
+            expectedEntries.filter { it.startsWith(ASSET_ENTRY_PREFIX) }
+                .forEach { entryName -> validateBackupImage(File(stageDirectory, entryName)) }
             return PreparedBackup(document, snapshot, stageDirectory)
         } catch (error: Exception) {
             stageDirectory.deleteRecursively()
@@ -254,7 +345,17 @@ class BackupRepository(
         copyDirectoryIfPresent(sourceWallpapers, wallpaperDirectory)
     }
 
-    private fun expectedAssetEntries(document: BackupDocument): Set<String> = buildSet {
+    private fun installProfiles(stageDirectory: File, document: BackupDocument) {
+        if (document.profileEntries.isEmpty()) return
+        installProfileDirectory(File(stageDirectory, PROFILE_ENTRY_PREFIX))
+    }
+
+    private fun installProfileDirectory(source: File) {
+        profileDirectory.deleteRecursively()
+        copyDirectoryIfPresent(source, profileDirectory)
+    }
+
+    private fun expectedArchiveEntries(document: BackupDocument): Set<String> = buildSet {
         if (document.wallpaper.main == CUSTOM_WALLPAPER) add(wallpaperEntry(WallpaperTarget.MAIN))
         if (document.wallpaper.day == CUSTOM_WALLPAPER) add(wallpaperEntry(WallpaperTarget.DAY))
         if (document.wallpaper.night == CUSTOM_WALLPAPER) add(wallpaperEntry(WallpaperTarget.NIGHT))
@@ -263,16 +364,17 @@ class BackupRepository(
             .map { it.componentName.substringBefore('/') }
             .distinct()
             .forEach { add(bannerEntry(it)) }
+        addAll(document.profileEntries)
     }
 
-    private fun uniqueBackupFile(createdAt: Long): File {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(Date(createdAt))
-        val baseName = "$BACKUP_PREFIX$timestamp"
-        var candidate = File(backupDirectory, "$baseName$BACKUP_EXTENSION")
-        var suffix = 1
-        while (candidate.exists()) candidate = File(backupDirectory, "${baseName}_${suffix++}$BACKUP_EXTENSION")
-        return candidate
+    private fun isManagedBackup(file: File): Boolean {
+        val parent = file.parentFile?.canonicalFile
+        return parent == backupDirectory.canonicalFile || parent == safetyBackupDirectory.canonicalFile
     }
+
+    private fun isProfileStateFile(file: File): Boolean =
+        file.parentFile?.canonicalFile == profileDirectory.canonicalFile &&
+            file.name.matches(Regex("[a-f0-9-]+\\.vesperprofile"))
 
     private fun bannerFile(packageName: String): File = File(bannerDirectory, "$packageName.image")
 
@@ -281,67 +383,14 @@ class BackupRepository(
     private fun wallpaperEntry(target: WallpaperTarget): String =
         "$ASSET_ENTRY_PREFIX/wallpapers/${target.name.lowercase(Locale.US)}.image"
 
-    private fun isSafeAssetEntry(entryName: String): Boolean =
-        entryName.matches(Regex("assets/(banners/[A-Za-z0-9_.]+|wallpapers/(main|day|night))\\.image"))
-
-    private fun validateImage(file: File) {
-        require(file.isFile)
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.path, bounds)
-        require(bounds.outWidth > 0 && bounds.outHeight > 0) { "A backup asset is not an image" }
-    }
-
-    private fun copyDirectoryIfPresent(source: File, destination: File) {
-        if (!source.isDirectory) return
-        check(source.copyRecursively(destination, overwrite = true)) { "Backup assets could not be copied" }
-    }
+    private fun isSafeStoredEntry(entryName: String): Boolean =
+        entryName.matches(Regex("assets/(banners/[A-Za-z0-9_.]+|wallpapers/(main|day|night))\\.image")) ||
+            entryName == "$PROFILE_ENTRY_PREFIX/$PROFILE_REGISTRY_FILE" ||
+            entryName.matches(Regex("profiles/[a-f0-9-]+\\.vesperprofile"))
 
     private data class PreparedBackup(
         val document: BackupDocument,
         val snapshot: BackupSnapshot,
         val stageDirectory: File
     )
-
-    private companion object {
-        const val BACKUP_DIRECTORY = "backups"
-        const val BANNER_DIRECTORY = "custom_banners"
-        const val WALLPAPER_DIRECTORY = "wallpapers"
-        const val BACKUP_PREFIX = "vesper_home_backup_"
-        const val BACKUP_EXTENSION = ".vesperbackup"
-        const val METADATA_ENTRY = "backup.json"
-        const val ASSET_ENTRY_PREFIX = "assets"
-        const val MAX_METADATA_BYTES = 2 * 1024 * 1024
-        const val MAX_ARCHIVE_ENTRIES = 10_010
-        const val MAX_ASSET_BYTES = 25L * 1024 * 1024
-        const val MAX_ARCHIVE_BYTES = 100L * 1024 * 1024
-        const val MAX_EXTRACTED_BYTES = 100L * 1024 * 1024
-    }
-}
-
-private class CopyBudget(private val maximum: Long) {
-    private var copied = 0L
-
-    fun add(byteCount: Int) {
-        copied += byteCount
-        require(copied <= maximum) { "Backup data is too large" }
-    }
-}
-
-private fun ZipOutputStream.writeEntry(name: String, input: InputStream, timestamp: Long) {
-    putNextEntry(ZipEntry(name).apply { time = timestamp })
-    input.copyTo(this)
-    closeEntry()
-}
-
-private fun copyLimited(input: InputStream, output: OutputStream, maximum: Long, budget: CopyBudget) {
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-    var copied = 0L
-    while (true) {
-        val count = input.read(buffer)
-        if (count < 0) break
-        copied += count
-        require(copied <= maximum) { "Backup entry is too large" }
-        budget.add(count)
-        output.write(buffer, 0, count)
-    }
 }

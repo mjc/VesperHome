@@ -23,7 +23,23 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlinx.serialization.Serializable
 
-data class BackupFileEntry(val file: File, val createdAt: Long, val size: Long)
+enum class BackupKind {
+    MANUAL,
+    SAFETY
+}
+
+enum class SafetyBackupReason {
+    BEFORE_RESTORE,
+    SCHEDULED
+}
+
+data class BackupFileEntry(
+    val file: File,
+    val createdAt: Long,
+    val size: Long,
+    val kind: BackupKind = BackupKind.MANUAL,
+    val safetyReason: SafetyBackupReason? = null
+)
 
 @Serializable
 internal data class BackupDocument(
@@ -34,7 +50,8 @@ internal data class BackupDocument(
     val appPreferences: List<AppPreferenceBackup>,
     val categories: List<CategoryBackup>,
     val memberships: List<MembershipBackup>,
-    val spacers: List<SpacerBackup>
+    val spacers: List<SpacerBackup>,
+    val profileEntries: List<String> = emptyList()
 )
 
 @Serializable
@@ -66,7 +83,9 @@ internal data class SettingsBackup(
     val brightnessEvening: Int,
     val brightnessNight: Int,
     val screensaverStartDelay: String = ScreensaverStartDelay.MINUTES_10.name,
-    val screensaverStandbyDelay: String = ScreensaverStandbyDelay.MINUTES_30.name
+    val screensaverStandbyDelay: String = ScreensaverStandbyDelay.MINUTES_30.name,
+    val showComingNext: Boolean = true,
+    val showJellyfinMusic: Boolean = true
 )
 
 @Serializable
@@ -109,43 +128,49 @@ internal data class BackupSnapshot(
     val spacers: List<SpacerEntity>
 )
 
-internal fun BackupSnapshot.toDocument(createdAt: Long): BackupDocument = BackupDocument(
-    version = BACKUP_FORMAT_VERSION,
-    createdAt = createdAt,
-    settings = settings.toBackup(),
-    wallpaper = wallpaper.toBackup(),
-    appPreferences = appPreferences.map { preference ->
-        AppPreferenceBackup(
-            preference.componentName,
-            preference.isFavorite,
-            preference.isHidden,
-            preference.manualOrder,
-            preference.lastUsedAt,
-            preference.customBannerRevision != null,
-            preference.customName
-        )
-    },
-    categories = categories.map { category ->
-        CategoryBackup(
-            category.categoryId,
-            category.name,
-            category.position,
-            category.sortMode,
-            category.layoutType,
-            category.gridColumns,
-            category.rowHeight
-        )
-    },
-    memberships = memberships.map { MembershipBackup(it.categoryId, it.componentName, it.position) },
-    spacers = spacers.map { SpacerBackup(it.spacerId, it.position, it.height) }
-)
+internal fun BackupSnapshot.toDocument(createdAt: Long, profileEntries: List<String> = emptyList()): BackupDocument =
+    BackupDocument(
+        version = BACKUP_FORMAT_VERSION,
+        createdAt = createdAt,
+        settings = settings.toBackup(),
+        wallpaper = wallpaper.toBackup(),
+        appPreferences = appPreferences.map { preference ->
+            AppPreferenceBackup(
+                preference.componentName,
+                preference.isFavorite,
+                preference.isHidden,
+                preference.manualOrder,
+                preference.lastUsedAt,
+                preference.customBannerRevision != null,
+                preference.customName
+            )
+        },
+        categories = categories.map { category ->
+            CategoryBackup(
+                category.categoryId,
+                category.name,
+                category.position,
+                category.sortMode,
+                category.layoutType,
+                category.gridColumns,
+                category.rowHeight
+            )
+        },
+        memberships = memberships.map { MembershipBackup(it.categoryId, it.componentName, it.position) },
+        spacers = spacers.map { SpacerBackup(it.spacerId, it.position, it.height) },
+        profileEntries = profileEntries
+    )
 
 internal fun BackupDocument.toSnapshot(): BackupSnapshot {
-    require(version == BACKUP_FORMAT_VERSION) { "Unsupported backup version" }
+    require(version in MIN_SUPPORTED_BACKUP_FORMAT_VERSION..BACKUP_FORMAT_VERSION) {
+        "Unsupported backup version"
+    }
     require(appPreferences.size <= MAX_APP_PREFERENCES)
     require(categories.size <= MAX_CATEGORIES)
     require(memberships.size <= MAX_MEMBERSHIPS)
     require(spacers.size <= MAX_SPACERS)
+    require(profileEntries.size <= MAX_PROFILE_ENTRIES)
+    require(profileEntries.distinct().size == profileEntries.size)
     require(categories.map(CategoryBackup::id).distinct().size == categories.size)
     require(categories.map { it.name.lowercase() }.distinct().size == categories.size)
     val categoryIds = categories.map(CategoryBackup::id).toSet()
@@ -221,7 +246,9 @@ private fun LauncherSettings.toBackup(): SettingsBackup = SettingsBackup(
     brightness.eveningPercentage,
     brightness.nightPercentage,
     screensaver.startDelay.name,
-    screensaver.standbyDelay.name
+    screensaver.standbyDelay.name,
+    showComingNext,
+    showJellyfinMusic
 )
 
 private fun SettingsBackup.toDomain(): LauncherSettings {
@@ -271,7 +298,9 @@ private fun SettingsBackup.toDomain(): LauncherSettings {
             brightnessAfternoon,
             brightnessEvening,
             brightnessNight
-        )
+        ),
+        showComingNext = showComingNext,
+        showJellyfinMusic = showJellyfinMusic
     )
 }
 
@@ -308,12 +337,14 @@ private fun requireValidDateTimePattern(pattern: String) {
     SimpleDateFormat(pattern, Locale.getDefault())
 }
 
-internal const val BACKUP_FORMAT_VERSION = 1
+internal const val BACKUP_FORMAT_VERSION = 2
+internal const val MIN_SUPPORTED_BACKUP_FORMAT_VERSION = 1
 internal const val CUSTOM_WALLPAPER = "CUSTOM"
 private const val MAX_APP_PREFERENCES = 10_000
 private const val MAX_CATEGORIES = 500
 private const val MAX_MEMBERSHIPS = 50_000
 private const val MAX_SPACERS = 500
+private const val MAX_PROFILE_ENTRIES = 13
 private const val MAX_CATEGORY_NAME_LENGTH = 100
 private const val MAX_APP_NAME_LENGTH = 100
 private const val MAX_COMPONENT_NAME_LENGTH = 500
