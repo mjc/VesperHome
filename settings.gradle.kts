@@ -17,3 +17,5 @@ dependencyResolutionManagement {
 rootProject.name = "VesperHome"
 include(":app")
 include(":benchmark")
+include(":plugin-api")
+include(":plugins:jellyfin-live-tv")

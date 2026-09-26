@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
@@ -8,11 +9,17 @@ plugins {
 
 spotless {
     kotlin {
-        target("app/src/**/*.kt", "benchmark/src/**/*.kt")
+        target("app/src/**/*.kt", "benchmark/src/**/*.kt", "plugin-api/src/**/*.kt", "plugins/*/src/**/*.kt")
         ktlint("1.8.0")
     }
     kotlinGradle {
-        target("*.gradle.kts", "app/*.gradle.kts", "benchmark/*.gradle.kts")
+        target(
+            "*.gradle.kts",
+            "app/*.gradle.kts",
+            "benchmark/*.gradle.kts",
+            "plugin-api/*.gradle.kts",
+            "plugins/*/*.gradle.kts"
+        )
         ktlint("1.8.0")
     }
     format("misc") {
@@ -21,7 +28,9 @@ spotless {
             ".gitignore",
             "gradle.properties",
             "app/src/**/*.xml",
-            "benchmark/src/**/*.xml"
+            "benchmark/src/**/*.xml",
+            "plugin-api/src/**/*.xml",
+            "plugins/*/src/**/*.xml"
         )
         trimTrailingWhitespace()
         endWithNewline()
@@ -37,5 +46,5 @@ tasks.register("format") {
 tasks.register("lint") {
     group = "verification"
     description = "Checks formatting, Kotlin style, and Android lint findings."
-    dependsOn("spotlessCheck", ":app:lintDebug")
+    dependsOn("spotlessCheck", ":app:lintDebug", ":plugin-api:lintDebug", ":plugins:jellyfin-live-tv:lintDebug")
 }
