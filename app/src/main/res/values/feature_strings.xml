@@ -63,4 +63,12 @@
     <string name="release_date">Published: %1$s</string>
     <string name="release_no_notes">No release notes were provided.</string>
     <string name="check_again">Check again</string>
+
+    <string name="live_tv">Live TV</string>
+    <string name="open_live_tv">Open Live TV</string>
+    <string name="close_live_tv">Close Live TV</string>
+    <string name="live_tv_no_channels">No Live TV channels are available.</string>
+    <string name="live_tv_channel_number">Channel %1$s</string>
+    <string name="live_tv_channel_description">%1$s, %2$s</string>
+    <string name="live_tv_playback_failed">The channel could not be played.</string>
 </resources>

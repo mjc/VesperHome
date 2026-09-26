@@ -63,4 +63,12 @@
     <string name="release_date">Publicada: %1$s</string>
     <string name="release_no_notes">No se proporcionaron notas de la versión.</string>
     <string name="check_again">Comprobar de nuevo</string>
+
+    <string name="live_tv">Televisión en directo</string>
+    <string name="open_live_tv">Abrir televisión en directo</string>
+    <string name="close_live_tv">Cerrar televisión en directo</string>
+    <string name="live_tv_no_channels">No hay canales de televisión en directo disponibles.</string>
+    <string name="live_tv_channel_number">Canal %1$s</string>
+    <string name="live_tv_channel_description">%1$s, %2$s</string>
+    <string name="live_tv_playback_failed">No se pudo reproducir el canal.</string>
 </resources>

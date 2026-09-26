@@ -151,6 +151,7 @@ class StatusBarController(
             listOf(
                 binding.openLauncherSettings,
                 binding.statusMediaSearch,
+                binding.statusLiveTv,
                 binding.statusInputs,
                 binding.statusNotifications,
                 binding.statusNetwork
@@ -228,7 +229,7 @@ class StatusBarController(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(palette.focusedText, palette.primaryText)
         )
-        listOf(binding.statusMediaSearch, binding.statusNetwork).forEach { button ->
+        listOf(binding.statusMediaSearch, binding.statusLiveTv, binding.statusNetwork).forEach { button ->
             button.backgroundTintList = background
             button.setTextColor(iconColors)
             button.iconTint = iconColors

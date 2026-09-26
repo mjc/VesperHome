@@ -12,6 +12,8 @@ import com.sergioasenjo.vesperhome.data.AppPreferencesRepository
 import com.sergioasenjo.vesperhome.data.CategoryRepository
 import com.sergioasenjo.vesperhome.data.LauncherDatabase
 import com.sergioasenjo.vesperhome.inputs.TvInputRepository
+import com.sergioasenjo.vesperhome.livetv.LiveTvPluginRepository
+import com.sergioasenjo.vesperhome.livetv.LiveTvPreferencesRepository
 import com.sergioasenjo.vesperhome.media.ArrApiClient
 import com.sergioasenjo.vesperhome.media.MediaSearchPreferencesRepository
 import com.sergioasenjo.vesperhome.media.MediaSearchRepository
@@ -66,6 +68,8 @@ class AppContainer(application: Application) {
     val jellyfinPreferencesRepository by lazy { JellyfinPreferencesRepository(application) }
     val jellyfinDiscoveryRepository by lazy { JellyfinDiscoveryRepository(json) }
     val jellyfinApiRepository by lazy { JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository) }
+    val liveTvPluginRepository by lazy { LiveTvPluginRepository(application, jellyfinPreferencesRepository) }
+    val liveTvPreferencesRepository by lazy { LiveTvPreferencesRepository(application) }
     val upcomingPreferencesRepository by lazy {
         UpcomingPreferencesRepository(
             application,

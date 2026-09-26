@@ -20,6 +20,7 @@ import com.sergioasenjo.vesperhome.brightness.BrightnessController
 import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.inputs.TvInputController
+import com.sergioasenjo.vesperhome.livetv.LiveTvController
 import com.sergioasenjo.vesperhome.music.JellyfinMusicController
 import com.sergioasenjo.vesperhome.music.JellyfinMusicViewModel
 import com.sergioasenjo.vesperhome.notifications.NotificationController
@@ -57,6 +58,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var settingsActionController: LauncherSettingsActionController
     private lateinit var stateRenderer: LauncherStateRenderer
     private lateinit var musicController: JellyfinMusicController
+    private lateinit var liveTvController: LiveTvController
     private lateinit var settingsHost: LauncherSettingsHost
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
     private var launcherInitialized = false
@@ -72,23 +74,10 @@ class LauncherActivity : AppCompatActivity() {
         if (uri != null && ::backupController.isInitialized) backupController.importBackup(uri)
     }
     private val viewModel: LauncherViewModel by viewModels {
-        val container = (application as VesperHomeApplication).container
-        LauncherViewModel.factory(
-            container.managedApplicationsRepository,
-            container.categoryRepository,
-            container.homeRepository,
-            container.launcherSettingsRepository,
-            container.wallpaperRepository
-        )
+        launcherViewModelFactory(application as VesperHomeApplication)
     }
     private val musicViewModel: JellyfinMusicViewModel by viewModels {
-        val container = (application as VesperHomeApplication).container
-        JellyfinMusicViewModel.factory(
-            application as VesperHomeApplication,
-            { container.jellyfinApiRepository },
-            container.jellyfinPreferencesRepository,
-            container.dreamStateTracker
-        )
+        jellyfinMusicViewModelFactory(application as VesperHomeApplication)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -159,6 +148,14 @@ class LauncherActivity : AppCompatActivity() {
             setDateFormat = viewModel::setStatusBarDateFormat,
             setTimeFormat = viewModel::setStatusBarTimeFormat
         )
+        liveTvController = LiveTvController(
+            this,
+            binding,
+            container.liveTvPluginRepository,
+            container.liveTvPreferencesRepository,
+            { viewModel.uiState.value.appearance.forWallpaper(viewModel.uiState.value.wallpaper) },
+            { if (::musicController.isInitialized) musicController.onHostStopped() }
+        ).also(LiveTvController::start)
         tvInputController = TvInputController(this, binding, container.tvInputRepository)
         notificationController = NotificationController(
             this,
@@ -232,6 +229,7 @@ class LauncherActivity : AppCompatActivity() {
             container.systemScreensaverRepository
         )
         onBackPressedDispatcher.addCallback(this) {
+            if (liveTvController.handleBack()) return@addCallback
             if (backActionGuard.consumeIntentionalBack()) preserveMusicOnStop = screensaverController.handleBack()
         }
         settingsPanelPageToRestore = restoredSettingsPage(savedInstanceState)
@@ -278,6 +276,7 @@ class LauncherActivity : AppCompatActivity() {
             releaseUpdateController = releaseUpdateController,
             currentSettingsPanel = { settingsHost.panel },
             currentMusicController = { if (::musicController.isInitialized) musicController else null },
+            currentLiveTvController = { liveTvController },
             showSettingsPanel = settingsHost::show,
             initialPageToRestore = settingsPanelPageToRestore
         )
@@ -339,11 +338,13 @@ class LauncherActivity : AppCompatActivity() {
         }
         if (::aboutController.isInitialized) aboutController.refresh()
         if (launcherInitialized) viewModel.refreshHomeStatus()
+        liveTvController.refresh()
     }
 
     override fun onStop() {
         backActionGuard.onStop()
         if (musicInitialized && !preserveMusicOnStop) musicController.onHostStopped()
+        liveTvController.onHostStopped()
         preserveMusicOnStop = false
         super.onStop()
     }
@@ -366,11 +367,13 @@ class LauncherActivity : AppCompatActivity() {
         profileController.release()
         releaseUpdateController.release()
         if (::musicController.isInitialized) musicController.release()
+        liveTvController.release()
         super.onDestroy()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         backActionGuard.onKeyEvent(event, hasWindowFocus())
+        if (liveTvController.onKeyEvent(event)) return true
         if (::statusBarController.isInitialized && statusBarController.onKeyEvent(event)) return true
         if (::musicController.isInitialized && musicController.onKeyEvent(event)) return true
         return super.dispatchKeyEvent(event)
