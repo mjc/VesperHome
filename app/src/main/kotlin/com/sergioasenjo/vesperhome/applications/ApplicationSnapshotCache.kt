@@ -18,7 +18,11 @@ class ApplicationSnapshotCache(private val context: Context) {
     private val metadataFile = AtomicFile(File(cacheDirectory, METADATA_FILE_NAME))
     private val defaultArtwork = context.packageManager.defaultActivityIcon
     private val json = Json { ignoreUnknownKeys = true }
+
+    @Volatile
     private var cachedVersions = emptyMap<String, Long>()
+
+    @Volatile
     private var cachedLabelLocales = ""
 
     val labelsMatchLocale: Boolean get() = cachedLabelLocales == currentLocales()

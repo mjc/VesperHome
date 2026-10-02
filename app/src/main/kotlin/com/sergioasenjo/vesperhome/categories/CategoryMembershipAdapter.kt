@@ -122,6 +122,7 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
 
         override fun areContentsTheSame(oldItem: CategoryMembershipItem, newItem: CategoryMembershipItem): Boolean =
             oldItem.app.label == newItem.app.label &&
+                oldItem.app.artworkVersion == newItem.app.artworkVersion &&
                 oldItem.app.customBannerRevision == newItem.app.customBannerRevision &&
                 oldItem.included == newItem.included
     }
