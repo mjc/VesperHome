@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
 import coil3.load
+import coil3.request.allowHardware
 import com.sergioasenjo.vesperhome.databinding.ItemAppBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -251,6 +253,11 @@ class AppAdapter(
             binding.root.isActivated = moving
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
             binding.artwork.load(app.customBannerFile ?: app.artworkFile ?: app.artwork) {
+                if (app.customBannerFile == null && app.artworkFile != null) {
+                    memoryCacheKey("app-banner:${app.packageName}:${app.artworkVersion}")
+                    // Hardware thumbnail imports can stall the graphics buffer queue on NVIDIA TVs.
+                    allowHardware(!Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true))
+                }
                 app.customBannerRevision?.let { revision ->
                     memoryCacheKey("custom-banner:${app.packageName}:$revision")
                 }
