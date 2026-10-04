@@ -81,7 +81,7 @@ class AppContainer(application: Application) {
             )
         )
     }
-    val upcomingRepository by lazy { UpcomingRepository(httpClient, json, upcomingPreferencesRepository) }
+    val upcomingRepository by lazy { UpcomingRepository(httpClient, json, upcomingPreferencesRepository.config) }
     private val arrApiClient by lazy { ArrApiClient(httpClient, json, upcomingPreferencesRepository) }
     private val mediaSearchPreferencesRepository by lazy { MediaSearchPreferencesRepository(application) }
     val mediaSearchRepository by lazy {

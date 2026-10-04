@@ -96,7 +96,7 @@ class LauncherActivity : AppCompatActivity() {
             onPeriodChanged = {
                 val state = viewModel.uiState.value
                 if (::settingsHost.isInitialized) {
-                    settingsHost.panel.renderBrightness(
+                    settingsHost.panel?.takeIf { it.isShowing }?.renderBrightness(
                         state.brightness,
                         brightnessController.hasPermission(),
                         state.appearance
@@ -330,7 +330,7 @@ class LauncherActivity : AppCompatActivity() {
         if (::brightnessController.isInitialized) {
             brightnessController.onResume()
             val state = viewModel.uiState.value
-            settingsHost.panel.renderBrightness(
+            settingsHost.panel?.takeIf { it.isShowing }?.renderBrightness(
                 state.brightness,
                 brightnessController.hasPermission(),
                 state.appearance
@@ -350,7 +350,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        settingsHost.panel.takeIf { it.isShowing }?.let { panel ->
+        settingsHost.panel?.takeIf { it.isShowing }?.let { panel ->
             outState.putBoolean(STATE_SETTINGS_PANEL_OPEN, true)
             outState.putString(STATE_SETTINGS_PANEL_PAGE, panel.currentPage.name)
         }

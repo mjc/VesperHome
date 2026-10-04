@@ -22,19 +22,24 @@ internal class LauncherSettingsHost(
     onScreensaverAction: (ScreensaverSettingsAction) -> Unit,
     onDismissed: () -> Unit
 ) {
-    val panel = LauncherSettingsPanel(
-        context = context,
-        onAction = onAction,
-        onAppearanceAction = onAppearanceAction,
-        onWallpaperAction = onWallpaperAction,
-        onStatusBarAction = onStatusBarAction,
-        onScreensaverAction = onScreensaverAction,
-        onBrightnessAction = brightnessController::handleSettingsAction,
-        onDismissed = onDismissed
-    )
+    private val panelDelegate = lazy {
+        LauncherSettingsPanel(
+            context = context,
+            onAction = onAction,
+            onAppearanceAction = onAppearanceAction,
+            onWallpaperAction = onWallpaperAction,
+            onStatusBarAction = onStatusBarAction,
+            onScreensaverAction = onScreensaverAction,
+            onBrightnessAction = brightnessController::handleSettingsAction,
+            onDismissed = onDismissed
+        )
+    }
+
+    val panel: LauncherSettingsPanel?
+        get() = if (panelDelegate.isInitialized()) panelDelegate.value else null
 
     fun show(state: LauncherUiState, page: LauncherSettingsPanelPage = LauncherSettingsPanelPage.MAIN) {
-        panel.show(
+        panelDelegate.value.show(
             state.isDefaultLauncher,
             homeButtonFixEnabled(),
             state.applicationSortMode,
@@ -49,7 +54,7 @@ internal class LauncherSettingsHost(
     }
 
     fun release() {
-        panel.release()
+        panel?.release()
     }
 }
 

@@ -14,11 +14,13 @@ import com.sergioasenjo.vesperhome.R
 import java.io.File
 import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -79,22 +81,26 @@ class WallpaperRepository(private val context: Context) {
     private val wallpaperDirectory = File(context.filesDir, "wallpapers")
     private val settings = context.wallpaperDataStore.data.map(::readSettings)
 
-    val state: Flow<WallpaperState> = combine(settings, observeDayPeriod()) { settings, isDay ->
-        val activeTarget = when {
-            !settings.timeBasedEnabled -> WallpaperTarget.MAIN
-            isDay -> WallpaperTarget.DAY
-            else -> WallpaperTarget.NIGHT
-        }
-        val selection = settings.selection(activeTarget)
-        val customFile = customFile(activeTarget).takeIf { selection == WallpaperSelection.Custom && it.isFile }
-        if (selection == WallpaperSelection.Custom && customFile == null) {
-            WallpaperState(
-                settings = settings,
-                activeTarget = activeTarget,
-                activeSelection = WallpaperSelection.BuiltIn(BuiltInWallpaper.MIDNIGHT)
-            )
-        } else {
-            WallpaperState(settings, activeTarget, selection, customFile)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: Flow<WallpaperState> = settings.flatMapLatest { settings ->
+        val periods = if (settings.timeBasedEnabled) observeDayPeriod() else flowOf(true)
+        periods.map { isDay ->
+            val activeTarget = when {
+                !settings.timeBasedEnabled -> WallpaperTarget.MAIN
+                isDay -> WallpaperTarget.DAY
+                else -> WallpaperTarget.NIGHT
+            }
+            val selection = settings.selection(activeTarget)
+            val customFile = customFile(activeTarget).takeIf { selection == WallpaperSelection.Custom && it.isFile }
+            if (selection == WallpaperSelection.Custom && customFile == null) {
+                WallpaperState(
+                    settings = settings,
+                    activeTarget = activeTarget,
+                    activeSelection = WallpaperSelection.BuiltIn(BuiltInWallpaper.MIDNIGHT)
+                )
+            } else {
+                WallpaperState(settings, activeTarget, selection, customFile)
+            }
         }
     }
 

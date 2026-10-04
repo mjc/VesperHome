@@ -27,6 +27,7 @@ class BrightnessController(
     private var settings = BrightnessSettings()
     private var schedulerJob: Job? = null
     private var enableAfterPermission = false
+    private var renderedPeriod: BrightnessPeriod? = null
 
     fun hasPermission(): Boolean = Settings.System.canWrite(activity)
 
@@ -41,8 +42,12 @@ class BrightnessController(
         if (schedulerJob == null) {
             schedulerJob = scope.launch {
                 while (isActive) {
-                    applyCurrentPeriod()
-                    onPeriodChanged()
+                    val period = BrightnessPeriod.current()
+                    applyCurrentPeriod(period)
+                    if (renderedPeriod != period) {
+                        renderedPeriod = period
+                        onPeriodChanged()
+                    }
                     delay(SCHEDULER_INTERVAL_MS)
                 }
             }
@@ -87,20 +92,27 @@ class BrightnessController(
         stopScheduler()
     }
 
-    private fun applyCurrentPeriod() {
+    private fun applyCurrentPeriod(period: BrightnessPeriod = BrightnessPeriod.current()) {
         if (!hasPermission()) {
             stopScheduler()
             return
         }
-        val percentage = settings.percentageFor(BrightnessPeriod.current())
+        val percentage = settings.percentageFor(period)
         val systemValue = (percentage / 100f * MAX_SYSTEM_BRIGHTNESS).roundToInt()
         try {
-            Settings.System.putInt(
-                activity.contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
+            val resolver = activity.contentResolver
+            if (Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, -1) !=
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
-            )
-            if (!Settings.System.putInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS, systemValue)) {
+            ) {
+                Settings.System.putInt(
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
+                )
+            }
+            if (Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS, -1) != systemValue &&
+                !Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, systemValue)
+            ) {
                 Log.e(TAG, "The device rejected the system brightness update")
             }
         } catch (error: SecurityException) {
@@ -140,6 +152,7 @@ class BrightnessController(
     private fun stopScheduler() {
         schedulerJob?.cancel()
         schedulerJob = null
+        renderedPeriod = null
     }
 
     private companion object {

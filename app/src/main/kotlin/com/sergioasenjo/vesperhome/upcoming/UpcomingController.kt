@@ -26,10 +26,10 @@ class UpcomingController(
         binding.upcomingItems.itemAnimator = null
     }
 
-    suspend fun load() {
+    suspend fun load(forceRefresh: Boolean = false) {
         if (!enabled) return
         items = try {
-            repository.upcoming()
+            repository.upcoming(forceRefresh = forceRefresh)
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {

@@ -45,15 +45,21 @@ class JellyfinMusicController(
 
     suspend fun collectState(): Unit = coroutineScope {
         launch {
+            var disconnected = false
             networkStatusRepository.observeStatus()
                 .map { it.transport != NetworkTransport.NONE }
                 .distinctUntilChanged()
                 .collectLatest { connected ->
                     if (connected) {
+                        var forceRefresh = disconnected
+                        disconnected = false
                         while (true) {
-                            upcomingController.load()
+                            upcomingController.load(forceRefresh)
+                            forceRefresh = false
                             delay(millisUntilTomorrow())
                         }
+                    } else {
+                        disconnected = true
                     }
                 }
         }
