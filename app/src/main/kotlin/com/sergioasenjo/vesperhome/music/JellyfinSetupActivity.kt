@@ -52,6 +52,15 @@ class JellyfinSetupActivity : AppCompatActivity() {
         }
         jellyfin.disconnect.setOnClickListener { viewModel.disconnect() }
         jellyfin.normalization.setOnClickListener { showNormalizationPicker() }
+        binding.plexPage.connectMusic.setOnClickListener {
+            viewModel.connectPlex(
+                binding.plexPage.serverUrl.text.toString(),
+                binding.plexPage.accessToken.text.toString()
+            )
+        }
+        binding.plexPage.disconnectMusic.setOnClickListener { viewModel.disconnectPlex() }
+        binding.plexPage.useMusic.setOnClickListener { viewModel.setMusicProvider(MusicProvider.PLEX) }
+        jellyfin.useMusic.setOnClickListener { viewModel.setMusicProvider(MusicProvider.JELLYFIN) }
         val plexAvailable = PlexItemLauncher(this).available
         binding.plexPage.usePlex.isEnabled = plexAvailable
         binding.plexPage.usePlex.setOnClickListener { viewModel.setUpcomingPlayer(UpcomingPlayer.PLEX) }
@@ -88,6 +97,34 @@ class JellyfinSetupActivity : AppCompatActivity() {
                 }
                 launch {
                     viewModel.uiState.collect { state ->
+                        binding.plexPage.connectMusic.isEnabled = !state.connectingPlex
+                        binding.plexPage.disconnectMusic.isVisible = state.plexServerName != null
+                        binding.plexPage.useMusic.isEnabled = state.plexServerName != null
+                        jellyfin.useMusic.isEnabled = state.connectedServerName != null
+                        binding.plexPage.useMusic.text = getString(
+                            if (state.musicProvider ==
+                                MusicProvider.PLEX
+                            ) {
+                                R.string.music_selected
+                            } else {
+                                R.string.use_plex_music
+                            }
+                        )
+                        jellyfin.useMusic.text = getString(
+                            if (state.musicProvider ==
+                                MusicProvider.JELLYFIN
+                            ) {
+                                R.string.music_selected
+                            } else {
+                                R.string.use_jellyfin_music
+                            }
+                        )
+                        binding.plexPage.musicStatus.text = when {
+                            state.connectingPlex -> getString(R.string.plex_music_connecting)
+                            state.plexErrorRes != null -> getString(state.plexErrorRes)
+                            state.plexServerName != null -> getString(R.string.jellyfin_ready, state.plexServerName)
+                            else -> getString(R.string.plex_music_setup_description)
+                        }
                         val plexSelected = state.serviceConfig?.player == UpcomingPlayer.PLEX ||
                             (state.serviceConfig?.player == UpcomingPlayer.AUTO && plexAvailable)
                         binding.plexPage.status.text = getString(

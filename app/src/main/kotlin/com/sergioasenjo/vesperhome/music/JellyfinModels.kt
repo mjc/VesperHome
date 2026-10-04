@@ -63,7 +63,18 @@ data class JellyfinAudioItem(
     val AlbumNormalizationGain: Double? = null
 )
 
-data class JellyfinCredentials(val baseUrl: String, val accessToken: String, val userId: String, val serverName: String)
+enum class MusicProvider {
+    JELLYFIN,
+    PLEX
+}
+
+data class JellyfinCredentials(
+    val baseUrl: String,
+    val accessToken: String,
+    val userId: String,
+    val serverName: String,
+    val provider: MusicProvider = MusicProvider.JELLYFIN
+)
 
 data class JellyfinTrack(
     val id: String,

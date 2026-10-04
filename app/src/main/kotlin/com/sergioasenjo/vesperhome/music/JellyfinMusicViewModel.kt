@@ -16,10 +16,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class JellyfinMusicUiState(
     val serverName: String? = null,
+    val provider: MusicProvider = MusicProvider.JELLYFIN,
     val track: JellyfinTrack? = null,
     val playing: Boolean = false,
     val collectionPlayback: Boolean = false,
@@ -39,7 +41,7 @@ data class JellyfinCollectionPickerState(
 class JellyfinMusicViewModel(
     application: Application,
     private val apiRepository: () -> JellyfinApiRepository,
-    preferencesRepository: JellyfinPreferencesRepository,
+    private val preferencesRepository: JellyfinPreferencesRepository,
     private val dreamStateTracker: DreamStateTracker
 ) : AndroidViewModel(application) {
     private val mutableUiState = MutableStateFlow(JellyfinMusicUiState())
@@ -57,7 +59,12 @@ class JellyfinMusicViewModel(
 
     init {
         viewModelScope.launch {
-            preferencesRepository.credentials.collect { updatedCredentials ->
+            preferencesRepository.musicProvider.collect { provider ->
+                mutableUiState.value = mutableUiState.value.copy(provider = provider)
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepository.musicCredentials.collect { updatedCredentials ->
                 val credentialsChanged = credentials != updatedCredentials
                 if (credentialsChanged) {
                     requestJob?.cancel()
@@ -67,6 +74,7 @@ class JellyfinMusicViewModel(
                 if (credentialsChanged) player.stop()
                 mutableUiState.value = mutableUiState.value.copy(
                     serverName = updatedCredentials?.serverName,
+                    loading = if (credentialsChanged) false else mutableUiState.value.loading,
                     track = if (credentialsChanged) null else mutableUiState.value.track,
                     collectionPlayback = if (credentialsChanged) false else mutableUiState.value.collectionPlayback,
                     activeCollection = if (credentialsChanged) null else mutableUiState.value.activeCollection,
@@ -142,7 +150,7 @@ class JellyfinMusicViewModel(
     }
 
     suspend fun jellyfinItemId(item: UpcomingMediaItem): String? {
-        val activeCredentials = credentials ?: return null
+        val activeCredentials = preferencesRepository.credentials.first() ?: return null
         return apiRepository().itemIdByProvider(
             activeCredentials,
             item.providerId.provider.apiName,

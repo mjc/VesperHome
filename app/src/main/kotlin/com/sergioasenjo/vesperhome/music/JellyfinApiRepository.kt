@@ -16,6 +16,11 @@ class JellyfinApiRepository(
     private val json: Json,
     private val preferencesRepository: JellyfinPreferencesRepository
 ) {
+    private val plex by lazy { PlexMusicApiRepository(client, json) }
+
+    suspend fun resolvePlexServer(address: String, token: String): JellyfinCredentials =
+        plex.resolveServer(address, token)
+
     suspend fun resolveServer(address: String): JellyfinServer {
         val normalizedAddress = address.trim().trimEnd('/').let {
             if (it.startsWith("http://") || it.startsWith("https://")) it else "https://$it"
@@ -44,6 +49,7 @@ class JellyfinApiRepository(
     )
 
     suspend fun randomTrack(credentials: JellyfinCredentials): JellyfinTrack {
+        if (credentials.provider == MusicProvider.PLEX) return plex.randomTrack(credentials)
         val result: JellyfinItemsResult = execute(
             credentials.baseUrl,
             "Items",
@@ -62,6 +68,7 @@ class JellyfinApiRepository(
     }
 
     suspend fun musicCollections(credentials: JellyfinCredentials): List<JellyfinMusicCollection> {
+        if (credentials.provider == MusicProvider.PLEX) return plex.musicCollections(credentials)
         val result: JellyfinLibraryItemsResult = execute(
             credentials.baseUrl,
             "Items",
@@ -93,6 +100,7 @@ class JellyfinApiRepository(
         credentials: JellyfinCredentials,
         collection: JellyfinMusicCollection
     ): List<JellyfinTrack> {
+        if (credentials.provider == MusicProvider.PLEX) return plex.collectionTracks(credentials, collection)
         val path: String
         val query: Map<String, String>
         when (collection.type) {

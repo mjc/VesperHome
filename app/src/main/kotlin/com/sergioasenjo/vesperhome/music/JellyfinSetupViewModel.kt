@@ -23,6 +23,10 @@ data class JellyfinSetupUiState(
     val pairing: Boolean = false,
     val quickConnectCode: String? = null,
     val connectedServerName: String? = null,
+    val plexServerName: String? = null,
+    val musicProvider: MusicProvider = MusicProvider.JELLYFIN,
+    val connectingPlex: Boolean = false,
+    val plexErrorRes: Int? = null,
     val normalizationMode: JellyfinNormalizationMode = JellyfinNormalizationMode.OFF,
     val errorRes: Int? = null,
     val serviceConfig: UpcomingServerConfig? = null,
@@ -42,8 +46,19 @@ class JellyfinSetupViewModel(
     private val mutableUiState = MutableStateFlow(JellyfinSetupUiState())
     val uiState = mutableUiState.asStateFlow()
     private var pairingJob: Job? = null
+    private var plexConnectionJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            preferencesRepository.plexCredentials.collect { credentials ->
+                mutableUiState.value = mutableUiState.value.copy(plexServerName = credentials?.serverName)
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepository.musicProvider.collect { provider ->
+                mutableUiState.value = mutableUiState.value.copy(musicProvider = provider)
+            }
+        }
         viewModelScope.launch {
             preferencesRepository.credentials.collect { credentials ->
                 mutableUiState.value = mutableUiState.value.copy(
@@ -167,6 +182,35 @@ class JellyfinSetupViewModel(
                 errorRes = null
             )
         }
+    }
+
+    fun connectPlex(address: String, token: String) {
+        plexConnectionJob?.cancel()
+        plexConnectionJob = viewModelScope.launch {
+            mutableUiState.value = mutableUiState.value.copy(connectingPlex = true, plexErrorRes = null)
+            try {
+                val credentials = apiRepository.resolvePlexServer(address, token)
+                preferencesRepository.savePlex(credentials)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                mutableUiState.value = mutableUiState.value.copy(plexErrorRes = R.string.plex_music_connection_failed)
+            } finally {
+                mutableUiState.value = mutableUiState.value.copy(connectingPlex = false)
+            }
+        }
+    }
+
+    fun disconnectPlex() {
+        plexConnectionJob?.cancel()
+        viewModelScope.launch {
+            preferencesRepository.clearPlex()
+            mutableUiState.value = mutableUiState.value.copy(plexErrorRes = null)
+        }
+    }
+
+    fun setMusicProvider(provider: MusicProvider) {
+        viewModelScope.launch { preferencesRepository.setMusicProvider(provider) }
     }
 
     fun setNormalizationMode(mode: JellyfinNormalizationMode) {
