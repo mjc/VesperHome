@@ -18,6 +18,7 @@ import coil3.load
 import coil3.request.ErrorResult
 import coil3.result
 import com.sergioasenjo.vesperhome.databinding.ItemAppBinding
+import com.sergioasenjo.vesperhome.launcher.absolutePosition
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
@@ -174,8 +175,10 @@ class AppAdapter(
         val position = currentList.indexOfFirst { it.key() == movingKey }
         if (position == RecyclerView.NO_POSITION) return
         recyclerView?.apply {
-            scrollToPosition(position)
-            post { findViewHolderForAdapterPosition(position)?.itemView?.requestFocus() }
+            val target = absolutePosition(this@AppAdapter, position)
+            if (target == RecyclerView.NO_POSITION) return@apply
+            scrollToPosition(target)
+            post { findViewHolderForAdapterPosition(target)?.itemView?.requestFocus() }
         }
     }
 
