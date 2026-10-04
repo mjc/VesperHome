@@ -6,7 +6,8 @@ data class UpcomingServerConfig(
     val sonarrUrl: String,
     val sonarrApiKey: String,
     val radarrUrl: String,
-    val radarrApiKey: String
+    val radarrApiKey: String,
+    val player: UpcomingPlayer = UpcomingPlayer.AUTO
 ) {
     val sonarrConfigured: Boolean
         get() = sonarrUrl.isNotBlank() && sonarrApiKey.isNotBlank()
@@ -16,6 +17,12 @@ data class UpcomingServerConfig(
 
     val configured: Boolean
         get() = sonarrConfigured || radarrConfigured
+}
+
+enum class UpcomingPlayer {
+    AUTO,
+    PLEX,
+    JELLYFIN
 }
 
 data class UpcomingMediaItem(

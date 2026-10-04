@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="36dp"
+    android:paddingTop="28dp"
+    android:paddingEnd="36dp"
+    android:paddingBottom="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/playback_integration"
+        android:textAllCaps="true"
+        android:textSize="11sp"
+        android:tag="accent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/plex"
+        android:textSize="27sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/plex_setup_description"
+        android:textSize="13sp"
+        android:tag="secondary" />
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:padding="14dp"
+        android:textSize="13sp"
+        android:tag="status" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/usePlex"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/use_plex_coming_next"
+        app:cornerRadius="9dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/openPlex"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/open_plex"
+        app:cornerRadius="9dp" />
+
+</LinearLayout>

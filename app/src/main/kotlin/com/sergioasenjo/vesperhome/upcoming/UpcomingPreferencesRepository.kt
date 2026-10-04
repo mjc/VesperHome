@@ -15,7 +15,8 @@ class UpcomingPreferencesRepository(private val context: Context, private val de
             sonarrUrl = preferences[SONARR_URL] ?: defaults.sonarrUrl,
             sonarrApiKey = preferences[SONARR_API_KEY] ?: defaults.sonarrApiKey,
             radarrUrl = preferences[RADARR_URL] ?: defaults.radarrUrl,
-            radarrApiKey = preferences[RADARR_API_KEY] ?: defaults.radarrApiKey
+            radarrApiKey = preferences[RADARR_API_KEY] ?: defaults.radarrApiKey,
+            player = UpcomingPlayer.entries.firstOrNull { it.name == preferences[PLAYER] } ?: UpcomingPlayer.AUTO
         )
     }
 
@@ -33,10 +34,15 @@ class UpcomingPreferencesRepository(private val context: Context, private val de
         }
     }
 
+    suspend fun setPlayer(player: UpcomingPlayer) {
+        context.upcomingDataStore.edit { it[PLAYER] = player.name }
+    }
+
     private companion object {
         val SONARR_URL = stringPreferencesKey("sonarr_url")
         val SONARR_API_KEY = stringPreferencesKey("sonarr_api_key")
         val RADARR_URL = stringPreferencesKey("radarr_url")
         val RADARR_API_KEY = stringPreferencesKey("radarr_api_key")
+        val PLAYER = stringPreferencesKey("player")
     }
 }

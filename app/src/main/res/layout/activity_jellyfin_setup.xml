@@ -86,6 +86,24 @@
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/showPlex"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:backgroundTint="@color/media_service_nav_background"
+                android:gravity="start|center_vertical"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="16dp"
+                android:text="@string/plex"
+                android:textColor="@color/action_button_text"
+                android:textSize="14sp"
+                app:cornerRadius="11dp"
+                app:icon="@drawable/ic_movie"
+                app:iconPadding="12dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/action_button_text" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/showJellyfin"
                 android:layout_width="match_parent"
                 android:layout_height="58dp"
@@ -162,6 +180,13 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:clipChildren="false">
+
+            <include
+                android:id="@+id/plexPage"
+                layout="@layout/view_plex_service"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
 
             <include
                 android:id="@+id/jellyfinPage"

@@ -259,7 +259,7 @@
     <string name="jellyfin_normalization_track">Pista</string>
     <string name="jellyfin_normalization_album">Álbum</string>
     <string name="media_services_setup">Servicios multimedia</string>
-    <string name="media_services_setup_description">Conecta la reproducción de Jellyfin y configura los calendarios de Sonarr y Radarr que aparecen en la pantalla de inicio.</string>
+    <string name="media_services_setup_description">Elige Plex o Jellyfin para Próximamente y configura los calendarios de Sonarr y Radarr que aparecen en la pantalla de inicio.</string>
     <string name="connected_services">Servicios</string>
     <string name="media_services_hint">Selecciona un servicio y pulsa derecha para editar su conexión.</string>
     <string name="playback_integration">Reproducción</string>
@@ -267,6 +267,14 @@
     <string name="sonarr_setup_description">Añade al launcher los próximos episodios del calendario de Sonarr.</string>
     <string name="radarr_setup_description">Añade estrenos de cine, digitales y físicos desde Radarr.</string>
     <string name="server_url">URL del servidor</string>
+    <string name="plex">Plex</string>
+    <string name="plex_setup_description">Abre los títulos de Próximamente en tus bibliotecas de Plex. Inicia sesión y selecciona tus servidores en la aplicación Plex TV.</string>
+    <string name="use_plex_coming_next">Usar Plex para Próximamente</string>
+    <string name="use_jellyfin_coming_next">Usar Jellyfin para Próximamente</string>
+    <string name="open_plex">Abrir Plex</string>
+    <string name="plex_selected">Próximamente se abre en Plex.</string>
+    <string name="jellyfin_selected">Próximamente se abre en Jellyfin.</string>
+    <string name="plex_available">Plex está instalado. Selecciónalo para abrir los títulos de Próximamente.</string>
     <string name="jellyfin">Jellyfin</string>
     <string name="sonarr">Sonarr</string>
     <string name="radarr">Radarr</string>
@@ -327,6 +335,9 @@
     <string name="physical_release">Físico</string>
     <string name="movie">Película</string>
     <string name="upcoming_open_jellyfin">%1$s, %2$s, %3$s. Abrir en Jellyfin.</string>
+    <string name="upcoming_open_plex">%1$s, %2$s, %3$s. Abrir en Plex.</string>
+    <string name="upcoming_plex_item_unavailable">Este título no se encontró en tus bibliotecas de Plex.</string>
+    <string name="upcoming_plex_app_unavailable">No se pudo abrir la aplicación Plex.</string>
     <string name="upcoming_jellyfin_item_unavailable">Este título no se encontró en el servidor Jellyfin conectado.</string>
     <string name="upcoming_jellyfin_app_unavailable">No se pudo abrir la aplicación Jellyfin TV.</string>
     <string name="retry">Reintentar</string>

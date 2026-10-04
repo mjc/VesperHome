@@ -4,13 +4,16 @@ import android.view.KeyEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import com.sergioasenjo.vesperhome.status.NetworkStatusRepository
 import com.sergioasenjo.vesperhome.status.NetworkTransport
+import com.sergioasenjo.vesperhome.upcoming.PlexItemLauncher
 import com.sergioasenjo.vesperhome.upcoming.UpcomingController
 import com.sergioasenjo.vesperhome.upcoming.UpcomingMediaItem
+import com.sergioasenjo.vesperhome.upcoming.UpcomingPlayer
 import com.sergioasenjo.vesperhome.upcoming.UpcomingRepository
 import java.util.Calendar
 import kotlinx.coroutines.coroutineScope
@@ -24,14 +27,24 @@ class JellyfinMusicController(
     private val activity: AppCompatActivity,
     private val binding: ViewLauncherContentBinding,
     private val viewModel: JellyfinMusicViewModel,
-    upcomingRepository: UpcomingRepository,
+    private val upcomingRepository: UpcomingRepository,
     private val networkStatusRepository: NetworkStatusRepository,
     private val currentAppearance: () -> LauncherAppearance
 ) {
     private var collectionDialog: JellyfinCollectionDialog? = null
     private var queueDialog: JellyfinQueueDialog? = null
     private val itemLauncher = JellyfinItemLauncher(activity)
-    private val upcomingController = UpcomingController(activity, binding, upcomingRepository, ::openInJellyfin)
+    private val plexItemLauncher = PlexItemLauncher(activity)
+    private var player = UpcomingPlayer.AUTO
+    private val usePlex: Boolean
+        get() = player == UpcomingPlayer.PLEX || (player == UpcomingPlayer.AUTO && plexItemLauncher.available)
+    private val upcomingController = UpcomingController(
+        activity,
+        binding,
+        upcomingRepository,
+        if (usePlex) R.string.upcoming_open_plex else R.string.upcoming_open_jellyfin,
+        ::openUpcomingItem
+    )
 
     init {
         binding.musicLibrary.setOnClickListener { showCollectionDialog() }
@@ -44,6 +57,14 @@ class JellyfinMusicController(
     }
 
     suspend fun collectState(): Unit = coroutineScope {
+        launch {
+            upcomingRepository.player.distinctUntilChanged().collect { selectedPlayer ->
+                player = selectedPlayer
+                upcomingController.setActionDescription(
+                    if (usePlex) R.string.upcoming_open_plex else R.string.upcoming_open_jellyfin
+                )
+            }
+        }
         launch {
             var disconnected = false
             networkStatusRepository.observeStatus()
@@ -120,8 +141,12 @@ class JellyfinMusicController(
         getOrCreateQueueDialog().show(state, currentAppearance())
     }
 
-    private fun openInJellyfin(item: UpcomingMediaItem) {
-        itemLauncher.open { viewModel.jellyfinItemId(item) }
+    private fun openUpcomingItem(item: UpcomingMediaItem) {
+        if (usePlex) {
+            plexItemLauncher.open(item)
+        } else {
+            itemLauncher.open { viewModel.jellyfinItemId(item) }
+        }
     }
 
     private fun getOrCreateCollectionDialog(): JellyfinCollectionDialog = collectionDialog ?: JellyfinCollectionDialog(

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,6 +30,8 @@ class UpcomingRepository(
     private val json: Json,
     private val config: Flow<UpcomingServerConfig>
 ) {
+    val player = config.map { it.player }
+
     private data class CachedUpcoming(
         val config: UpcomingServerConfig,
         val startMillis: Long,

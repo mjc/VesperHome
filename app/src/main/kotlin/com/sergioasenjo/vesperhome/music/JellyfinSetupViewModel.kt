@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.upcoming.UpcomingPlayer
 import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingServerConfig
@@ -170,6 +171,10 @@ class JellyfinSetupViewModel(
 
     fun setNormalizationMode(mode: JellyfinNormalizationMode) {
         viewModelScope.launch { preferencesRepository.setNormalizationMode(mode) }
+    }
+
+    fun setUpcomingPlayer(player: UpcomingPlayer) {
+        viewModelScope.launch { upcomingPreferencesRepository.setPlayer(player) }
     }
 
     fun saveSonarr(url: String, apiKey: String) {
