@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
 import coil3.load
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ItemCategoryMembershipBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
@@ -72,6 +73,16 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
             }
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
             binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
+                if (item.app.customBannerFile != null) {
+                    cacheSizedArtwork(
+                        "custom-banner:${item.app.packageName}:${item.app.user}:${item.app.customBannerRevision}"
+                    )
+                } else if (item.app.artworkFile != null) {
+                    cacheSizedArtwork(
+                        "app-banner:${item.app.packageName}:${item.app.user}:${item.app.artworkVersion}",
+                        item.app.packageName
+                    )
+                }
                 item.app.customBannerRevision?.let { revision ->
                     memoryCacheKey("custom-banner:${item.app.packageName}:$revision")
                 }

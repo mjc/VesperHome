@@ -1,11 +1,15 @@
 package com.sergioasenjo.vesperhome
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 import com.sergioasenjo.vesperhome.about.DiagnosticsRepository
 import com.sergioasenjo.vesperhome.applications.ApplicationRepository
 import com.sergioasenjo.vesperhome.applications.ManagedApplicationsRepository
 import com.sergioasenjo.vesperhome.applications.PlatformApplicationRepository
+import com.sergioasenjo.vesperhome.artwork.SizedArtworkCache
 import com.sergioasenjo.vesperhome.backup.BackupRepository
 import com.sergioasenjo.vesperhome.backup.SafetyBackupSettingsRepository
 import com.sergioasenjo.vesperhome.data.AppPreferencesRepository
@@ -38,7 +42,15 @@ import com.sergioasenjo.vesperhome.wallpaper.WallpaperRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 
-class VesperHomeApplication : Application() {
+class VesperHomeApplication :
+    Application(),
+    SingletonImageLoader.Factory {
+    val sizedArtworkCache by lazy { SizedArtworkCache(this) }
+
+    override fun newImageLoader(context: Context): ImageLoader = ImageLoader.Builder(context)
+        .components { add(sizedArtworkCache) }
+        .build()
+
     val container: AppContainer by lazy {
         AppContainer(this)
     }
