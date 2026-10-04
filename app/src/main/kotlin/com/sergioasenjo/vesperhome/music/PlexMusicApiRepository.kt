@@ -35,7 +35,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
     }
 
     suspend fun musicCollections(credentials: JellyfinCredentials): List<JellyfinMusicCollection> {
-        val playlists = items(credentials, "playlists", mapOf("playlistType" to "audio"))
+        val playlists = items(credentials, "playlists", mapOf("playlistType" to "audio", "type" to "15"))
             .filter { it.type == "playlist" && it.playlistType == "audio" }
             .map { it.toCollection(credentials, JellyfinCollectionType.PLAYLIST) }
         val albums = items(credentials, "library/all", mapOf("type" to "9"))
@@ -116,10 +116,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
             .header("X-Plex-Token", credentials.accessToken)
             .header("X-Plex-Product", "Vesper Home")
             .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Plex request failed with ${response.code}")
-            json.decodeFromString<PlexMusicResponse>(response.body.string())
-        }
+        json.decodeFromString<PlexMusicResponse>(client.executeBody(request))
     }
 
     private fun authenticatedUrl(credentials: JellyfinCredentials, path: String): String {

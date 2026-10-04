@@ -80,6 +80,23 @@ class PlexMusicApiRepositoryTest {
     }
 
     @Test
+    @Suppress("ktlint:standard:max-line-length")
+    fun includesPlaylistsInsideFoldersUsingFlatAudioListing() = runBlocking {
+        val api = repository { request ->
+            when {
+                request.url.encodedPath != "/playlists" -> """{"MediaContainer":{"Metadata":[]}}"""
+
+                request.url.queryParameter("type") == "15" ->
+                    """{"MediaContainer":{"Metadata":[{"ratingKey":"nested","title":"Nested Mix","type":"playlist","playlistType":"audio"}]}}"""
+
+                else -> """{"MediaContainer":{"Metadata":[{"ratingKey":"folder","title":"Music Folder","type":"playlistfolder"}]}}"""
+            }
+        }
+        assertEquals(listOf("Nested Mix"), api.musicCollections(credentials).map { it.name })
+        assertEquals("audio", requests.first().url.queryParameter("playlistType"))
+    }
+
+    @Test
     fun collectionPlaybackKeepsServerOrderAndFiltersNonAudioEntries() = runBlocking {
         val api = repository {
             """{"MediaContainer":{"Metadata":[$TRACK,{"ratingKey":"video","title":"Movie","type":"movie"},${TRACK.replace(

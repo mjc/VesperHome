@@ -47,7 +47,7 @@ class PlexItemLauncher(private val activity: AppCompatActivity) {
         }
     }
 
-    private suspend fun findItem(item: UpcomingMediaItem): Uri? = withContext(Dispatchers.IO) {
+    internal suspend fun findItem(item: UpcomingMediaItem): Uri? = withContext(Dispatchers.IO) {
         // Plex resolves suggestions using its own signed-in servers; no separate credentials are needed.
         activity.contentResolver.query(
             Uri.parse("content://com.plexapp.android.SearchProvider/${SearchManager.SUGGEST_URI_PATH_QUERY}"),
@@ -60,7 +60,8 @@ class PlexItemLauncher(private val activity: AppCompatActivity) {
             val uriColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_INTENT_DATA)
             val typeColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_CONTENT_TYPE)
             if (titleColumn == -1 || uriColumn == -1) return@use null
-            val aliases = mutableListOf<Uri>()
+            val exactMatches = mutableSetOf<Uri>()
+            val aliases = mutableSetOf<Uri>()
             while (cursor.moveToNext()) {
                 // A series suggestion has no video MIME type; individual episodes and movies do.
                 if (typeColumn != -1 && item.type == UpcomingMediaType.EPISODE &&
@@ -71,11 +72,12 @@ class PlexItemLauncher(private val activity: AppCompatActivity) {
                 val title = cursor.getString(titleColumn) ?: continue
                 val uri = cursor.getString(uriColumn)?.let(Uri::parse) ?: continue
                 if (uri.scheme != "plex") continue
-                if (title.equals(item.title, ignoreCase = true)) return@use uri
+                if (title.equals(item.title, ignoreCase = true)) exactMatches.add(uri)
                 // Sonarr calls Richard Osman's House of Games simply House of Games.
                 if (title.endsWith(" ${item.title}", ignoreCase = true)) aliases.add(uri)
             }
-            aliases.singleOrNull()
+            // Reject ambiguous titles rather than opening an arbitrary remake or server copy.
+            if (exactMatches.isNotEmpty()) exactMatches.singleOrNull() else aliases.singleOrNull()
         }
     }
 

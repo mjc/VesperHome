@@ -210,10 +210,7 @@ class JellyfinApiRepository(
                 if (method == HttpMethod.POST) post(requestBody)
             }
             .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Jellyfin request failed with ${response.code}")
-            json.decodeFromString<T>(response.body.string())
-        }
+        json.decodeFromString<T>(client.executeBody(request))
     }
 
     private suspend fun authorizationHeader(token: String?): String {
