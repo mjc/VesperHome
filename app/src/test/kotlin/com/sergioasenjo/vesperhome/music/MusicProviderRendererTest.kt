@@ -21,9 +21,9 @@ class MusicProviderRendererTest {
         val context = RuntimeEnvironment.getApplication()
         context.setTheme(R.style.Theme_VesperHome)
         val binding = ViewLauncherContentBinding.inflate(LayoutInflater.from(context))
-        val track = JellyfinTrack("track", "Song", "Artist", "Album", "http://plex.test/music", null)
-        val collection = JellyfinMusicCollection("album", "Album", 1, null, JellyfinCollectionType.ALBUM)
-        val state = JellyfinMusicUiState(
+        val track = MusicTrack("track", "Song", "Artist", "Album", "http://plex.test/music", null)
+        val collection = MusicCollection("album", "Album", 1, null, MusicCollectionType.ALBUM)
+        val state = MusicUiState(
             serverName = "Plex",
             provider = MusicProvider.PLEX,
             track = track,
@@ -32,7 +32,7 @@ class MusicProviderRendererTest {
             activeCollection = collection,
             queue = listOf(track)
         )
-        binding.renderJellyfinMusic(context, state)
+        binding.renderMusic(context, state)
         assertEquals("Song", binding.musicTitle.text.toString())
         assertEquals("Artist | Album", binding.musicArtist.text.toString())
         for (control in listOf(
@@ -46,7 +46,7 @@ class MusicProviderRendererTest {
         }
         assertTrue(binding.musicArtwork.isFocusable)
         assertEquals(context.getString(R.string.pause), binding.musicPlayPause.contentDescription)
-        binding.renderJellyfinMusic(context, state.copy(track = null))
+        binding.renderMusic(context, state.copy(track = null))
         assertEquals(context.getString(R.string.plex_music), binding.musicTitle.text.toString())
     }
 }

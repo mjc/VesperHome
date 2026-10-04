@@ -11,22 +11,22 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.VesperHomeApplication
-import com.sergioasenjo.vesperhome.databinding.ActivityJellyfinSetupBinding
+import com.sergioasenjo.vesperhome.databinding.ActivityMediaServicesSetupBinding
 import com.sergioasenjo.vesperhome.upcoming.PlexItemLauncher
 import com.sergioasenjo.vesperhome.upcoming.UpcomingPlayer
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-class JellyfinSetupActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityJellyfinSetupBinding
+class MediaServicesSetupActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMediaServicesSetupBinding
     private lateinit var appearanceRenderer: MediaServicesAppearanceRenderer
     private var serviceFieldsInitialized = false
-    private val viewModel: JellyfinSetupViewModel by viewModels {
+    private val viewModel: MediaServicesSetupViewModel by viewModels {
         val container = (application as VesperHomeApplication).container
-        JellyfinSetupViewModel.factory(
+        MediaServicesSetupViewModel.factory(
             container.jellyfinDiscoveryRepository,
-            container.jellyfinApiRepository,
-            container.jellyfinPreferencesRepository,
+            container.musicApiRepository,
+            container.musicPreferencesRepository,
             container.upcomingRepository,
             container.upcomingPreferencesRepository
         )
@@ -34,7 +34,7 @@ class JellyfinSetupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityJellyfinSetupBinding.inflate(layoutInflater)
+        binding = ActivityMediaServicesSetupBinding.inflate(layoutInflater)
         setContentView(binding.root)
         appearanceRenderer = MediaServicesAppearanceRenderer(binding)
         val container = (application as VesperHomeApplication).container
@@ -42,7 +42,7 @@ class JellyfinSetupActivity : AppCompatActivity() {
         val jellyfin = binding.jellyfinPage
         val serverAdapter = JellyfinServerAdapter(viewModel::connect)
         jellyfin.servers.apply {
-            layoutManager = LinearLayoutManager(this@JellyfinSetupActivity)
+            layoutManager = LinearLayoutManager(this@MediaServicesSetupActivity)
             adapter = serverAdapter
             itemAnimator = null
         }
@@ -194,7 +194,7 @@ class JellyfinSetupActivity : AppCompatActivity() {
         statusRes?.let(::getString) ?: if (configured) getString(R.string.media_service_configured) else ""
 
     private fun showNormalizationPicker() {
-        val modes = JellyfinNormalizationMode.entries
+        val modes = MusicNormalizationMode.entries
         AlertDialog.Builder(this)
             .setTitle(R.string.jellyfin_normalization)
             .setSingleChoiceItems(
@@ -215,9 +215,9 @@ class JellyfinSetupActivity : AppCompatActivity() {
     }
 }
 
-private val JellyfinNormalizationMode.labelRes: Int
+private val MusicNormalizationMode.labelRes: Int
     get() = when (this) {
-        JellyfinNormalizationMode.OFF -> R.string.jellyfin_normalization_off
-        JellyfinNormalizationMode.TRACK -> R.string.jellyfin_normalization_track
-        JellyfinNormalizationMode.ALBUM -> R.string.jellyfin_normalization_album
+        MusicNormalizationMode.OFF -> R.string.jellyfin_normalization_off
+        MusicNormalizationMode.TRACK -> R.string.jellyfin_normalization_track
+        MusicNormalizationMode.ALBUM -> R.string.jellyfin_normalization_album
     }

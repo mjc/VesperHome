@@ -19,39 +19,39 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-data class JellyfinMusicUiState(
+data class MusicUiState(
     val serverName: String? = null,
     val provider: MusicProvider = MusicProvider.JELLYFIN,
-    val track: JellyfinTrack? = null,
+    val track: MusicTrack? = null,
     val playing: Boolean = false,
     val collectionPlayback: Boolean = false,
-    val activeCollection: JellyfinMusicCollection? = null,
-    val queue: List<JellyfinTrack> = emptyList(),
+    val activeCollection: MusicCollection? = null,
+    val queue: List<MusicTrack> = emptyList(),
     val loading: Boolean = false,
     val errorRes: Int? = null,
-    val collectionPicker: JellyfinCollectionPickerState = JellyfinCollectionPickerState()
+    val collectionPicker: MusicCollectionPickerState = MusicCollectionPickerState()
 )
 
-data class JellyfinCollectionPickerState(
-    val collections: List<JellyfinMusicCollection> = emptyList(),
+data class MusicCollectionPickerState(
+    val collections: List<MusicCollection> = emptyList(),
     val loading: Boolean = false,
     val errorRes: Int? = null
 )
 
-class JellyfinMusicViewModel(
+class MusicViewModel(
     application: Application,
-    private val apiRepository: () -> JellyfinApiRepository,
-    private val preferencesRepository: JellyfinPreferencesRepository,
+    private val apiRepository: () -> MusicApiRepository,
+    private val preferencesRepository: MusicPreferencesRepository,
     private val dreamStateTracker: DreamStateTracker
 ) : AndroidViewModel(application) {
-    private val mutableUiState = MutableStateFlow(JellyfinMusicUiState())
+    private val mutableUiState = MutableStateFlow(MusicUiState())
     val uiState = mutableUiState.asStateFlow()
-    private val player = JellyfinPlayer(
+    private val player = MusicPlayer(
         application,
         onPlayingChanged = { playing -> mutableUiState.value = mutableUiState.value.copy(playing = playing) },
         onTrackChanged = { track -> mutableUiState.value = mutableUiState.value.copy(track = track) }
     )
-    private var credentials: JellyfinCredentials? = null
+    private var credentials: MusicCredentials? = null
     private var requestJob: Job? = null
     private var playlistRequestJob: Job? = null
     private var hostStopJob: Job? = null
@@ -81,7 +81,7 @@ class JellyfinMusicViewModel(
                     queue = if (credentialsChanged) emptyList() else mutableUiState.value.queue,
                     errorRes = null,
                     collectionPicker = if (credentialsChanged) {
-                        JellyfinCollectionPickerState()
+                        MusicCollectionPickerState()
                     } else {
                         mutableUiState.value.collectionPicker
                     }
@@ -144,7 +144,7 @@ class JellyfinMusicViewModel(
         player.playNext()
     }
 
-    fun playQueueTrack(track: JellyfinTrack) {
+    fun playQueueTrack(track: MusicTrack) {
         val index = mutableUiState.value.queue.indexOfFirst { it.id == track.id }
         if (index >= 0) player.playAt(index)
     }
@@ -169,7 +169,7 @@ class JellyfinMusicViewModel(
             try {
                 val collections = apiRepository().musicCollections(activeCredentials)
                 mutableUiState.value = mutableUiState.value.copy(
-                    collectionPicker = JellyfinCollectionPickerState(collections = collections)
+                    collectionPicker = MusicCollectionPickerState(collections = collections)
                 )
             } catch (error: CancellationException) {
                 throw error
@@ -184,7 +184,7 @@ class JellyfinMusicViewModel(
         }
     }
 
-    fun playCollection(collection: JellyfinMusicCollection) {
+    fun playCollection(collection: MusicCollection) {
         val activeCredentials = credentials ?: return
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
@@ -260,11 +260,11 @@ class JellyfinMusicViewModel(
     companion object {
         fun factory(
             application: Application,
-            apiRepository: () -> JellyfinApiRepository,
-            preferencesRepository: JellyfinPreferencesRepository,
+            apiRepository: () -> MusicApiRepository,
+            preferencesRepository: MusicPreferencesRepository,
             dreamStateTracker: DreamStateTracker
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { JellyfinMusicViewModel(application, apiRepository, preferencesRepository, dreamStateTracker) }
+            initializer { MusicViewModel(application, apiRepository, preferencesRepository, dreamStateTracker) }
         }
 
         private const val HOST_STOP_GRACE_PERIOD_MS = 1_000L

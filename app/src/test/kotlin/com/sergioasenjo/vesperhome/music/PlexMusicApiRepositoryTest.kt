@@ -18,7 +18,7 @@ import org.junit.Test
 
 class PlexMusicApiRepositoryTest {
     private val credentials =
-        JellyfinCredentials("http://plex.test:32400", "secret + token", "", "Music", MusicProvider.PLEX)
+        MusicCredentials("http://plex.test:32400", "secret + token", "", "Music", MusicProvider.PLEX)
     private val requests = mutableListOf<Request>()
 
     private fun repository(response: (Request) -> String): PlexMusicApiRepository {
@@ -104,10 +104,10 @@ class PlexMusicApiRepositoryTest {
                 "Second"
             ).replace("\"t\"", "\"t2\"")}]}}"""
         }
-        val playlist = JellyfinMusicCollection("p", "Mix", 2, null, JellyfinCollectionType.PLAYLIST)
+        val playlist = MusicCollection("p", "Mix", 2, null, MusicCollectionType.PLAYLIST)
         assertEquals(listOf("Song", "Second"), api.collectionTracks(credentials, playlist).map { it.title })
         assertEquals("/playlists/p/items", requests.single().url.encodedPath)
-        api.collectionTracks(credentials, playlist.copy(id = "a", type = JellyfinCollectionType.ALBUM))
+        api.collectionTracks(credentials, playlist.copy(id = "a", type = MusicCollectionType.ALBUM))
         assertEquals("/library/metadata/a/children", requests.last().url.encodedPath)
     }
 

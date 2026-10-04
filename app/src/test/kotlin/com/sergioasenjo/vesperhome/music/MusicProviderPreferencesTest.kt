@@ -31,19 +31,19 @@ class MusicProviderPreferencesTest {
                     "Media":[{"Part":[{"key":"/library/parts/1/music.mp3"}]}]}]}}""".toResponseBody()
                 ).build()
         }.build()
-        val api = JellyfinApiRepository(
+        val api = MusicApiRepository(
             client,
             Json {
                 ignoreUnknownKeys = true
             },
-            JellyfinPreferencesRepository(RuntimeEnvironment.getApplication())
+            MusicPreferencesRepository(RuntimeEnvironment.getApplication())
         )
-        val plex = JellyfinCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
+        val plex = MusicCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
         assertEquals("Song", api.randomTrack(plex).title)
         api.musicCollections(plex)
         assertEquals(
             "Song",
-            api.collectionTracks(plex, JellyfinMusicCollection("a", "Album", 1, null, JellyfinCollectionType.ALBUM))
+            api.collectionTracks(plex, MusicCollection("a", "Album", 1, null, MusicCollectionType.ALBUM))
                 .single().title
         )
         assertEquals(
@@ -59,7 +59,7 @@ class MusicProviderPreferencesTest {
     @Test
     fun providerChoicePersistsAndKeepsBothAccountsIndependent() = runBlocking {
         val context = RuntimeEnvironment.getApplication()
-        val preferences = JellyfinPreferencesRepository(context)
+        val preferences = MusicPreferencesRepository(context)
         preferences.clear()
         preferences.clearPlex()
         preferences.setMusicProvider(MusicProvider.JELLYFIN)
@@ -70,9 +70,9 @@ class MusicProviderPreferencesTest {
             AuthenticationResult(JellyfinUser("user", "Name"), "jellyfin-token", "server")
         )
         val jellyfin = preferences.credentials.first()!!
-        val plex = JellyfinCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
+        val plex = MusicCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
         preferences.savePlex(plex)
-        val restored = JellyfinPreferencesRepository(context)
+        val restored = MusicPreferencesRepository(context)
         assertEquals(MusicProvider.PLEX, restored.musicProvider.first())
         assertEquals(plex, restored.musicCredentials.first())
         assertEquals(jellyfin, restored.credentials.first())

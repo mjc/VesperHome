@@ -21,14 +21,14 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
-class JellyfinMusicViewModelTest {
+class MusicViewModelTest {
     @Test
     fun unconfiguredLifecycleAndProviderLookupDoNotStartPlayback() = runBlocking {
         val application = RuntimeEnvironment.getApplication()
-        val viewModel = JellyfinMusicViewModel(
+        val viewModel = MusicViewModel(
             application,
             { error("An unconfigured account must not request the API") },
-            JellyfinPreferencesRepository(application),
+            MusicPreferencesRepository(application),
             DreamStateTracker(application)
         )
         val store = ViewModelStore().apply { put("music", viewModel) }

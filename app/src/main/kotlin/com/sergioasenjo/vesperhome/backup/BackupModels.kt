@@ -21,6 +21,7 @@ import com.sergioasenjo.vesperhome.wallpaper.WallpaperSettings
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 enum class BackupKind {
@@ -85,7 +86,7 @@ internal data class SettingsBackup(
     val screensaverStartDelay: String = ScreensaverStartDelay.MINUTES_10.name,
     val screensaverStandbyDelay: String = ScreensaverStandbyDelay.MINUTES_30.name,
     val showComingNext: Boolean = true,
-    val showJellyfinMusic: Boolean = true
+    @SerialName("showJellyfinMusic") val showMusic: Boolean = true
 )
 
 @Serializable
@@ -248,7 +249,7 @@ private fun LauncherSettings.toBackup(): SettingsBackup = SettingsBackup(
     screensaver.startDelay.name,
     screensaver.standbyDelay.name,
     showComingNext,
-    showJellyfinMusic
+    showMusic
 )
 
 private fun SettingsBackup.toDomain(): LauncherSettings {
@@ -300,7 +301,7 @@ private fun SettingsBackup.toDomain(): LauncherSettings {
             brightnessNight
         ),
         showComingNext = showComingNext,
-        showJellyfinMusic = showJellyfinMusic
+        showMusic = showMusic
     )
 }
 

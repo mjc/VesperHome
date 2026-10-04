@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import com.sergioasenjo.vesperhome.music.JellyfinPreferencesRepository
+import com.sergioasenjo.vesperhome.music.MusicPreferencesRepository
 import com.sergioasenjo.vesperhome.plugin.api.ILiveTvChannelsCallback
 import com.sergioasenjo.vesperhome.plugin.api.ILiveTvConnectionCallback
 import com.sergioasenjo.vesperhome.plugin.api.ILiveTvConnectionProvider
@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-class LiveTvPluginRepository(context: Context, private val jellyfinPreferences: JellyfinPreferencesRepository) {
+class LiveTvPluginRepository(context: Context, private val jellyfinPreferences: MusicPreferencesRepository) {
     private data class BoundPlugin(
         val component: ComponentName,
         val connection: ServiceConnection,

@@ -54,7 +54,7 @@ class MusicHttpTest {
         val ready = CountDownLatch(1)
         val disconnected = CountDownLatch(1)
         val bodyStarted = CountDownLatch(1)
-        val call = AtomicReference<Call>()
+        val observedCall = AtomicReference<Call>()
         val serverError = AtomicReference<Throwable>()
         ServerSocket(0).use { server ->
             server.soTimeout = 5000
@@ -79,8 +79,8 @@ class MusicHttpTest {
                 }
             }
             val client = OkHttpClient.Builder().eventListener(object : EventListener() {
-                override fun callStart(startedCall: Call) {
-                    call.set(startedCall)
+                override fun callStart(call: Call) {
+                    observedCall.set(call)
                 }
                 override fun responseBodyStart(call: Call) {
                     bodyStarted.countDown()
@@ -93,7 +93,7 @@ class MusicHttpTest {
                 assertTrue("Server did not receive the request", ready.await(5, TimeUnit.SECONDS))
                 if (partialBody) assertTrue("Body read did not start", bodyStarted.await(5, TimeUnit.SECONDS))
                 withTimeout(5000) { job.cancelAndJoin() }
-                assertTrue(call.get().isCanceled())
+                assertTrue(observedCall.get().isCanceled())
                 assertTrue("Cancellation did not close the network socket", disconnected.await(5, TimeUnit.SECONDS))
                 assertEquals(null, serverError.get())
             } finally {

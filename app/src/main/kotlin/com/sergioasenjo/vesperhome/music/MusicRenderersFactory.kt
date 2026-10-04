@@ -8,7 +8,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
-internal class JellyfinRenderersFactory(context: Context, private val gainProcessor: JellyfinGainAudioProcessor) :
+internal class MusicRenderersFactory(context: Context, private val gainProcessor: MusicGainAudioProcessor) :
     DefaultRenderersFactory(context) {
     override fun buildAudioSink(
         context: Context,

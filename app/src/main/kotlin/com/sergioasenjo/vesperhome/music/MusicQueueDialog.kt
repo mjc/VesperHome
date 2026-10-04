@@ -6,16 +6,16 @@ import android.view.Gravity
 import android.view.WindowManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sergioasenjo.vesperhome.R
-import com.sergioasenjo.vesperhome.databinding.DialogJellyfinQueueBinding
+import com.sergioasenjo.vesperhome.databinding.DialogMusicQueueBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
-internal class JellyfinQueueDialog(
+internal class MusicQueueDialog(
     private val context: Context,
-    onTrackSelected: (JellyfinTrack) -> Unit,
+    onTrackSelected: (MusicTrack) -> Unit,
     private val onDismissed: () -> Unit
 ) {
-    private val binding = DialogJellyfinQueueBinding.inflate(android.view.LayoutInflater.from(context))
-    private val adapter = JellyfinQueueAdapter(onTrackSelected)
+    private val binding = DialogMusicQueueBinding.inflate(android.view.LayoutInflater.from(context))
+    private val adapter = MusicQueueAdapter(onTrackSelected)
     private var currentTrackId: String? = null
     private val dialog = Dialog(context, R.style.Theme_VesperHome_SettingsPanel).apply {
         setContentView(binding.root)
@@ -35,16 +35,16 @@ internal class JellyfinQueueDialog(
         binding.tracks.itemAnimator = null
     }
 
-    fun show(state: JellyfinMusicUiState, appearance: LauncherAppearance) {
+    fun show(state: MusicUiState, appearance: LauncherAppearance) {
         render(state, appearance)
         if (!dialog.isShowing) dialog.show()
     }
 
-    fun render(state: JellyfinMusicUiState, appearance: LauncherAppearance) {
+    fun render(state: MusicUiState, appearance: LauncherAppearance) {
         val collection = state.activeCollection ?: return
         currentTrackId = state.track?.id
         binding.eyebrow.text = context.getString(
-            if (collection.type == JellyfinCollectionType.PLAYLIST) R.string.playlist else R.string.album
+            if (collection.type == MusicCollectionType.PLAYLIST) R.string.playlist else R.string.album
         )
         binding.title.text = collection.name
         binding.description.text = context.resources.getQuantityString(
@@ -61,7 +61,7 @@ internal class JellyfinQueueDialog(
         adapter.setAppearance(appearance)
         adapter.submitList(
             state.queue.map { track ->
-                JellyfinQueueTrackUi(track, track.id == state.track?.id, state.playing && track.id == state.track?.id)
+                MusicQueueTrackUi(track, track.id == state.track?.id, state.playing && track.id == state.track?.id)
             }
         )
     }

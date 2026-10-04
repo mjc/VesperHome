@@ -11,15 +11,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class JellyfinApiRepository(
+class MusicApiRepository(
     private val client: OkHttpClient,
     private val json: Json,
-    private val preferencesRepository: JellyfinPreferencesRepository
+    private val preferencesRepository: MusicPreferencesRepository
 ) {
     private val plex by lazy { PlexMusicApiRepository(client, json) }
 
-    suspend fun resolvePlexServer(address: String, token: String): JellyfinCredentials =
-        plex.resolveServer(address, token)
+    suspend fun resolvePlexServer(address: String, token: String): MusicCredentials = plex.resolveServer(address, token)
 
     suspend fun resolveServer(address: String): JellyfinServer {
         val normalizedAddress = address.trim().trimEnd('/').let {
@@ -48,7 +47,7 @@ class JellyfinApiRepository(
         body = json.encodeToString(QuickConnectRequest(secret))
     )
 
-    suspend fun randomTrack(credentials: JellyfinCredentials): JellyfinTrack {
+    suspend fun randomTrack(credentials: MusicCredentials): MusicTrack {
         if (credentials.provider == MusicProvider.PLEX) return plex.randomTrack(credentials)
         val result: JellyfinItemsResult = execute(
             credentials.baseUrl,
@@ -67,7 +66,7 @@ class JellyfinApiRepository(
         return item.toTrack(credentials)
     }
 
-    suspend fun musicCollections(credentials: JellyfinCredentials): List<JellyfinMusicCollection> {
+    suspend fun musicCollections(credentials: MusicCredentials): List<MusicCollection> {
         if (credentials.provider == MusicProvider.PLEX) return plex.musicCollections(credentials)
         val result: JellyfinLibraryItemsResult = execute(
             credentials.baseUrl,
@@ -86,30 +85,27 @@ class JellyfinApiRepository(
             )
         )
         return result.Items.map { item ->
-            JellyfinMusicCollection(
+            MusicCollection(
                 id = item.Id,
                 name = item.Name,
                 trackCount = item.ChildCount ?: item.RecursiveItemCount ?: 0,
                 artworkUrl = item.ImageTags["Primary"]?.let { tag -> imageUrl(credentials, item.Id, tag, 480) },
-                type = if (item.Type == "Playlist") JellyfinCollectionType.PLAYLIST else JellyfinCollectionType.ALBUM
+                type = if (item.Type == "Playlist") MusicCollectionType.PLAYLIST else MusicCollectionType.ALBUM
             )
-        }.sortedWith(compareBy(JellyfinMusicCollection::type, { it.name.lowercase() }))
+        }.sortedWith(compareBy(MusicCollection::type, { it.name.lowercase() }))
     }
 
-    suspend fun collectionTracks(
-        credentials: JellyfinCredentials,
-        collection: JellyfinMusicCollection
-    ): List<JellyfinTrack> {
+    suspend fun collectionTracks(credentials: MusicCredentials, collection: MusicCollection): List<MusicTrack> {
         if (credentials.provider == MusicProvider.PLEX) return plex.collectionTracks(credentials, collection)
         val path: String
         val query: Map<String, String>
         when (collection.type) {
-            JellyfinCollectionType.PLAYLIST -> {
+            MusicCollectionType.PLAYLIST -> {
                 path = "Playlists/${collection.id}/Items"
                 query = mediaQuery(credentials)
             }
 
-            JellyfinCollectionType.ALBUM -> {
+            MusicCollectionType.ALBUM -> {
                 path = "Items"
                 query = mediaQuery(credentials) + mapOf(
                     "parentId" to collection.id,
@@ -132,7 +128,7 @@ class JellyfinApiRepository(
     }
 
     suspend fun itemIdByProvider(
-        credentials: JellyfinCredentials,
+        credentials: MusicCredentials,
         provider: String,
         providerId: Int,
         itemType: String
@@ -156,7 +152,7 @@ class JellyfinApiRepository(
         }?.Id
     }
 
-    private fun mediaQuery(credentials: JellyfinCredentials): Map<String, String> = mapOf(
+    private fun mediaQuery(credentials: MusicCredentials): Map<String, String> = mapOf(
         "userId" to credentials.userId,
         "fields" to "PrimaryImageAspectRatio,RunTimeTicks",
         "enableImages" to "true",
@@ -164,14 +160,14 @@ class JellyfinApiRepository(
         "enableImageTypes" to "Primary"
     )
 
-    private fun JellyfinAudioItem.toTrack(credentials: JellyfinCredentials): JellyfinTrack {
+    private fun JellyfinAudioItem.toTrack(credentials: MusicCredentials): MusicTrack {
         val streamUrl = authenticatedUrl(credentials, "Audio/$Id/stream", mapOf("static" to "true"))
         val imageId = if (ImageTags["Primary"] != null) Id else AlbumId
         val imageTag = ImageTags["Primary"] ?: AlbumPrimaryImageTag
         val artworkUrl = imageId?.let { id -> imageTag?.let { tag -> id to tag } }?.let { (id, tag) ->
             imageUrl(credentials, id, tag, 512)
         }
-        return JellyfinTrack(
+        return MusicTrack(
             id = Id,
             title = Name,
             artist = Artists.joinToString().ifBlank { AlbumArtist.orEmpty() },
@@ -184,7 +180,7 @@ class JellyfinApiRepository(
         )
     }
 
-    private fun imageUrl(credentials: JellyfinCredentials, itemId: String, tag: String, maxWidth: Int): String =
+    private fun imageUrl(credentials: MusicCredentials, itemId: String, tag: String, maxWidth: Int): String =
         authenticatedUrl(
             credentials,
             "Items/$itemId/Images/Primary",
@@ -222,7 +218,7 @@ class JellyfinApiRepository(
         }
     }
 
-    private fun authenticatedUrl(credentials: JellyfinCredentials, path: String, query: Map<String, String>): String =
+    private fun authenticatedUrl(credentials: MusicCredentials, path: String, query: Map<String, String>): String =
         credentials.baseUrl.toHttpUrl().newBuilder()
             .addPathSegments(path)
             .apply {

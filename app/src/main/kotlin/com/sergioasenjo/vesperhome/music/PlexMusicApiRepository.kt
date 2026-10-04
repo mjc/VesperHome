@@ -3,6 +3,7 @@ package com.sergioasenjo.vesperhome.music
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -12,54 +13,51 @@ import okhttp3.Request
 /** Maps Plex music into the library, queue and player already used by the music panel. */
 class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
     private val client = client.newBuilder().followRedirects(false).followSslRedirects(false).build()
-    suspend fun resolveServer(address: String, token: String): JellyfinCredentials {
+    suspend fun resolveServer(address: String, token: String): MusicCredentials {
         require(address.isNotBlank() && token.isNotBlank())
         val baseUrl = address.trim().trimEnd('/').let {
             if (it.startsWith("http://") || it.startsWith("https://")) it else "https://$it"
         }.toHttpUrl().toString().trimEnd('/')
-        val credentials = JellyfinCredentials(baseUrl, token.trim(), "", "Plex", MusicProvider.PLEX)
-        val server = execute(credentials, "").MediaContainer
+        val credentials = MusicCredentials(baseUrl, token.trim(), "", "Plex", MusicProvider.PLEX)
+        val server = execute(credentials, "").mediaContainer
         val name = server.friendlyName?.takeIf(String::isNotBlank)
             ?: throw IOException("Plex server identity is missing")
         return credentials.copy(serverName = name)
     }
 
-    suspend fun randomTrack(credentials: JellyfinCredentials): JellyfinTrack {
+    suspend fun randomTrack(credentials: MusicCredentials): MusicTrack {
         val item = execute(
             credentials,
             "library/all",
             mapOf("type" to "10", "sort" to "random", "X-Plex-Container-Size" to "1")
-        ).MediaContainer.Metadata.firstOrNull { it.type == "track" }
+        ).mediaContainer.metadata.firstOrNull { it.type == "track" }
             ?: throw IOException("The Plex library contains no audio items")
         return item.toTrack(credentials)
     }
 
-    suspend fun musicCollections(credentials: JellyfinCredentials): List<JellyfinMusicCollection> {
+    suspend fun musicCollections(credentials: MusicCredentials): List<MusicCollection> {
         val playlists = items(credentials, "playlists", mapOf("playlistType" to "audio", "type" to "15"))
             .filter { it.type == "playlist" && it.playlistType == "audio" }
-            .map { it.toCollection(credentials, JellyfinCollectionType.PLAYLIST) }
+            .map { it.toCollection(credentials, MusicCollectionType.PLAYLIST) }
         val albums = items(credentials, "library/all", mapOf("type" to "9"))
             .filter { it.type == "album" }
-            .map { it.toCollection(credentials, JellyfinCollectionType.ALBUM) }
-        return (playlists + albums).sortedWith(compareBy(JellyfinMusicCollection::type, { it.name.lowercase() }))
+            .map { it.toCollection(credentials, MusicCollectionType.ALBUM) }
+        return (playlists + albums).sortedWith(compareBy(MusicCollection::type, { it.name.lowercase() }))
     }
 
-    suspend fun collectionTracks(
-        credentials: JellyfinCredentials,
-        collection: JellyfinMusicCollection
-    ): List<JellyfinTrack> {
+    suspend fun collectionTracks(credentials: MusicCredentials, collection: MusicCollection): List<MusicTrack> {
         // Keys belong to the selected server. Encode the id as a single path segment.
         val id = credentials.baseUrl.toHttpUrl().newBuilder().addPathSegment(collection.id).build()
             .encodedPath.substringAfterLast('/')
         val path = when (collection.type) {
-            JellyfinCollectionType.PLAYLIST -> "playlists/$id/items"
-            JellyfinCollectionType.ALBUM -> "library/metadata/$id/children"
+            MusicCollectionType.PLAYLIST -> "playlists/$id/items"
+            MusicCollectionType.ALBUM -> "library/metadata/$id/children"
         }
         return items(credentials, path).filter { it.type == "track" }.map { it.toTrack(credentials) }
     }
 
     private suspend fun items(
-        credentials: JellyfinCredentials,
+        credentials: MusicCredentials,
         path: String,
         query: Map<String, String> = emptyMap()
     ): List<PlexMusicItem> {
@@ -71,8 +69,8 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
                 path,
                 query +
                     mapOf("X-Plex-Container-Start" to start.toString(), "X-Plex-Container-Size" to PAGE_SIZE.toString())
-            ).MediaContainer
-            val entries = page.Metadata
+            ).mediaContainer
+            val entries = page.metadata
             result.addAll(entries)
             start += entries.size
             if (entries.isEmpty() || start >= (page.totalSize ?: page.size ?: entries.size)) break
@@ -80,8 +78,8 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
         return result
     }
 
-    private fun PlexMusicItem.toCollection(credentials: JellyfinCredentials, collectionType: JellyfinCollectionType) =
-        JellyfinMusicCollection(
+    private fun PlexMusicItem.toCollection(credentials: MusicCredentials, collectionType: MusicCollectionType) =
+        MusicCollection(
             id = ratingKey,
             name = title,
             trackCount = leafCount ?: 0,
@@ -89,10 +87,10 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
             type = collectionType
         )
 
-    private fun PlexMusicItem.toTrack(credentials: JellyfinCredentials): JellyfinTrack {
-        val part = Media.firstOrNull()?.Part?.firstOrNull()
+    private fun PlexMusicItem.toTrack(credentials: MusicCredentials): MusicTrack {
+        val part = media.firstOrNull()?.parts?.firstOrNull()
             ?: throw IOException("Plex track has no playable media")
-        return JellyfinTrack(
+        return MusicTrack(
             id = ratingKey,
             title = title,
             artist = originalTitle?.takeIf(String::isNotBlank) ?: grandparentTitle.orEmpty(),
@@ -104,7 +102,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
     }
 
     private suspend fun execute(
-        credentials: JellyfinCredentials,
+        credentials: MusicCredentials,
         path: String,
         query: Map<String, String> = emptyMap()
     ): PlexMusicResponse = withContext(Dispatchers.IO) {
@@ -119,7 +117,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
         json.decodeFromString<PlexMusicResponse>(client.executeBody(request))
     }
 
-    private fun authenticatedUrl(credentials: JellyfinCredentials, path: String): String {
+    private fun authenticatedUrl(credentials: MusicCredentials, path: String): String {
         // Never forward the server token to a URL supplied by metadata on another host.
         require(path.startsWith('/') && !path.startsWith("//") && !path.contains('?') && !path.contains('#'))
         return credentials.baseUrl.toHttpUrl().newBuilder().addPathSegments(path.trimStart('/'))
@@ -132,14 +130,14 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
 }
 
 @Serializable
-private data class PlexMusicResponse(val MediaContainer: PlexMusicContainer)
+private data class PlexMusicResponse(@SerialName("MediaContainer") val mediaContainer: PlexMusicContainer)
 
 @Serializable
 private data class PlexMusicContainer(
     val friendlyName: String? = null,
     val size: Int? = null,
     val totalSize: Int? = null,
-    val Metadata: List<PlexMusicItem> = emptyList()
+    @SerialName("Metadata") val metadata: List<PlexMusicItem> = emptyList()
 )
 
 @Serializable
@@ -156,11 +154,11 @@ private data class PlexMusicItem(
     val grandparentTitle: String? = null,
     val parentTitle: String? = null,
     val duration: Long? = null,
-    val Media: List<PlexMusicMedia> = emptyList()
+    @SerialName("Media") val media: List<PlexMusicMedia> = emptyList()
 )
 
 @Serializable
-private data class PlexMusicMedia(val Part: List<PlexMusicPart> = emptyList())
+private data class PlexMusicMedia(@SerialName("Part") val parts: List<PlexMusicPart> = emptyList())
 
 @Serializable
 private data class PlexMusicPart(val key: String)

@@ -23,16 +23,16 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-class JellyfinMusicController(
+class MusicController(
     private val activity: AppCompatActivity,
     private val binding: ViewLauncherContentBinding,
-    private val viewModel: JellyfinMusicViewModel,
+    private val viewModel: MusicViewModel,
     private val upcomingRepository: UpcomingRepository,
     private val networkStatusRepository: NetworkStatusRepository,
     private val currentAppearance: () -> LauncherAppearance
 ) {
-    private var collectionDialog: JellyfinCollectionDialog? = null
-    private var queueDialog: JellyfinQueueDialog? = null
+    private var collectionDialog: MusicCollectionDialog? = null
+    private var queueDialog: MusicQueueDialog? = null
     private val itemLauncher = JellyfinItemLauncher(activity)
     private val plexItemLauncher = PlexItemLauncher(activity)
     private var player = UpcomingPlayer.AUTO
@@ -85,7 +85,7 @@ class JellyfinMusicController(
                 }
         }
         viewModel.uiState.collectLatest { state ->
-            binding.renderJellyfinMusic(activity, state)
+            binding.renderMusic(activity, state)
             collectionDialog?.render(state.collectionPicker)
             queueDialog?.takeIf { it.isShowing }?.render(state, currentAppearance())
             if (state.serverName == null) collectionDialog?.dismiss()
@@ -149,7 +149,7 @@ class JellyfinMusicController(
         }
     }
 
-    private fun getOrCreateCollectionDialog(): JellyfinCollectionDialog = collectionDialog ?: JellyfinCollectionDialog(
+    private fun getOrCreateCollectionDialog(): MusicCollectionDialog = collectionDialog ?: MusicCollectionDialog(
         context = activity,
         onCollectionSelected = viewModel::playCollection,
         onRandomSelected = viewModel::playGlobalRandom,
@@ -157,7 +157,7 @@ class JellyfinMusicController(
         onDismissed = { binding.musicLibrary.requestFocus() }
     ).also { collectionDialog = it }
 
-    private fun getOrCreateQueueDialog(): JellyfinQueueDialog = queueDialog ?: JellyfinQueueDialog(
+    private fun getOrCreateQueueDialog(): MusicQueueDialog = queueDialog ?: MusicQueueDialog(
         context = activity,
         onTrackSelected = viewModel::playQueueTrack,
         onDismissed = {

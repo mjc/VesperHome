@@ -29,7 +29,7 @@ class ProfileController(
             activity,
             onCreate = { showNameDialog(R.string.create_profile, ::createProfile) },
             onToggleComingNext = ::toggleComingNext,
-            onToggleJellyfinMusic = ::toggleJellyfinMusic,
+            onToggleMusic = ::toggleMusic,
             onSelected = ::showActions,
             onDismissed = onDismissed
         )
@@ -107,9 +107,9 @@ class ProfileController(
         }
     }
 
-    private fun toggleJellyfinMusic() {
+    private fun toggleMusic() {
         runOperation(successMessage = null) {
-            settingsRepository.setShowJellyfinMusic(!currentSettings().showJellyfinMusic)
+            settingsRepository.setShowMusic(!currentSettings().showMusic)
         }
     }
 

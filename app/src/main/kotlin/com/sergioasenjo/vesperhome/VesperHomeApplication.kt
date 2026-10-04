@@ -22,9 +22,9 @@ import com.sergioasenjo.vesperhome.media.ArrApiClient
 import com.sergioasenjo.vesperhome.media.MediaSearchPreferencesRepository
 import com.sergioasenjo.vesperhome.media.MediaSearchRepository
 import com.sergioasenjo.vesperhome.media.TrackedMediaRepository
-import com.sergioasenjo.vesperhome.music.JellyfinApiRepository
 import com.sergioasenjo.vesperhome.music.JellyfinDiscoveryRepository
-import com.sergioasenjo.vesperhome.music.JellyfinPreferencesRepository
+import com.sergioasenjo.vesperhome.music.MusicApiRepository
+import com.sergioasenjo.vesperhome.music.MusicPreferencesRepository
 import com.sergioasenjo.vesperhome.notifications.NotificationRepository
 import com.sergioasenjo.vesperhome.platform.HomeRepository
 import com.sergioasenjo.vesperhome.platform.PlatformHomeRepository
@@ -77,10 +77,10 @@ class AppContainer(application: Application) {
     val notificationRepository = NotificationRepository(application)
     private val json by lazy { Json { ignoreUnknownKeys = true } }
     private val httpClient by lazy { OkHttpClient() }
-    val jellyfinPreferencesRepository by lazy { JellyfinPreferencesRepository(application) }
+    val musicPreferencesRepository by lazy { MusicPreferencesRepository(application) }
     val jellyfinDiscoveryRepository by lazy { JellyfinDiscoveryRepository(json) }
-    val jellyfinApiRepository by lazy { JellyfinApiRepository(httpClient, json, jellyfinPreferencesRepository) }
-    val liveTvPluginRepository by lazy { LiveTvPluginRepository(application, jellyfinPreferencesRepository) }
+    val musicApiRepository by lazy { MusicApiRepository(httpClient, json, musicPreferencesRepository) }
+    val liveTvPluginRepository by lazy { LiveTvPluginRepository(application, musicPreferencesRepository) }
     val liveTvPreferencesRepository by lazy { LiveTvPreferencesRepository(application) }
     val upcomingPreferencesRepository by lazy {
         UpcomingPreferencesRepository(

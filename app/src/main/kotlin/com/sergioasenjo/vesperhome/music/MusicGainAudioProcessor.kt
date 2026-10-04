@@ -13,7 +13,7 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
-internal class JellyfinGainAudioProcessor : BaseAudioProcessor() {
+internal class MusicGainAudioProcessor : BaseAudioProcessor() {
     @Volatile
     private var gainFactor = UNITY_GAIN
     private var limiterGain = UNITY_GAIN

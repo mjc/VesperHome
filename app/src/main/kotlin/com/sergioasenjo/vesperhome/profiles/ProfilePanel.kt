@@ -18,7 +18,7 @@ internal class ProfilePanel(
     context: Context,
     onCreate: () -> Unit,
     onToggleComingNext: () -> Unit,
-    onToggleJellyfinMusic: () -> Unit,
+    onToggleMusic: () -> Unit,
     onSelected: (LayoutProfile) -> Unit,
     private val onDismissed: () -> Unit
 ) {
@@ -43,7 +43,7 @@ internal class ProfilePanel(
         binding.profiles.itemAnimator = null
         binding.createProfile.setOnClickListener { onCreate() }
         binding.showComingNext.setOnClickListener { onToggleComingNext() }
-        binding.showJellyfinMusic.setOnClickListener { onToggleJellyfinMusic() }
+        binding.showMusic.setOnClickListener { onToggleMusic() }
     }
 
     val isShowing: Boolean
@@ -61,15 +61,15 @@ internal class ProfilePanel(
         binding.profiles.visibility = if (busy || state.loading) View.INVISIBLE else View.VISIBLE
         binding.createProfile.isEnabled = !busy
         binding.showComingNext.isEnabled = !busy
-        binding.showJellyfinMusic.isEnabled = !busy
+        binding.showMusic.isEnabled = !busy
         val context = binding.root.context
         binding.showComingNext.text = context.getString(
             R.string.profile_show_coming_next_value,
             context.getString(if (settings.showComingNext) R.string.setting_on else R.string.setting_off)
         )
-        binding.showJellyfinMusic.text = context.getString(
+        binding.showMusic.text = context.getString(
             R.string.profile_show_jellyfin_music_value,
-            context.getString(if (settings.showJellyfinMusic) R.string.setting_on else R.string.setting_off)
+            context.getString(if (settings.showMusic) R.string.setting_on else R.string.setting_off)
         )
         applyAppearance(appearance)
     }
@@ -84,7 +84,7 @@ internal class ProfilePanel(
         binding.root.setBackgroundColor(palette.panel)
         binding.title.setTextColor(palette.primaryText)
         binding.description.setTextColor(palette.secondaryText)
-        listOf(binding.createProfile, binding.showComingNext, binding.showJellyfinMusic).forEach { button ->
+        listOf(binding.createProfile, binding.showComingNext, binding.showMusic).forEach { button ->
             renderButton(button, appearance)
         }
     }

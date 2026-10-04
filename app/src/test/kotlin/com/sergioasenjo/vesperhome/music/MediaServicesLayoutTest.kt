@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ScrollView
 import com.sergioasenjo.vesperhome.R
-import com.sergioasenjo.vesperhome.databinding.ActivityJellyfinSetupBinding
+import com.sergioasenjo.vesperhome.databinding.ActivityMediaServicesSetupBinding
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,7 +31,7 @@ class MediaServicesLayoutTest {
     private fun assertMusicSelectorReachable(pairing: Boolean, servers: Boolean) {
         val context = RuntimeEnvironment.getApplication()
         context.setTheme(R.style.Theme_VesperHome)
-        val binding = ActivityJellyfinSetupBinding.inflate(LayoutInflater.from(context))
+        val binding = ActivityMediaServicesSetupBinding.inflate(LayoutInflater.from(context))
         val page = binding.jellyfinPage
         binding.plexPage.root.visibility = View.GONE
         page.root.visibility = View.VISIBLE

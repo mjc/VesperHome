@@ -11,37 +11,37 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.jellyfinDataStore by preferencesDataStore(name = "jellyfin")
+private val Context.musicDataStore by preferencesDataStore(name = "jellyfin")
 
-class JellyfinPreferencesRepository(private val context: Context) {
-    val credentials: Flow<JellyfinCredentials?> = context.jellyfinDataStore.data.map {
+class MusicPreferencesRepository(private val context: Context) {
+    val credentials: Flow<MusicCredentials?> = context.musicDataStore.data.map {
         credentialsFrom(it, MusicProvider.JELLYFIN)
     }.distinctUntilChanged()
-    val plexCredentials: Flow<JellyfinCredentials?> = context.jellyfinDataStore.data.map {
+    val plexCredentials: Flow<MusicCredentials?> = context.musicDataStore.data.map {
         credentialsFrom(it, MusicProvider.PLEX)
     }.distinctUntilChanged()
-    val musicProvider: Flow<MusicProvider> = context.jellyfinDataStore.data.map {
+    val musicProvider: Flow<MusicProvider> = context.musicDataStore.data.map {
         providerFrom(it)
     }.distinctUntilChanged()
-    val musicCredentials: Flow<JellyfinCredentials?> = context.jellyfinDataStore.data.map {
+    val musicCredentials: Flow<MusicCredentials?> = context.musicDataStore.data.map {
         credentialsFrom(it, providerFrom(it))
     }.distinctUntilChanged()
 
     private fun providerFrom(preferences: Preferences): MusicProvider =
         MusicProvider.entries.firstOrNull { it.name == preferences[MUSIC_PROVIDER] } ?: MusicProvider.JELLYFIN
 
-    private fun credentialsFrom(preferences: Preferences, provider: MusicProvider): JellyfinCredentials? {
+    private fun credentialsFrom(preferences: Preferences, provider: MusicProvider): MusicCredentials? {
         val plex = provider == MusicProvider.PLEX
         val baseUrl = preferences[if (plex) PLEX_URL else BASE_URL] ?: return null
         val token = preferences[if (plex) PLEX_TOKEN else ACCESS_TOKEN] ?: return null
         val name = preferences[if (plex) PLEX_NAME else SERVER_NAME] ?: return null
         val userId = if (plex) "" else preferences[USER_ID] ?: return null
-        return JellyfinCredentials(baseUrl, token, userId, name, provider)
+        return MusicCredentials(baseUrl, token, userId, name, provider)
     }
 
-    suspend fun savePlex(credentials: JellyfinCredentials) {
+    suspend fun savePlex(credentials: MusicCredentials) {
         require(credentials.provider == MusicProvider.PLEX)
-        context.jellyfinDataStore.edit {
+        context.musicDataStore.edit {
             it[PLEX_URL] = credentials.baseUrl
             it[PLEX_TOKEN] = credentials.accessToken
             it[PLEX_NAME] = credentials.serverName
@@ -50,7 +50,7 @@ class JellyfinPreferencesRepository(private val context: Context) {
     }
 
     suspend fun clearPlex() {
-        context.jellyfinDataStore.edit {
+        context.musicDataStore.edit {
             it.remove(PLEX_URL)
             it.remove(PLEX_TOKEN)
             it.remove(PLEX_NAME)
@@ -58,24 +58,24 @@ class JellyfinPreferencesRepository(private val context: Context) {
     }
 
     suspend fun setMusicProvider(provider: MusicProvider) {
-        context.jellyfinDataStore.edit { it[MUSIC_PROVIDER] = provider.name }
+        context.musicDataStore.edit { it[MUSIC_PROVIDER] = provider.name }
     }
 
-    val normalizationMode: Flow<JellyfinNormalizationMode> = context.jellyfinDataStore.data.map { preferences ->
+    val normalizationMode: Flow<MusicNormalizationMode> = context.musicDataStore.data.map { preferences ->
         preferences[NORMALIZATION_MODE]
-            ?.let { stored -> JellyfinNormalizationMode.entries.firstOrNull { it.name == stored } }
-            ?: JellyfinNormalizationMode.OFF
+            ?.let { stored -> MusicNormalizationMode.entries.firstOrNull { it.name == stored } }
+            ?: MusicNormalizationMode.OFF
     }
 
     suspend fun deviceId(): String {
-        context.jellyfinDataStore.data.first()[DEVICE_ID]?.let { return it }
+        context.musicDataStore.data.first()[DEVICE_ID]?.let { return it }
         val deviceId = UUID.randomUUID().toString()
-        context.jellyfinDataStore.edit { it[DEVICE_ID] = deviceId }
+        context.musicDataStore.edit { it[DEVICE_ID] = deviceId }
         return deviceId
     }
 
     suspend fun save(server: JellyfinServer, authentication: AuthenticationResult) {
-        context.jellyfinDataStore.edit { preferences ->
+        context.musicDataStore.edit { preferences ->
             preferences[BASE_URL] = server.baseUrl
             preferences[ACCESS_TOKEN] = authentication.AccessToken
             preferences[USER_ID] = authentication.User.Id
@@ -84,7 +84,7 @@ class JellyfinPreferencesRepository(private val context: Context) {
     }
 
     suspend fun clear() {
-        context.jellyfinDataStore.edit { preferences ->
+        context.musicDataStore.edit { preferences ->
             preferences.remove(BASE_URL)
             preferences.remove(ACCESS_TOKEN)
             preferences.remove(USER_ID)
@@ -92,8 +92,8 @@ class JellyfinPreferencesRepository(private val context: Context) {
         }
     }
 
-    suspend fun setNormalizationMode(mode: JellyfinNormalizationMode) {
-        context.jellyfinDataStore.edit { it[NORMALIZATION_MODE] = mode.name }
+    suspend fun setNormalizationMode(mode: MusicNormalizationMode) {
+        context.musicDataStore.edit { it[NORMALIZATION_MODE] = mode.name }
     }
 
     private companion object {

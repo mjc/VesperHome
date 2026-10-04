@@ -22,8 +22,8 @@ import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.inputs.TvInputController
 import com.sergioasenjo.vesperhome.livetv.LiveTvController
-import com.sergioasenjo.vesperhome.music.JellyfinMusicController
-import com.sergioasenjo.vesperhome.music.JellyfinMusicViewModel
+import com.sergioasenjo.vesperhome.music.MusicController
+import com.sergioasenjo.vesperhome.music.MusicViewModel
 import com.sergioasenjo.vesperhome.notifications.NotificationController
 import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverController
@@ -58,7 +58,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var releaseUpdateController: ReleaseUpdateController
     private lateinit var settingsActionController: LauncherSettingsActionController
     private lateinit var stateRenderer: LauncherStateRenderer
-    private lateinit var musicController: JellyfinMusicController
+    private lateinit var musicController: MusicController
     private lateinit var liveTvController: LiveTvController
     private lateinit var settingsHost: LauncherSettingsHost
     private var settingsPanelPageToRestore: LauncherSettingsPanelPage? = null
@@ -77,8 +77,8 @@ class LauncherActivity : AppCompatActivity() {
     private val viewModel: LauncherViewModel by viewModels {
         launcherViewModelFactory(application as VesperHomeApplication)
     }
-    private val musicViewModel: JellyfinMusicViewModel by viewModels {
-        jellyfinMusicViewModelFactory(application as VesperHomeApplication)
+    private val musicViewModel: MusicViewModel by viewModels {
+        musicViewModelFactory(application as VesperHomeApplication)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -304,7 +304,7 @@ class LauncherActivity : AppCompatActivity() {
         if (musicInitialized || isFinishing || isDestroyed) return
         musicInitialized = true
         val container = (application as VesperHomeApplication).container
-        musicController = JellyfinMusicController(
+        musicController = MusicController(
             this,
             contentBinding,
             musicViewModel,
@@ -314,7 +314,7 @@ class LauncherActivity : AppCompatActivity() {
             viewModel.uiState.value.let { it.appearance.forWallpaper(it.wallpaper) }
         }
         viewModel.uiState.value.let { state ->
-            musicController.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
+            musicController.setSectionVisibility(state.showMusic, state.showComingNext)
         }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
