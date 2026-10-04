@@ -12,9 +12,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
+import coil3.request.ErrorResult
 import coil3.request.error
 import coil3.request.placeholder
+import coil3.result
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ItemUpcomingMediaBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
@@ -99,6 +102,8 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
         }
 
         fun bind(item: UpcomingMediaItem, appearance: LauncherAppearance) {
+            val reloadArtwork = this.item == null || this.item?.imageUrl != item.imageUrl ||
+                (item.imageUrl != null && binding.artwork.result is ErrorResult)
             this.item = item
             this.appearance = appearance
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
@@ -112,9 +117,11 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
                 setColor(appearance.palette.surface)
             }
             binding.artwork.imageTintList = null
-            binding.artwork.load(item.imageUrl) {
-                placeholder(R.drawable.ic_upcoming)
-                error(R.drawable.ic_upcoming)
+            if (reloadArtwork) {
+                binding.artwork.load(item.imageUrl) {
+                    placeholder(R.drawable.ic_upcoming)
+                    error(R.drawable.ic_upcoming)
+                }
             }
             bindDateLabel(item)
             updateFocus(binding.root.hasFocus())
@@ -131,7 +138,9 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
         }
 
         fun recycle() {
-            binding.artwork.load(null)
+            item = null
+            binding.artwork.dispose()
+            binding.artwork.setImageDrawable(null)
             binding.root.animate().cancel()
             binding.root.scaleX = 1f
             binding.root.scaleY = 1f
