@@ -20,7 +20,7 @@ class JellyfinPlayer(
     private val onTrackChanged: (JellyfinTrack) -> Unit
 ) {
     private val applicationContext = context.applicationContext
-    private val controllerFuture: ListenableFuture<MediaController>
+    private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var pendingAction: ((MediaController) -> Unit)? = null
     private val listener = object : Player.Listener {
@@ -34,12 +34,29 @@ class JellyfinPlayer(
     }
 
     init {
+        onHostStarted()
+    }
+
+    fun onHostStarted() {
+        if (JellyfinPlaybackService.isRunning) connect()
+    }
+
+    private fun connect() {
+        if (controller?.isConnected == false) release()
+        if (controllerFuture != null) return
         val token =
             SessionToken(applicationContext, ComponentName(applicationContext, JellyfinPlaybackService::class.java))
-        controllerFuture = MediaController.Builder(applicationContext, token).buildAsync()
-        controllerFuture.addListener(
+        val future = MediaController.Builder(applicationContext, token).buildAsync()
+        controllerFuture = future
+        future.addListener(
             {
-                runCatching(controllerFuture::get).getOrNull()?.let { connectedController ->
+                if (controllerFuture === future) {
+                    val connectedController = runCatching(future::get).getOrNull()
+                    if (connectedController == null) {
+                        controllerFuture = null
+                        pendingAction = null
+                        return@addListener
+                    }
                     controller = connectedController
                     connectedController.addListener(listener)
                     onPlayingChanged(connectedController.isPlaying)
@@ -54,6 +71,7 @@ class JellyfinPlayer(
 
     fun play(tracks: List<JellyfinTrack>) {
         if (tracks.isEmpty()) return
+        connect()
         withController { player ->
             player.setMediaItems(tracks.map { it.toMediaItem() })
             player.prepare()
@@ -89,10 +107,13 @@ class JellyfinPlayer(
         pendingAction = null
         controller?.removeListener(listener)
         controller = null
-        MediaController.releaseFuture(controllerFuture)
+        val future = controllerFuture
+        controllerFuture = null
+        future?.let(MediaController::releaseFuture)
     }
 
     private fun withController(action: (MediaController) -> Unit) {
+        if (controllerFuture == null) return
         controller?.let(action) ?: run { pendingAction = action }
     }
 

@@ -19,6 +19,7 @@ import com.sergioasenjo.vesperhome.categories.LauncherSection
 import com.sergioasenjo.vesperhome.categories.LauncherSpacer
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
+import com.sergioasenjo.vesperhome.settings.setSoundEffectsEnabledRecursively
 import kotlin.math.ceil
 
 class LauncherContentRenderer(
@@ -36,6 +37,7 @@ class LauncherContentRenderer(
     private val categoryRows = mutableMapOf<Long, CategoryRowUi>()
     private val reorderableAdapters = mutableSetOf<AppAdapter>()
     private var appearance = LauncherAppearance()
+    private var renderedState: LauncherUiState? = null
     private val favoriteAppAdapter = createAdapter(onManualOrderChanged)
     private val appAdapter = createAdapter(onManualOrderChanged)
 
@@ -45,6 +47,16 @@ class LauncherContentRenderer(
     }
 
     fun render(state: LauncherUiState) {
+        renderedState?.let { previous ->
+            if (previous.favoriteApps == state.favoriteApps && previous.apps == state.apps &&
+                previous.sections == state.sections && previous.appearance == state.appearance &&
+                previous.applicationSortMode == state.applicationSortMode &&
+                previous.loading == state.loading && previous.isDefaultLauncher == state.isDefaultLauncher
+            ) {
+                return
+            }
+        }
+        renderedState = state
         applyAppearance(state.appearance)
         renderBuiltInRows(state)
         val sectionsHaveApps = renderSections(
@@ -122,6 +134,7 @@ class LauncherContentRenderer(
     }
 
     private fun updateRowAppearance(appRow: AppRowView) {
+        appRow.setSoundEffectsEnabledRecursively(appearance.keyClickSounds)
         appRow.categoryHeader.visibility = if (appearance.showCategoryTitles) View.VISIBLE else View.GONE
         appRow.accentTick.backgroundTintList =
             android.content.res.ColorStateList.valueOf(appearance.palette.focus)
@@ -147,16 +160,27 @@ class LauncherContentRenderer(
             cardWidth = (availableWidth / columns) - dp(12)
             val gridCardHeight = (cardWidth * 0.68f).toInt().coerceAtLeast(dp(80))
             adapter.setItemSize(cardWidth, gridCardHeight, columns)
-            appRow.apps.layoutManager = GridLayoutManager(context, columns)
+            val manager = appRow.apps.layoutManager as? GridLayoutManager
+            if (manager == null) {
+                appRow.apps.layoutManager = GridLayoutManager(context, columns)
+            } else if (manager.spanCount != columns) {
+                manager.spanCount = columns
+            }
             recyclerHeight = ceil(appCount.toDouble() / columns).toInt() * (gridCardHeight + dp(12))
         } else {
             cardWidth = dp(rowHeight * 16 / 9)
             adapter.setItemSize(cardWidth, cardHeight)
-            appRow.apps.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            val manager = appRow.apps.layoutManager
+            if (manager !is LinearLayoutManager || manager is GridLayoutManager ||
+                manager.orientation != LinearLayoutManager.HORIZONTAL || manager.reverseLayout
+            ) {
+                appRow.apps.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            }
             recyclerHeight = cardHeight + dp(12)
         }
-        appRow.apps.layoutParams = appRow.apps.layoutParams.apply {
-            height = recyclerHeight.coerceAtLeast(dp(32))
+        val height = recyclerHeight.coerceAtLeast(dp(32))
+        if (appRow.apps.layoutParams.height != height) {
+            appRow.apps.layoutParams = appRow.apps.layoutParams.apply { this.height = height }
         }
     }
 
