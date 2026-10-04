@@ -22,7 +22,8 @@ class BrightnessController(
     private val currentSettings: () -> BrightnessSettings,
     private val setEnabled: (Boolean) -> Unit,
     private val setBrightness: (BrightnessPeriod, Int) -> Unit,
-    private val onPeriodChanged: () -> Unit
+    private val onPeriodChanged: () -> Unit,
+    private val currentPeriod: () -> BrightnessPeriod = { BrightnessPeriod.current() }
 ) {
     private var settings = BrightnessSettings()
     private var schedulerJob: Job? = null
@@ -42,7 +43,7 @@ class BrightnessController(
         if (schedulerJob == null) {
             schedulerJob = scope.launch {
                 while (isActive) {
-                    val period = BrightnessPeriod.current()
+                    val period = currentPeriod()
                     applyCurrentPeriod(period)
                     if (renderedPeriod != period) {
                         renderedPeriod = period
@@ -92,7 +93,7 @@ class BrightnessController(
         stopScheduler()
     }
 
-    private fun applyCurrentPeriod(period: BrightnessPeriod = BrightnessPeriod.current()) {
+    private fun applyCurrentPeriod(period: BrightnessPeriod = currentPeriod()) {
         if (!hasPermission()) {
             stopScheduler()
             return

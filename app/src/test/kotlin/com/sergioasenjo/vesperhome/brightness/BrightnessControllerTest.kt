@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30], application = Application::class)
 class BrightnessControllerTest {
     @Test
-    fun unchangedPeriodsDoNotRerenderAndExternalBrightnessChangesAreCorrected() {
+    fun periodChangesRerenderOnceAndExternalBrightnessChangesAreCorrected() {
         val activity = Robolectric.buildActivity(Activity::class.java).create().get()
         shadowOf(activity.getSystemService(AppOpsManager::class.java)).setMode(
             AppOpsManager.OPSTR_WRITE_SETTINGS,
@@ -32,9 +32,18 @@ class BrightnessControllerTest {
             AppOpsManager.MODE_ALLOWED
         )
         val scope = TestScope()
-        val settings = BrightnessSettings(true, 50, 50, 50, 50, 50)
+        val settings = BrightnessSettings(true, 50, 100, 50, 50, 50)
         var renders = 0
-        val controller = BrightnessController(activity, scope, { settings }, {}, { _, _ -> }, { renders++ })
+        var hour = 8
+        val controller = BrightnessController(
+            activity,
+            scope,
+            { settings },
+            {},
+            { _, _ -> },
+            { renders++ },
+            currentPeriod = { BrightnessPeriod.current(hour) }
+        )
         assertTrue(controller.hasPermission())
         controller.render(settings)
         scope.runCurrent()
@@ -49,6 +58,15 @@ class BrightnessControllerTest {
         scope.runCurrent()
         assertEquals(128, Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS))
         assertEquals(1, renders)
+
+        hour = 9
+        scope.advanceTimeBy(60_000)
+        scope.runCurrent()
+        assertEquals(255, Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS))
+        assertEquals(2, renders)
+        scope.advanceTimeBy(60_000)
+        scope.runCurrent()
+        assertEquals(2, renders)
 
         controller.render(settings.copy(enabled = false))
         Settings.System.putInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 8)
