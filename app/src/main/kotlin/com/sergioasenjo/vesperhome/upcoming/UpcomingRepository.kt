@@ -161,7 +161,8 @@ class UpcomingRepository(
                 startsAtMillis = release.first,
                 imageUrl = movie.images.posterUrl(),
                 type = release.second,
-                providerId = UpcomingProviderId(UpcomingProvider.TMDB, movie.tmdbId)
+                providerId = UpcomingProviderId(UpcomingProvider.TMDB, movie.tmdbId),
+                productionYear = movie.year?.takeIf { it > 0 }
             )
         }
     }

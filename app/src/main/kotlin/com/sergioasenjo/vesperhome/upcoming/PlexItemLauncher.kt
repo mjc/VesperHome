@@ -59,15 +59,20 @@ class PlexItemLauncher(private val activity: AppCompatActivity) {
             val titleColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_TEXT_1)
             val uriColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_INTENT_DATA)
             val typeColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_CONTENT_TYPE)
-            if (titleColumn == -1 || uriColumn == -1) return@use null
+            val yearColumn = cursor.getColumnIndex(SearchManager.SUGGEST_COLUMN_PRODUCTION_YEAR)
+            val isSeries = item.type == UpcomingMediaType.EPISODE
+            if (titleColumn == -1 || uriColumn == -1 || typeColumn == -1) return@use null
+            if (!isSeries && (item.productionYear == null || yearColumn == -1)) return@use null
             val exactMatches = mutableSetOf<Uri>()
             val aliases = mutableSetOf<Uri>()
             while (cursor.moveToNext()) {
                 // A series suggestion has no video MIME type; individual episodes and movies do.
-                if (typeColumn != -1 && item.type == UpcomingMediaType.EPISODE &&
-                    cursor.getString(typeColumn) != null
-                ) {
-                    continue
+                val mime = cursor.getString(typeColumn)
+                if (isSeries) {
+                    if (mime != null) continue
+                } else {
+                    if (mime?.startsWith("video/", ignoreCase = true) != true) continue
+                    if (cursor.getString(yearColumn)?.toIntOrNull() != item.productionYear) continue
                 }
                 val title = cursor.getString(titleColumn) ?: continue
                 val uri = cursor.getString(uriColumn)?.let(Uri::parse) ?: continue

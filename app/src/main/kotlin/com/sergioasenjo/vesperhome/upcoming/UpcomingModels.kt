@@ -32,7 +32,8 @@ data class UpcomingMediaItem(
     val startsAtMillis: Long,
     val imageUrl: String?,
     val type: UpcomingMediaType,
-    val providerId: UpcomingProviderId
+    val providerId: UpcomingProviderId,
+    val productionYear: Int? = null
 )
 
 data class UpcomingProviderId(val provider: UpcomingProvider, val value: Int)
@@ -73,5 +74,6 @@ data class RadarrMovie(
     val inCinemas: String? = null,
     val digitalRelease: String? = null,
     val physicalRelease: String? = null,
-    val images: List<CalendarImage> = emptyList()
+    val images: List<CalendarImage> = emptyList(),
+    val year: Int? = null
 )

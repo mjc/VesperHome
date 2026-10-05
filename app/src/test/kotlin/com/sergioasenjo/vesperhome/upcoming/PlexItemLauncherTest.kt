@@ -31,7 +31,7 @@ class PlexItemLauncherTest {
             find(
                 "The Thing",
                 listOf(
-                    row("The Thing", "plex://movie/2011"),
+                    row("The Thing", "plex://movie/duplicate"),
                     row("The Thing", "plex://movie/1982"),
                     row("John Carpenter's The Thing", "plex://movie/alias")
                 )
@@ -61,17 +61,19 @@ class PlexItemLauncherTest {
             find(
                 "House of Games",
                 listOf(
-                    row("Richard Osman's House of Games", "plex://series/1")
-                )
+                    row("Richard Osman's House of Games", "plex://series/1", null)
+                ),
+                UpcomingMediaType.EPISODE
             )
         )
         assertNull(
             find(
                 "House of Games",
                 listOf(
-                    row("Richard Osman's House of Games", "plex://series/1"),
-                    row("Another House of Games", "plex://series/2")
-                )
+                    row("Richard Osman's House of Games", "plex://series/1", null),
+                    row("Another House of Games", "plex://series/2", null)
+                ),
+                UpcomingMediaType.EPISODE
             )
         )
     }
@@ -84,28 +86,80 @@ class PlexItemLauncherTest {
                 "Show",
                 listOf(
                     row("Show", "plex://episode/1", "video/mp4"),
-                    row("Show", "https://other.test/show"),
-                    row("Show", "plex://series/1")
+                    row("Show", "https://other.test/show", null),
+                    row("Show", "plex://series/1", null)
                 ),
                 UpcomingMediaType.EPISODE
             )
         )
     }
 
-    private fun row(title: String, uri: String, mime: String? = null) = arrayOf(title, uri, mime)
+    @Test
+    fun movieSearchRejectsSeriesAndAudioWithoutMakingTheMovieAmbiguous() {
+        val otherTypes = listOf(
+            row("Fargo", "plex://series/fargo", null),
+            row("Fargo", "plex://audio/fargo", "audio/mpeg")
+        )
+        for (type in listOf(UpcomingMediaType.CINEMA, UpcomingMediaType.DIGITAL, UpcomingMediaType.PHYSICAL)) {
+            assertNull(find("Fargo", otherTypes, type))
+            assertEquals(
+                Uri.parse("plex://movie/fargo"),
+                find("Fargo", otherTypes + listOf(row("Fargo", "plex://movie/fargo")), type)
+            )
+        }
+    }
+
+    @Test
+    fun movieSearchRejectsASoleWrongRemakeAndSelectsTheMatchingProductionYear() {
+        val wrong = row("The Thing", "plex://movie/2011", year = "2011")
+        assertNull(find("The Thing", listOf(wrong)))
+        assertNull(find("The Thing", listOf(row("Another The Thing", "plex://movie/alias", year = "2011"))))
+        assertEquals(
+            Uri.parse("plex://movie/1982"),
+            find("The Thing", listOf(wrong, row("The Thing", "plex://movie/1982")))
+        )
+    }
+
+    @Test
+    fun movieSearchRequiresContentTypeAndKnownProductionYears() {
+        val match = listOf(row("The Thing", "plex://movie/1982"))
+        assertNull(find("The Thing", match, productionYear = null))
+        assertNull(find("The Thing", match, omitYearColumn = true))
+        assertNull(find("The Thing", match, omitTypeColumn = true))
+        for (year in listOf(null, "", "unknown", "0")) {
+            assertNull(find("The Thing", listOf(row("The Thing", "plex://movie/1982", year = year))))
+        }
+    }
+
+    private fun row(title: String, uri: String, mime: String? = "video/mp4", year: String? = "1982") =
+        arrayOf(title, uri, mime, year)
 
     private fun find(
         title: String,
         rows: List<Array<String?>>,
-        type: UpcomingMediaType = UpcomingMediaType.DIGITAL
+        type: UpcomingMediaType = UpcomingMediaType.DIGITAL,
+        productionYear: Int? = 1982,
+        omitYearColumn: Boolean = false,
+        omitTypeColumn: Boolean = false
     ): Uri? {
-        val cursor = MatrixCursor(
-            arrayOf(
-                SearchManager.SUGGEST_COLUMN_TEXT_1,
-                SearchManager.SUGGEST_COLUMN_INTENT_DATA,
-                SearchManager.SUGGEST_COLUMN_CONTENT_TYPE
-            )
-        ).apply { rows.forEach(::addRow) }
+        val columns = listOf(
+            SearchManager.SUGGEST_COLUMN_TEXT_1,
+            SearchManager.SUGGEST_COLUMN_INTENT_DATA,
+            SearchManager.SUGGEST_COLUMN_CONTENT_TYPE,
+            SearchManager.SUGGEST_COLUMN_PRODUCTION_YEAR
+        ).filterIndexed { index, _ -> !((omitTypeColumn && index == 2) || (omitYearColumn && index == 3)) }
+        val cursor = MatrixCursor(columns.toTypedArray()).apply {
+            rows.forEach { row ->
+                addRow(
+                    row.filterIndexed { index, _ ->
+                        !(
+                            (omitTypeColumn && index == 2) ||
+                                (omitYearColumn && index == 3)
+                            )
+                    }
+                )
+            }
+        }
         val context = RuntimeEnvironment.getApplication()
         val provider = object : ContentProvider() {
             override fun onCreate() = true
@@ -141,7 +195,8 @@ class PlexItemLauncherTest {
                         0,
                         null,
                         type,
-                        UpcomingProviderId(UpcomingProvider.TMDB, 1091)
+                        UpcomingProviderId(UpcomingProvider.TMDB, 1091),
+                        productionYear
                     )
                 )
             }.also { assertTrue("Search cursor must be closed", cursor.isClosed) }
