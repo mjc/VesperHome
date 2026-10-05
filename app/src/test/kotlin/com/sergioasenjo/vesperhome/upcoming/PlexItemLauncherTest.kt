@@ -55,7 +55,7 @@ class PlexItemLauncherTest {
     }
 
     @Test
-    fun acceptsOnlyUniqueSuffixAliases() {
+    fun acceptsOnlyKnownSeriesAliasesAndRejectsAmbiguousCopies() {
         assertEquals(
             Uri.parse("plex://series/1"),
             find(
@@ -71,11 +71,34 @@ class PlexItemLauncherTest {
                 "House of Games",
                 listOf(
                     row("Richard Osman's House of Games", "plex://series/1", null),
-                    row("Another House of Games", "plex://series/2", null)
+                    row("Richard Osman's House of Games", "plex://series/2", null)
                 ),
                 UpcomingMediaType.EPISODE
             )
         )
+    }
+
+    @Test
+    fun unrecognizedPrefixesCannotIdentifyASeriesOrMovie() {
+        assertNull(
+            find(
+                "House of Games",
+                listOf(row("Another House of Games", "plex://series/other", null)),
+                UpcomingMediaType.EPISODE
+            )
+        )
+        assertEquals(
+            Uri.parse("plex://series/known"),
+            find(
+                "House of Games",
+                listOf(
+                    row("Another House of Games", "plex://series/other", null),
+                    row("Richard Osman's House of Games", "plex://series/known", null)
+                ),
+                UpcomingMediaType.EPISODE
+            )
+        )
+        assertNull(find("The Thing", listOf(row("Another The Thing", "plex://movie/other"))))
     }
 
     @Test

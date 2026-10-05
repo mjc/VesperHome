@@ -79,7 +79,11 @@ class PlexItemLauncher(private val activity: AppCompatActivity) {
                 if (uri.scheme != "plex") continue
                 if (title.equals(item.title, ignoreCase = true)) exactMatches.add(uri)
                 // Sonarr calls Richard Osman's House of Games simply House of Games.
-                if (title.endsWith(" ${item.title}", ignoreCase = true)) aliases.add(uri)
+                if (isSeries && item.title.equals("House of Games", ignoreCase = true) &&
+                    title.equals("Richard Osman's House of Games", ignoreCase = true)
+                ) {
+                    aliases.add(uri)
+                }
             }
             // Reject ambiguous titles rather than opening an arbitrary remake or server copy.
             if (exactMatches.isNotEmpty()) exactMatches.singleOrNull() else aliases.singleOrNull()
