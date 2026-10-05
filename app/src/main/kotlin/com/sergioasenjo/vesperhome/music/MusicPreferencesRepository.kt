@@ -54,6 +54,9 @@ class MusicPreferencesRepository(private val context: Context) {
             it.remove(PLEX_URL)
             it.remove(PLEX_TOKEN)
             it.remove(PLEX_NAME)
+            if (providerFrom(it) == MusicProvider.PLEX) {
+                it[MUSIC_PROVIDER] = MusicProvider.JELLYFIN.name
+            }
         }
     }
 
@@ -89,6 +92,9 @@ class MusicPreferencesRepository(private val context: Context) {
             preferences.remove(ACCESS_TOKEN)
             preferences.remove(USER_ID)
             preferences.remove(SERVER_NAME)
+            if (providerFrom(preferences) == MusicProvider.JELLYFIN) {
+                preferences[MUSIC_PROVIDER] = MusicProvider.PLEX.name
+            }
         }
     }
 

@@ -79,11 +79,46 @@ class MusicProviderPreferencesTest {
         restored.setMusicProvider(MusicProvider.JELLYFIN)
         assertEquals(jellyfin, restored.musicCredentials.first())
         restored.clear()
-        assertNull(restored.musicCredentials.first())
+        assertEquals(MusicProvider.PLEX, restored.musicProvider.first())
+        assertEquals(plex, restored.musicCredentials.first())
         assertEquals(plex, restored.plexCredentials.first())
         restored.setMusicProvider(MusicProvider.PLEX)
         assertEquals(plex, restored.musicCredentials.first())
         restored.clearPlex()
+        assertEquals(MusicProvider.JELLYFIN, restored.musicProvider.first())
         assertNull(restored.musicCredentials.first())
+    }
+
+    @Test
+    fun disconnectingSelectedProviderFallsBackWithoutChangingTheOtherAccount() = runBlocking {
+        val preferences = MusicPreferencesRepository(RuntimeEnvironment.getApplication())
+        val plex = MusicCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
+        preferences.save(
+            JellyfinServer("http://jellyfin.test:8096", "server", "Jellyfin"),
+            AuthenticationResult(JellyfinUser("user", "Name"), "jellyfin-token", "server")
+        )
+        val jellyfin = preferences.credentials.first()!!
+        preferences.savePlex(plex)
+        preferences.clearPlex()
+        assertEquals(MusicProvider.JELLYFIN, preferences.musicProvider.first())
+        assertEquals(jellyfin, preferences.musicCredentials.first())
+        assertNull(preferences.plexCredentials.first())
+
+        preferences.savePlex(plex)
+        preferences.clear()
+        assertEquals(MusicProvider.PLEX, preferences.musicProvider.first())
+        assertEquals(plex, preferences.musicCredentials.first())
+        assertNull(preferences.credentials.first())
+
+        preferences.save(
+            JellyfinServer("http://jellyfin.test:8096", "server", "Jellyfin"),
+            AuthenticationResult(JellyfinUser("user", "Name"), "jellyfin-token", "server")
+        )
+        preferences.clear()
+        assertEquals(MusicProvider.PLEX, preferences.musicProvider.first())
+        assertEquals(plex, preferences.musicCredentials.first())
+        preferences.setMusicProvider(MusicProvider.JELLYFIN)
+        preferences.clearPlex()
+        assertEquals(MusicProvider.JELLYFIN, preferences.musicProvider.first())
     }
 }
