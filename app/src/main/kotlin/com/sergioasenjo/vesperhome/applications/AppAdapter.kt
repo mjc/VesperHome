@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -199,6 +200,7 @@ class AppAdapter(
         private var outlineAnimator: ValueAnimator? = null
         private var edgeAnimator: ObjectAnimator? = null
         private val cardBackground = GradientDrawable()
+        private val cardOutline = GradientDrawable()
 
         init {
             binding.root.setOnClickListener { app?.let(onAppClick) }
@@ -240,7 +242,11 @@ class AppAdapter(
                 view.isSelected = focused
                 updateFocusAppearance(focused)
             }
-            binding.artworkFrame.background = cardBackground
+            val radius = dp(BANNER_CORNER_RADIUS_DP).toFloat()
+            cardBackground.cornerRadius = radius
+            cardOutline.cornerRadius = radius
+            cardOutline.setColor(Color.TRANSPARENT)
+            binding.artworkFrame.background = LayerDrawable(arrayOf(cardBackground, cardOutline))
             binding.artworkFrame.clipToOutline = true
         }
 
@@ -289,7 +295,7 @@ class AppAdapter(
         private fun updateFocusAppearance(focused: Boolean) {
             outlineAnimator?.cancel()
             outlineAnimator = null
-            updateBackground(focused, OUTLINE_FULL_ALPHA)
+            updateBackground(focused)
 
             val scale = if (focused) FOCUSED_SCALE else 1f
             binding.root.animate().cancel()
@@ -305,13 +311,13 @@ class AppAdapter(
                     duration = OUTLINE_ANIMATION_MS
                     repeatCount = ValueAnimator.INFINITE
                     repeatMode = ValueAnimator.REVERSE
-                    addUpdateListener { animator -> updateBackground(focused = true, animator.animatedValue as Int) }
+                    addUpdateListener { animator -> cardOutline.alpha = animator.animatedValue as Int }
                     start()
                 }
             }
         }
 
-        private fun updateBackground(focused: Boolean, outlineAlpha: Int) {
+        private fun updateBackground(focused: Boolean) {
             val palette = appearance.palette
             val fillColor = if (focused || moving) palette.focusedSurface else Color.TRANSPARENT
             val strokeColor: Int
@@ -323,7 +329,7 @@ class AppAdapter(
                 }
 
                 focused && appearance.showFocusOutline -> {
-                    strokeColor = palette.focus.withAlpha(outlineAlpha)
+                    strokeColor = palette.focus
                     strokeWidth = dp(FOCUS_STROKE_WIDTH_DP)
                 }
 
@@ -332,16 +338,12 @@ class AppAdapter(
                     strokeWidth = 0
                 }
             }
-            cardBackground.apply {
-                cornerRadius = dp(BANNER_CORNER_RADIUS_DP).toFloat()
-                setColor(fillColor)
-                setStroke(strokeWidth, strokeColor)
-            }
+            cardBackground.setColor(fillColor)
+            cardOutline.alpha = OUTLINE_FULL_ALPHA
+            cardOutline.setStroke(strokeWidth, strokeColor)
         }
 
         private fun dp(value: Int): Int = (value * binding.root.resources.displayMetrics.density).toInt()
-
-        private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 
         private companion object {
             const val FOCUSED_SCALE = 1.1f
