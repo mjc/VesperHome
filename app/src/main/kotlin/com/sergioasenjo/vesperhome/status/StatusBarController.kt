@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.TextUtils
+import android.util.LruCache
 import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
@@ -25,6 +27,7 @@ import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlinx.coroutines.launch
 
 class StatusBarController(
@@ -45,6 +48,9 @@ class StatusBarController(
     private var settings = StatusBarSettings()
     private var appearance = LauncherAppearance()
     private var networkStatus = NetworkStatus()
+    private val dateTimeFormatters = LruCache<String, SimpleDateFormat>(2)
+    private var formatterLocale: Locale? = null
+    private var formatterTimeZone: TimeZone? = null
     private val updateClock = object : Runnable {
         override fun run() {
             renderDateTime()
@@ -186,7 +192,8 @@ class StatusBarController(
             if (settings.showDate) add(format(now, settings.dateFormat))
             if (settings.showTime) add(format(now, settings.timeFormat))
         }
-        binding.statusDateTime.text = values.joinToString("  ·  ")
+        val text = values.joinToString("  ·  ")
+        if (!TextUtils.equals(binding.statusDateTime.text, text)) binding.statusDateTime.text = text
     }
 
     private fun renderNetwork() {
@@ -305,7 +312,18 @@ class StatusBarController(
     }
 
     private fun format(date: Date, pattern: String): String = try {
-        SimpleDateFormat(pattern, Locale.getDefault()).format(date)
+        val locale = Locale.getDefault()
+        val timeZone = TimeZone.getDefault()
+        if (formatterLocale != locale || formatterTimeZone != timeZone) {
+            dateTimeFormatters.evictAll()
+            formatterLocale = locale
+            formatterTimeZone = timeZone
+        }
+        val formatter = dateTimeFormatters[pattern] ?: SimpleDateFormat(pattern, locale).apply {
+            this.timeZone = timeZone
+            dateTimeFormatters.put(pattern, this)
+        }
+        formatter.format(date)
     } catch (_: IllegalArgumentException) {
         ""
     }
