@@ -19,7 +19,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
             if (it.startsWith("http://") || it.startsWith("https://")) it else "https://$it"
         }.toHttpUrl().toString().trimEnd('/')
         val credentials = MusicCredentials(baseUrl, token.trim(), "", "Plex", MusicProvider.PLEX)
-        val server = execute(credentials, "").mediaContainer
+        val server = execute(credentials, "")
         val name = server.friendlyName?.takeIf(String::isNotBlank)
             ?: throw IOException("Plex server identity is missing")
         return credentials.copy(serverName = name)
@@ -30,7 +30,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
             credentials,
             "library/all",
             mapOf("type" to "10", "sort" to "random", "X-Plex-Container-Size" to "1")
-        ).mediaContainer.metadata.firstOrNull { it.type == "track" }
+        ).metadata.firstOrNull { it.type == "track" }
             ?: throw IOException("The Plex library contains no audio items")
         return item.toTrack(credentials)
     }
@@ -69,11 +69,19 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
                 path,
                 query +
                     mapOf("X-Plex-Container-Start" to start.toString(), "X-Plex-Container-Size" to PAGE_SIZE.toString())
-            ).mediaContainer
+            )
+            if (page.offset != null && page.offset != start) {
+                throw IOException("Plex returned an unexpected page offset")
+            }
             val entries = page.metadata
             result.addAll(entries)
             start += entries.size
-            if (entries.isEmpty() || start >= (page.totalSize ?: page.size ?: entries.size)) break
+            if (entries.isEmpty() ||
+                (page.totalSize != null && start >= page.totalSize) ||
+                (page.totalSize == null && page.offset == null)
+            ) {
+                break
+            }
         }
         return result
     }
@@ -105,7 +113,7 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
         credentials: MusicCredentials,
         path: String,
         query: Map<String, String> = emptyMap()
-    ): PlexMusicResponse = withContext(Dispatchers.IO) {
+    ): PlexMusicContainer = withContext(Dispatchers.IO) {
         val url = credentials.baseUrl.toHttpUrl().newBuilder().addPathSegments(path).apply {
             query.forEach { (key, value) -> addQueryParameter(key, value) }
         }.build()
@@ -114,7 +122,12 @@ class PlexMusicApiRepository(client: OkHttpClient, private val json: Json) {
             .header("X-Plex-Token", credentials.accessToken)
             .header("X-Plex-Product", "Vesper Home")
             .build()
-        json.decodeFromString<PlexMusicResponse>(client.executeBody(request))
+        val response = client.executeResponse(request)
+        val container = json.decodeFromString<PlexMusicResponse>(response.body).mediaContainer
+        container.copy(
+            offset = response.headers["X-Plex-Container-Start"]?.toIntOrNull() ?: container.offset,
+            totalSize = response.headers["X-Plex-Container-Total-Size"]?.toIntOrNull() ?: container.totalSize
+        )
     }
 
     private fun authenticatedUrl(credentials: MusicCredentials, path: String): String {
@@ -135,7 +148,7 @@ private data class PlexMusicResponse(@SerialName("MediaContainer") val mediaCont
 @Serializable
 private data class PlexMusicContainer(
     val friendlyName: String? = null,
-    val size: Int? = null,
+    val offset: Int? = null,
     val totalSize: Int? = null,
     @SerialName("Metadata") val metadata: List<PlexMusicItem> = emptyList()
 )
