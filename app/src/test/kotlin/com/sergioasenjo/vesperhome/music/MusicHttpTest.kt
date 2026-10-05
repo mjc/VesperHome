@@ -45,6 +45,19 @@ class MusicHttpTest {
     }
 
     @Test
+    fun nonIoBodyFailuresResumeTheCallerAndCloseTheBody() = runBlocking {
+        val closed = AtomicBoolean()
+        val failure = IllegalStateException("Body cannot be read")
+        try {
+            withTimeout(5000) { responseClient(200, closed, failure).executeBody(request) }
+            throw AssertionError("Expected the body failure")
+        } catch (error: IllegalStateException) {
+            assertEquals(failure.message, error.message)
+        }
+        assertTrue(closed.get())
+    }
+
+    @Test
     fun cancellationClosesTheSocketWhileWaitingForHeaders() = cancelRead(partialBody = false)
 
     @Test
@@ -106,22 +119,28 @@ class MusicHttpTest {
         }
     }
 
-    private fun responseClient(code: Int, closed: AtomicBoolean): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor { chain ->
-            val source = object : ForwardingSource(Buffer().writeUtf8("music")) {
-                override fun close() {
-                    closed.set(true)
-                    super.close()
+    private fun responseClient(code: Int, closed: AtomicBoolean, readFailure: RuntimeException? = null): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val source = object : ForwardingSource(Buffer().writeUtf8("music")) {
+                    override fun read(sink: Buffer, byteCount: Long): Long {
+                        readFailure?.let { throw it }
+                        return super.read(sink, byteCount)
+                    }
+
+                    override fun close() {
+                        closed.set(true)
+                        super.close()
+                    }
+                }.buffer()
+                val body = object : ResponseBody() {
+                    override fun contentType(): MediaType? = null
+                    override fun contentLength() = 5L
+                    override fun source(): BufferedSource = source
                 }
-            }.buffer()
-            val body = object : ResponseBody() {
-                override fun contentType(): MediaType? = null
-                override fun contentLength() = 5L
-                override fun source(): BufferedSource = source
-            }
-            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-                .code(code).message("Test").body(body).build()
-        }.build()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(code).message("Test").body(body).build()
+            }.build()
 
     private val request = Request.Builder().url("http://music.test/track").build()
 }

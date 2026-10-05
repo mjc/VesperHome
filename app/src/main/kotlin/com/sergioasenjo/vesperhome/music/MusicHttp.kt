@@ -32,7 +32,7 @@ internal suspend fun OkHttpClient.executeResponse(request: Request): MusicHttpRe
                         MusicHttpResponse(it.body.string(), it.headers)
                     }
                     continuation.resume(body)
-                } catch (error: IOException) {
+                } catch (error: Exception) {
                     continuation.resumeWithException(error)
                 }
             }
