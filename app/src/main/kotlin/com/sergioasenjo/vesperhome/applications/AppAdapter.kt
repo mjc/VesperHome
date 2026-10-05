@@ -5,11 +5,11 @@ import android.animation.ValueAnimator
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -201,6 +201,13 @@ class AppAdapter(
         private var edgeAnimator: ObjectAnimator? = null
         private val cardBackground = GradientDrawable()
         private val cardOutline = GradientDrawable()
+        private val outlineView = object : View(binding.root.context) {
+            // A single stroke can modulate its opacity directly, without an offscreen layer.
+            override fun hasOverlappingRendering() = false
+        }.apply {
+            background = cardOutline
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
 
         init {
             binding.root.setOnClickListener { app?.let(onAppClick) }
@@ -246,7 +253,12 @@ class AppAdapter(
             cardBackground.cornerRadius = radius
             cardOutline.cornerRadius = radius
             cardOutline.setColor(Color.TRANSPARENT)
-            binding.artworkFrame.background = LayerDrawable(arrayOf(cardBackground, cardOutline))
+            binding.artworkFrame.background = cardBackground
+            binding.artworkFrame.addView(
+                outlineView,
+                0,
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            )
             binding.artworkFrame.clipToOutline = true
         }
 
@@ -311,7 +323,12 @@ class AppAdapter(
                     duration = OUTLINE_ANIMATION_MS
                     repeatCount = ValueAnimator.INFINITE
                     repeatMode = ValueAnimator.REVERSE
-                    addUpdateListener { animator -> cardOutline.alpha = animator.animatedValue as Int }
+                    addUpdateListener { animator ->
+                        val alpha = animator.animatedValue as Int
+                        // Match GradientDrawable's integer modulation of the opaque stroke.
+                        val strokeAlpha = (OUTLINE_FULL_ALPHA * (alpha + (alpha shr 7))) shr 8
+                        outlineView.alpha = strokeAlpha.toFloat() / OUTLINE_FULL_ALPHA
+                    }
                     start()
                 }
             }
@@ -339,7 +356,7 @@ class AppAdapter(
                 }
             }
             cardBackground.setColor(fillColor)
-            cardOutline.alpha = OUTLINE_FULL_ALPHA
+            outlineView.alpha = 1f
             cardOutline.setStroke(strokeWidth, strokeColor)
         }
 
