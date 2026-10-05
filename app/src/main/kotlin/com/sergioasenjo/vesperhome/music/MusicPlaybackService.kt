@@ -1,5 +1,6 @@
 package com.sergioasenjo.vesperhome.music
 
+import android.os.Process
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -13,7 +14,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
-class MusicPlaybackService : MediaSessionService() {
+class MusicPlaybackService :
+    MediaSessionService(),
+    MediaSession.Callback {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val gainProcessor = MusicGainAudioProcessor()
     private var mediaSession: MediaSession? = null
@@ -30,7 +33,7 @@ class MusicPlaybackService : MediaSessionService() {
             setHandleAudioBecomingNoisy(true)
             addListener(playerListener)
         }
-        mediaSession = MediaSession.Builder(this, player).build()
+        mediaSession = MediaSession.Builder(this, player).setCallback(this).build()
         isRunning = true
         serviceScope.launch {
             MusicPreferencesRepository(this@MusicPlaybackService).normalizationMode.collect { mode ->
@@ -40,7 +43,20 @@ class MusicPlaybackService : MediaSessionService() {
         }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        mediaSession.takeIf { canConnect(controllerInfo) }
+
+    override fun onConnect(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo
+    ): MediaSession.ConnectionResult = if (canConnect(controller)) {
+        super<MediaSession.Callback>.onConnect(session, controller)
+    } else {
+        MediaSession.ConnectionResult.reject()
+    }
+
+    private fun canConnect(controller: MediaSession.ControllerInfo): Boolean =
+        controller.uid == Process.myUid() || controller.isTrusted
 
     override fun onDestroy() {
         isRunning = false
