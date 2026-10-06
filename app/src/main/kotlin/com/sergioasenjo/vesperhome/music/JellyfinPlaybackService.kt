@@ -31,6 +31,7 @@ class JellyfinPlaybackService : MediaSessionService() {
             addListener(playerListener)
         }
         mediaSession = MediaSession.Builder(this, player).build()
+        isRunning = true
         serviceScope.launch {
             JellyfinPreferencesRepository(this@JellyfinPlaybackService).normalizationMode.collect { mode ->
                 normalizationMode = mode
@@ -42,6 +43,7 @@ class JellyfinPlaybackService : MediaSessionService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
     override fun onDestroy() {
+        isRunning = false
         mediaSession?.run {
             player.removeListener(playerListener)
             player.release()
@@ -66,4 +68,10 @@ class JellyfinPlaybackService : MediaSessionService() {
     }
 
     private fun android.os.Bundle.gain(key: String): Double? = getDouble(key).takeIf { containsKey(key) }
+
+    companion object {
+        @Volatile
+        internal var isRunning = false
+            private set
+    }
 }

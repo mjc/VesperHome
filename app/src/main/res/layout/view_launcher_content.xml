@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
-    android:fillViewport="true"
     android:scrollbars="none">
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/contentRows"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:focusable="false"
+        android:overScrollMode="never" />
+
+    <!-- The renderer moves these bound controls into full-width RecyclerView items. -->
     <LinearLayout
+        android:id="@+id/contentTemplates"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clipChildren="false"
@@ -235,17 +245,10 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:id="@+id/categoryRows"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:orientation="vertical" />
-
         <com.sergioasenjo.vesperhome.applications.AppRowView
             android:id="@+id/applicationsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
     </LinearLayout>
-</ScrollView>
+</FrameLayout>

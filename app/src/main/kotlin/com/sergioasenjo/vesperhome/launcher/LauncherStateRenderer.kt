@@ -44,6 +44,7 @@ internal class LauncherStateRenderer(
 ) {
     private var pageToRestore = initialPageToRestore
     private var fullyDrawnReported = false
+    private val appearanceRenderer = LauncherAppearanceRenderer(binding, contentBinding)
 
     fun render(state: LauncherUiState) {
         brightnessController.render(state.brightness)
@@ -65,7 +66,7 @@ internal class LauncherStateRenderer(
             controller.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
         }
         currentLiveTvController()?.setAppearance(homeAppearance)
-        renderLauncherAppearance(binding, contentBinding, homeAppearance)
+        appearanceRenderer.render(homeAppearance)
         statusBarController.render(state.statusBar, homeAppearance)
         tvInputController.render(state.statusBar.showInputs, homeAppearance)
         notificationController.render(state.statusBar, homeAppearance, state.appearance)

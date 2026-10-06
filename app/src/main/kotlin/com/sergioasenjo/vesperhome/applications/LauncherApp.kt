@@ -22,4 +22,10 @@ data class LauncherApp(
 ) {
     val packageName: String
         get() = componentName.packageName
+
+    internal fun hasSameArtwork(other: LauncherApp): Boolean =
+        componentName == other.componentName && user == other.user &&
+            artwork === other.artwork && artworkVersion == other.artworkVersion &&
+            artworkFile == other.artworkFile && customBannerFile == other.customBannerFile &&
+            customBannerRevision == other.customBannerRevision
 }

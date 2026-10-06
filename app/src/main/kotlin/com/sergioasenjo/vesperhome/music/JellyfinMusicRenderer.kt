@@ -5,6 +5,8 @@ import android.content.res.ColorStateList
 import android.view.View
 import androidx.core.content.ContextCompat
 import coil3.load
+import coil3.request.ErrorResult
+import coil3.result
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 
@@ -37,15 +39,20 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
         else -> context.getString(R.string.jellyfin_not_connected)
     }
     val artworkUrl = state.track?.artworkUrl
+    val artworkData = artworkUrl ?: R.drawable.ic_music
+    val reloadArtwork = musicArtwork.getTag(R.id.music_artwork_request_data) != artworkData ||
+        musicArtwork.result is ErrorResult
     if (artworkUrl == null) {
         val padding = (PLACEHOLDER_PADDING_DP * musicArtwork.resources.displayMetrics.density).toInt()
         musicArtwork.setPadding(padding, padding, padding, padding)
         musicArtwork.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
-        musicArtwork.load(R.drawable.ic_music)
     } else {
         musicArtwork.setPadding(0, 0, 0, 0)
         musicArtwork.imageTintList = null
-        musicArtwork.load(artworkUrl)
+    }
+    if (reloadArtwork) {
+        musicArtwork.setTag(R.id.music_artwork_request_data, artworkData)
+        musicArtwork.load(artworkData)
     }
 }
 
