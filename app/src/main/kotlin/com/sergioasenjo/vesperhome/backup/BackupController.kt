@@ -27,14 +27,17 @@ class BackupController(
     private var entries: List<BackupFileEntry> = emptyList()
     private var busy = false
     private var frequency = SafetyBackupFrequency.OFF
-    private val panel = BackupPanel(
-        activity,
-        onCreate = ::createBackup,
-        onImport = ::openImportPicker,
-        onFrequencySelected = ::showFrequencyPicker,
-        onSelected = ::showActions,
-        onDismissed = onRestored
-    )
+    private val panelDelegate = lazy {
+        BackupPanel(
+            activity,
+            onCreate = ::createBackup,
+            onImport = ::openImportPicker,
+            onFrequencySelected = ::showFrequencyPicker,
+            onSelected = ::showActions,
+            onDismissed = onRestored
+        )
+    }
+    private val panel by panelDelegate
 
     fun show() {
         panel.show(entries, frequency, busy = true, currentAppearance())
@@ -48,11 +51,11 @@ class BackupController(
     }
 
     fun renderAppearance() {
-        if (panel.isShowing) panel.render(entries, frequency, busy, currentAppearance())
+        render()
     }
 
     fun release() {
-        panel.release()
+        if (panelDelegate.isInitialized()) panel.release()
     }
 
     private fun createBackup() {
@@ -207,7 +210,9 @@ class BackupController(
     }
 
     private fun render() {
-        if (panel.isShowing) panel.render(entries, frequency, busy, currentAppearance())
+        if (panelDelegate.isInitialized() && panel.isShowing) {
+            panel.render(entries, frequency, busy, currentAppearance())
+        }
     }
 
     private fun showMessage(messageRes: Int) {

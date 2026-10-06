@@ -10,8 +10,11 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -23,36 +26,67 @@ import okhttp3.Request
 class UpcomingRepository(
     private val client: OkHttpClient,
     private val json: Json,
-    private val preferencesRepository: UpcomingPreferencesRepository
+    private val config: Flow<UpcomingServerConfig>
 ) {
-    suspend fun upcoming(nowMillis: Long = System.currentTimeMillis()): List<UpcomingMediaItem> {
-        val config = preferencesRepository.config.first()
-        if (!config.configured) return emptyList()
-        val startMillis = startOfDay(nowMillis)
-        val endMillis = startMillis + TimeUnit.DAYS.toMillis(LOOKAHEAD_DAYS)
-        return supervisorScope {
-            val sonarr = async {
-                if (config.sonarrConfigured) {
-                    requestSafely { sonarrItems(config, startMillis, endMillis) }
-                } else {
-                    Result.success(emptyList())
+    private data class CachedUpcoming(
+        val config: UpcomingServerConfig,
+        val startMillis: Long,
+        val fetchedAtMillis: Long,
+        val items: List<UpcomingMediaItem>
+    )
+
+    private val refreshMutex = Mutex()
+
+    @Volatile
+    private var cached: CachedUpcoming? = null
+
+    suspend fun upcoming(
+        nowMillis: Long = System.currentTimeMillis(),
+        forceRefresh: Boolean = false
+    ): List<UpcomingMediaItem> {
+        val observedCache = cached
+        return refreshMutex.withLock {
+            val config = config.first()
+            if (!config.configured) {
+                cached = null
+                return@withLock emptyList()
+            }
+            val startMillis = startOfDay(nowMillis)
+            cached?.takeIf {
+                it.config == config && it.startMillis == startMillis &&
+                    nowMillis - it.fetchedAtMillis in 0 until CACHE_FRESHNESS_MS &&
+                    (!forceRefresh || it !== observedCache)
+            }?.let { return@withLock it.items }
+            cached = null
+            val endMillis = startMillis + TimeUnit.DAYS.toMillis(LOOKAHEAD_DAYS)
+            supervisorScope {
+                val sonarr = async {
+                    if (config.sonarrConfigured) {
+                        requestSafely { sonarrItems(config, startMillis, endMillis) }
+                    } else {
+                        Result.success(emptyList())
+                    }
                 }
-            }
-            val radarr = async {
-                if (config.radarrConfigured) {
-                    requestSafely { radarrItems(config, startMillis, endMillis) }
-                } else {
-                    Result.success(emptyList())
+                val radarr = async {
+                    if (config.radarrConfigured) {
+                        requestSafely { radarrItems(config, startMillis, endMillis) }
+                    } else {
+                        Result.success(emptyList())
+                    }
                 }
+                val sonarrResult = sonarr.await()
+                val radarrResult = radarr.await()
+                if (sonarrResult.isFailure && radarrResult.isFailure) {
+                    throw sonarrResult.exceptionOrNull() ?: IOException("Upcoming calendar requests failed")
+                }
+                val items = (sonarrResult.getOrDefault(emptyList()) + radarrResult.getOrDefault(emptyList()))
+                    .sortedBy(UpcomingMediaItem::startsAtMillis)
+                    .take(MAX_ITEMS)
+                if (sonarrResult.isSuccess && radarrResult.isSuccess) {
+                    cached = CachedUpcoming(config, startMillis, nowMillis, items)
+                }
+                items
             }
-            val sonarrResult = sonarr.await()
-            val radarrResult = radarr.await()
-            if (sonarrResult.isFailure && radarrResult.isFailure) {
-                throw sonarrResult.exceptionOrNull() ?: IOException("Upcoming calendar requests failed")
-            }
-            (sonarrResult.getOrDefault(emptyList()) + radarrResult.getOrDefault(emptyList()))
-                .sortedBy(UpcomingMediaItem::startsAtMillis)
-                .take(MAX_ITEMS)
         }
     }
 
@@ -199,6 +233,7 @@ class UpcomingRepository(
     private companion object {
         const val API_KEY_HEADER = "X-Api-Key"
         const val LOOKAHEAD_DAYS = 28L
+        const val CACHE_FRESHNESS_MS = 5 * 60_000L
         const val MAX_ITEMS = 12
         const val RELEASE_DATE_LENGTH = 10
         val API_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {

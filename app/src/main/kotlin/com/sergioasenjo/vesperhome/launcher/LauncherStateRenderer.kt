@@ -48,7 +48,7 @@ internal class LauncherStateRenderer(
     fun render(state: LauncherUiState) {
         brightnessController.render(state.brightness)
         screensaverController.applySystemConfiguration(state.screensaver)
-        currentSettingsPanel()?.render(
+        currentSettingsPanel()?.takeIf { it.isShowing }?.render(
             state.isDefaultLauncher,
             homeButtonFixController.isEnabled(),
             state.applicationSortMode,

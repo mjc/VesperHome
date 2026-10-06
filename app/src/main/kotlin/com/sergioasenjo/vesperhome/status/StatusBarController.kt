@@ -13,7 +13,9 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sergioasenjo.vesperhome.R
@@ -66,6 +68,16 @@ class StatusBarController(
     }
 
     init {
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                renderDateTime()
+                scheduleClockUpdate()
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                clockHandler.removeCallbacks(updateClock)
+            }
+        })
         binding.statusNetwork.setOnClickListener(::openWifiSettings)
         binding.statusMediaSearch.setOnClickListener {
             activity.startActivity(Intent(activity, MediaSearchActivity::class.java))
@@ -296,11 +308,8 @@ class StatusBarController(
 
     private fun scheduleClockUpdate() {
         clockHandler.removeCallbacks(updateClock)
-        val interval = if (settings.dateFormat.contains('s') || settings.timeFormat.contains('s')) {
-            SECOND_MS
-        } else {
-            MINUTE_MS
-        }
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
+        val interval = settings.clockUpdateIntervalMillis() ?: return
         clockHandler.postDelayed(updateClock, interval - System.currentTimeMillis() % interval)
     }
 
@@ -320,8 +329,6 @@ class StatusBarController(
     private companion object {
         const val STATUS_VISIBLE_DURATION_MS = 5_000L
         const val STATUS_FADE_DURATION_MS = 150L
-        const val SECOND_MS = 1_000L
-        const val MINUTE_MS = 60_000L
         val DATE_FORMAT_PRESETS = listOf("EEEE d", "E d", "dd/MM/y", "MMM d, y", "d MMMM", "M/d/y")
         val TIME_FORMAT_PRESETS = listOf("H:mm", "hh:mm", "h:mm a", "hh:mm a", "HH:mm")
         val WIFI_LEVEL_ICONS = listOf(

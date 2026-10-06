@@ -18,6 +18,9 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
+        create("profile") {
+            initWith(getByName("benchmark"))
+        }
     }
 
     targetProjectPath = ":app"
@@ -26,7 +29,7 @@ android {
 
 androidComponents {
     beforeVariants(selector().all()) { variant ->
-        variant.enable = variant.buildType == "benchmark"
+        variant.enable = variant.buildType in setOf("benchmark", "profile")
     }
 }
 

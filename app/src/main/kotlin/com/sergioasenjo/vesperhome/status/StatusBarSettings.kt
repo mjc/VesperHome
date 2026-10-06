@@ -13,6 +13,19 @@ data class StatusBarSettings(
     val timeFormat: String = "HH:mm"
 )
 
+internal fun StatusBarSettings.clockUpdateIntervalMillis(): Long? {
+    val patterns = listOfNotNull(dateFormat.takeIf { showDate }, timeFormat.takeIf { showTime })
+    if (patterns.isEmpty()) return null
+    val showsSeconds = patterns.any { pattern ->
+        var quoted = false
+        pattern.any { character ->
+            if (character == '\'') quoted = !quoted
+            !quoted && character in "sS"
+        }
+    }
+    return if (showsSeconds) 1_000L else 60_000L
+}
+
 sealed interface StatusBarSettingsAction {
     data object ToggleAutoHide : StatusBarSettingsAction
 

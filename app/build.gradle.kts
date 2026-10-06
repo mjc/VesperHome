@@ -73,6 +73,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
+        create("profile") {
+            initWith(getByName("benchmark"))
+            applicationIdSuffix = ".profile"
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         create("instrumented") {
             initWith(getByName("release"))
             applicationIdSuffix = ".instrumented"
@@ -119,12 +125,12 @@ tasks.named("check") {
 }
 
 dependencies {
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+
     implementation(project(":plugin-api"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.ktx)
