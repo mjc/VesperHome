@@ -21,6 +21,44 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30], application = Application::class)
 class MusicProviderPreferencesTest {
     @Test
+    fun reconnectingTheOnlyJellyfinAccountRestoresMusic() = runBlocking {
+        val preferences = MusicPreferencesRepository(RuntimeEnvironment.getApplication())
+        preferences.clear()
+        preferences.clearPlex()
+        preferences.setMusicProvider(MusicProvider.JELLYFIN)
+        val server = JellyfinServer("http://jellyfin.test:8096", "server", "Jellyfin")
+        val authentication = AuthenticationResult(JellyfinUser("user", "Name"), "jellyfin-token", "server")
+        preferences.save(server, authentication)
+        val jellyfin = preferences.musicCredentials.first()!!
+
+        preferences.clear()
+        assertNull(preferences.musicCredentials.first())
+        assertEquals(MusicProvider.JELLYFIN, preferences.musicProvider.first())
+        preferences.save(server, authentication)
+        assertEquals(jellyfin, preferences.musicCredentials.first())
+    }
+
+    @Test
+    fun connectingJellyfinRepairsAnUnavailableSelectionAndPreservesAConnectedPlexAccount() = runBlocking {
+        val preferences = MusicPreferencesRepository(RuntimeEnvironment.getApplication())
+        preferences.clear()
+        preferences.clearPlex()
+        // Older versions can leave Plex selected after disconnecting the only Jellyfin account.
+        preferences.setMusicProvider(MusicProvider.PLEX)
+        val server = JellyfinServer("http://jellyfin.test:8096", "server", "Jellyfin")
+        val authentication = AuthenticationResult(JellyfinUser("user", "Name"), "jellyfin-token", "server")
+        preferences.save(server, authentication)
+        assertEquals(MusicProvider.JELLYFIN, preferences.musicProvider.first())
+        assertEquals(preferences.credentials.first(), preferences.musicCredentials.first())
+
+        val plex = MusicCredentials("http://plex.test:32400", "plex-token", "", "Plex", MusicProvider.PLEX)
+        preferences.savePlex(plex)
+        preferences.save(server, authentication)
+        assertEquals(MusicProvider.PLEX, preferences.musicProvider.first())
+        assertEquals(plex, preferences.musicCredentials.first())
+    }
+
+    @Test
     fun sharedMusicApiDispatchesPlexBrowsingAndPlaybackToPlexEndpoints() = runBlocking {
         val requests = mutableListOf<Request>()
         val client = OkHttpClient.Builder().addInterceptor { chain ->

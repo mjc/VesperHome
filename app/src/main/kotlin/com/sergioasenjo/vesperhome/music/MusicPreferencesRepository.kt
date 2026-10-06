@@ -83,6 +83,9 @@ class MusicPreferencesRepository(private val context: Context) {
             preferences[ACCESS_TOKEN] = authentication.AccessToken
             preferences[USER_ID] = authentication.User.Id
             preferences[SERVER_NAME] = server.Name
+            if (credentialsFrom(preferences, providerFrom(preferences)) == null) {
+                preferences[MUSIC_PROVIDER] = MusicProvider.JELLYFIN.name
+            }
         }
     }
 
@@ -92,7 +95,9 @@ class MusicPreferencesRepository(private val context: Context) {
             preferences.remove(ACCESS_TOKEN)
             preferences.remove(USER_ID)
             preferences.remove(SERVER_NAME)
-            if (providerFrom(preferences) == MusicProvider.JELLYFIN) {
+            if (providerFrom(preferences) == MusicProvider.JELLYFIN &&
+                credentialsFrom(preferences, MusicProvider.PLEX) != null
+            ) {
                 preferences[MUSIC_PROVIDER] = MusicProvider.PLEX.name
             }
         }
