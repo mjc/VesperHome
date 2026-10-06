@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -13,7 +12,6 @@ import android.os.Process
 import android.os.UserHandle
 import android.provider.Settings
 import android.util.Log
-import android.util.LruCache
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +26,8 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface ApplicationRepository {
     fun observeApplications(): Flow<List<LauncherApp>>
@@ -46,9 +46,10 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
     private val packageManager = context.packageManager
     private val ownPackageName = context.packageName
     private val callbackHandler = Handler(Looper.getMainLooper())
-    private val artworkCache = LruCache<String, Drawable>(ARTWORK_CACHE_SIZE)
+    private val defaultArtwork = packageManager.defaultActivityIcon
     private val artworkVersions = ConcurrentHashMap<String, Long>()
     private val snapshotCache = ApplicationSnapshotCache(context)
+    private val refreshMutex = Mutex()
 
     @Volatile
     private var memorySnapshot: List<LauncherApp>? = null
@@ -84,23 +85,29 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
         .transform { request ->
             var renderedSnapshot = false
             if (request.initial) {
-                val cachedApps = memorySnapshot ?: snapshotCache.load().also { cached ->
-                    if (cached.isNotEmpty()) memorySnapshot = cached
+                val cachedApps = refreshMutex.withLock {
+                    memorySnapshot ?: snapshotCache.load().also { cached ->
+                        if (cached.isNotEmpty()) memorySnapshot = cached
+                    }
                 }
                 if (cachedApps.isNotEmpty()) {
                     emit(cachedApps)
                     renderedSnapshot = true
                 }
             }
-            request.changedPackages.forEach { packageName ->
-                artworkCache.remove(packageName)
-                artworkVersions[packageName] = (artworkVersions[packageName] ?: 0L) + 1L
-            }
             if (renderedSnapshot) delay(BACKGROUND_REFRESH_DELAY_MS)
-            val freshApps = loadApplications()
-            memorySnapshot = freshApps
+            // Each collector shares these files and versions. Keep the entire refresh atomic.
+            val freshApps = refreshMutex.withLock {
+                request.changedPackages.forEach { packageName ->
+                    snapshotCache.invalidateArtwork(packageName)
+                    artworkVersions[packageName] = (artworkVersions[packageName] ?: 0L) + 1L
+                }
+                loadApplications().also { apps ->
+                    snapshotCache.save(apps)
+                    memorySnapshot = apps
+                }
+            }
             emit(freshApps)
-            snapshotCache.save(freshApps)
         }
         .flowOn(Dispatchers.IO)
 
@@ -111,23 +118,45 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
             .filterNot { it.componentName.packageName == ownPackageName }
             .distinctBy { it.componentName.packageName }
             .toList()
+        val previousApps = memorySnapshot.orEmpty().associateBy(LauncherApp::packageName)
         return coroutineScope {
             activities.map { activity ->
                 async(APP_LOAD_DISPATCHER) {
                     val packageName = activity.componentName.packageName
-                    val artwork = artworkCache[packageName] ?: (
-                        activity.applicationInfo.loadBanner(packageManager)
-                            ?: activity.getBadgedIcon(0)
-                        ).also { artworkCache.put(packageName, it) }
+                    val artworkVersion = (
+                        activity.applicationInfo.sourceDir
+                            ?.let(::File)
+                            ?.lastModified()
+                            ?: 0L
+                        ) + (artworkVersions[packageName] ?: 0L)
+                    val cachedArtwork = snapshotCache.cachedArtwork(packageName, artworkVersion)
+                    val previousApp = previousApps[packageName]
+                    if (snapshotCache.labelsMatchLocale && cachedArtwork != null &&
+                        previousApp?.artworkVersion == artworkVersion
+                    ) {
+                        // Reading platform labels also opens every installed APK's resource table.
+                        return@async previousApp.copy(
+                            componentName = activity.componentName,
+                            user = activity.user,
+                            artworkFile = cachedArtwork
+                        )
+                    }
+                    val artwork = if (cachedArtwork != null) {
+                        defaultArtwork
+                    } else {
+                        (
+                            activity.applicationInfo.loadBanner(packageManager)
+                                ?: activity.getBadgedIcon(0)
+                            )
+                    }
+                    val artworkFile = cachedArtwork ?: snapshotCache.saveArtwork(packageName, artwork)
                     LauncherApp(
                         componentName = activity.componentName,
                         label = activity.label.toString(),
-                        artwork = artwork,
-                        artworkVersion = activity.applicationInfo.sourceDir
-                            ?.let(::File)
-                            ?.lastModified()
-                            ?: (artworkVersions[packageName] ?: 0L),
-                        user = activity.user
+                        artwork = if (artworkFile != null) defaultArtwork else artwork,
+                        artworkVersion = artworkVersion,
+                        user = activity.user,
+                        artworkFile = artworkFile
                     )
                 }
             }
@@ -155,7 +184,6 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
 
     private companion object {
         const val TAG = "ApplicationRepository"
-        const val ARTWORK_CACHE_SIZE = 64
         const val MAX_CONCURRENT_APP_LOADS = 2
         const val BACKGROUND_REFRESH_DELAY_MS = 1_500L
         val APP_LOAD_DISPATCHER = Dispatchers.IO.limitedParallelism(MAX_CONCURRENT_APP_LOADS)
