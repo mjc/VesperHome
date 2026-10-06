@@ -10,7 +10,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
+import coil3.dispose
 import coil3.load
+import coil3.request.ErrorResult
+import coil3.result
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.databinding.ItemCategoryMembershipBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -34,6 +37,11 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
         holder.bind(getItem(position), appearance)
     }
 
+    override fun onViewRecycled(holder: MembershipViewHolder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
+    }
+
     fun setAppearance(appearance: LauncherAppearance) {
         if (this.appearance == appearance) return
         this.appearance = appearance
@@ -52,6 +60,8 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
         }
 
         fun bind(item: CategoryMembershipItem, appearance: LauncherAppearance) {
+            val reloadArtwork = this.item?.app?.hasSameArtwork(item.app) != true ||
+                binding.artwork.result is ErrorResult
             this.item = item
             val palette = appearance.palette
             binding.root.background = StateListDrawable().apply {
@@ -71,11 +81,13 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
                 )
             }
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
-            binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
-                item.app.customBannerRevision?.let { revision ->
-                    memoryCacheKey("custom-banner:${item.app.packageName}:$revision")
+            if (reloadArtwork) {
+                binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
+                    item.app.customBannerRevision?.let { revision ->
+                        memoryCacheKey("custom-banner:${item.app.packageName}:$revision")
+                    }
+                    placeholder(item.app.artwork.asImage())
                 }
-                placeholder(item.app.artwork.asImage())
             }
             binding.name.text = item.app.label
             binding.name.setTextColor(
@@ -99,6 +111,12 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
                 R.string.add_app_to_category_description
             }
             binding.root.contentDescription = binding.root.resources.getString(description, item.app.label)
+        }
+
+        fun recycle() {
+            item = null
+            binding.artwork.dispose()
+            binding.artwork.setImageDrawable(null)
         }
 
         private fun dp(view: android.view.View, value: Int): Int =

@@ -13,8 +13,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
+import coil3.dispose
 import coil3.load
+import coil3.request.ErrorResult
+import coil3.result
 import com.sergioasenjo.vesperhome.databinding.ItemAppBinding
+import com.sergioasenjo.vesperhome.launcher.absolutePosition
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
@@ -171,8 +175,10 @@ class AppAdapter(
         val position = currentList.indexOfFirst { it.key() == movingKey }
         if (position == RecyclerView.NO_POSITION) return
         recyclerView?.apply {
-            scrollToPosition(position)
-            post { findViewHolderForAdapterPosition(position)?.itemView?.requestFocus() }
+            val target = absolutePosition(this@AppAdapter, position)
+            if (target == RecyclerView.NO_POSITION) return@apply
+            scrollToPosition(target)
+            post { findViewHolderForAdapterPosition(target)?.itemView?.requestFocus() }
         }
     }
 
@@ -194,6 +200,8 @@ class AppAdapter(
         isMovementActive: () -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private var app: LauncherApp? = null
+        private var artworkWidth = 0
+        private var artworkHeight = 0
         private var appearance = LauncherAppearance()
         private var moving = false
         private var outlineAnimator: ValueAnimator? = null
@@ -245,16 +253,25 @@ class AppAdapter(
         }
 
         fun bind(app: LauncherApp, moving: Boolean, appearance: LauncherAppearance) {
+            val width = binding.root.layoutParams?.width ?: 0
+            val height = binding.root.layoutParams?.height ?: 0
+            val reloadArtwork = this.app?.hasSameArtwork(app) != true ||
+                artworkWidth != width || artworkHeight != height ||
+                this.appearance.showAppNames != appearance.showAppNames || binding.artwork.result is ErrorResult
             this.app = app
+            artworkWidth = width
+            artworkHeight = height
             this.moving = moving
             this.appearance = appearance
             binding.root.isActivated = moving
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
-            binding.artwork.load(app.customBannerFile ?: app.artworkFile ?: app.artwork) {
-                app.customBannerRevision?.let { revision ->
-                    memoryCacheKey("custom-banner:${app.packageName}:$revision")
+            if (reloadArtwork) {
+                binding.artwork.load(app.customBannerFile ?: app.artworkFile ?: app.artwork) {
+                    app.customBannerRevision?.let { revision ->
+                        memoryCacheKey("custom-banner:${app.packageName}:$revision")
+                    }
+                    placeholder(app.artwork.asImage())
                 }
-                placeholder(app.artwork.asImage())
             }
             binding.name.text = app.label
             binding.name.setTextColor(appearance.palette.primaryText)
@@ -264,6 +281,9 @@ class AppAdapter(
         }
 
         fun recycle() {
+            app = null
+            binding.artwork.dispose()
+            binding.artwork.setImageDrawable(null)
             outlineAnimator?.cancel()
             outlineAnimator = null
             edgeAnimator?.cancel()

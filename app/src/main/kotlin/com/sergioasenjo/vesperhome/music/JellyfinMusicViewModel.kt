@@ -213,6 +213,7 @@ class JellyfinMusicViewModel(
         hostStopped = false
         hostStopJob?.cancel()
         hostStopJob = null
+        player.onHostStarted()
     }
 
     fun onHostStopped() {

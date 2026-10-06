@@ -46,6 +46,7 @@ android {
         targetSdk = 36
         versionCode = releaseVersionCode ?: 1
         versionName = releaseVersionName ?: "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SONARR_URL", "\"\"")
         buildConfigField("String", "SONARR_API_KEY", "\"\"")
         buildConfigField("String", "RADARR_URL", "\"\"")
@@ -67,11 +68,35 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
+        create("optimized") {
+            initWith(getByName("debug"))
+            versionNameSuffix = "-optimized"
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            matchingFallbacks += listOf("release")
+        }
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
+        create("instrumented") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".instrumented"
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            matchingFallbacks += listOf("release")
+        }
+    }
+
+    testBuildType = "instrumented"
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 
     buildFeatures {
@@ -103,6 +128,12 @@ tasks.named("check") {
 }
 
 dependencies {
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
     implementation(project(":plugin-api"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.ktx)
