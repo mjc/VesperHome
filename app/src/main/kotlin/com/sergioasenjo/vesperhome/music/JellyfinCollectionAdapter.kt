@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.load
 import coil3.request.error
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ItemJellyfinCollectionBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -131,6 +132,7 @@ class JellyfinCollectionAdapter(
                 binding.artwork.setPadding(0, 0, 0, 0)
                 binding.artwork.imageTintList = null
                 binding.artwork.load(collection.artworkUrl) {
+                    cacheSizedArtwork("music-collection")
                     error(R.drawable.ic_music_library)
                 }
             }

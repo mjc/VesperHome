@@ -3,6 +3,7 @@ package com.sergioasenjo.vesperhome.launcher
 import android.os.Bundle
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -324,6 +325,7 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        (application as VesperHomeApplication).sizedArtworkCache.setForeground(hasWindowFocus())
         backActionGuard.onResume()
         musicViewModel.onHostStarted()
         if (::notificationController.isInitialized) notificationController.refreshPermissions()
@@ -339,6 +341,28 @@ class LauncherActivity : AppCompatActivity() {
         if (::aboutController.isInitialized) aboutController.refresh()
         if (launcherInitialized) viewModel.refreshHomeStatus()
         liveTvController.refresh()
+    }
+
+    override fun onPause() {
+        (application as VesperHomeApplication).sizedArtworkCache.setForeground(false)
+        super.onPause()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        (application as VesperHomeApplication).sizedArtworkCache.setForeground(
+            hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        )
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        (application as VesperHomeApplication).sizedArtworkCache.onInput()
+        return super.dispatchTouchEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        (application as VesperHomeApplication).sizedArtworkCache.onInput()
+        return super.dispatchGenericMotionEvent(event)
     }
 
     override fun onStop() {
@@ -372,6 +396,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        (application as VesperHomeApplication).sizedArtworkCache.onInput()
         backActionGuard.onKeyEvent(event, hasWindowFocus())
         if (liveTvController.onKeyEvent(event)) return true
         if (::statusBarController.isInitialized && statusBarController.onKeyEvent(event)) return true

@@ -17,6 +17,7 @@ import coil3.request.ErrorResult
 import coil3.request.allowHardware
 import coil3.result
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ItemCategoryMembershipBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
@@ -85,6 +86,16 @@ class CategoryMembershipAdapter(private val onClick: (CategoryMembershipItem) ->
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
             if (reloadArtwork) {
                 binding.artwork.load(item.app.customBannerFile ?: item.app.artworkFile ?: item.app.artwork) {
+                    if (item.app.customBannerFile != null) {
+                        cacheSizedArtwork(
+                            "custom-banner:${item.app.packageName}:${item.app.user}:${item.app.customBannerRevision}"
+                        )
+                    } else if (item.app.artworkFile != null) {
+                        cacheSizedArtwork(
+                            "app-banner:${item.app.packageName}:${item.app.user}:${item.app.artworkVersion}",
+                            item.app.packageName
+                        )
+                    }
                     if (item.app.customBannerFile == null && item.app.artworkFile != null) {
                         memoryCacheKey("app-banner:${item.app.packageName}:${item.app.artworkVersion}")
                         // Hardware thumbnail imports can stall the graphics buffer queue on NVIDIA TVs.

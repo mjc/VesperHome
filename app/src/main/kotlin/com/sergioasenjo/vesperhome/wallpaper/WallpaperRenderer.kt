@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import coil3.load
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.settings.LauncherPalette
 
 class WallpaperRenderer(private val root: FrameLayout, private val image: ImageView) {
@@ -37,6 +38,7 @@ class WallpaperRenderer(private val root: FrameLayout, private val image: ImageV
         root.setBackgroundColor(palette.backgroundEnd)
         image.visibility = View.VISIBLE
         image.load(file) {
+            cacheSizedArtwork("wallpaper:${state.settings.revision}")
             memoryCacheKey("${file.path}:${state.settings.revision}")
         }
     }

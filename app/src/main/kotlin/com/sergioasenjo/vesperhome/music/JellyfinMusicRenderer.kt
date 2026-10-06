@@ -8,6 +8,7 @@ import coil3.load
 import coil3.request.ErrorResult
 import coil3.result
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 
 fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
@@ -52,7 +53,9 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
     }
     if (reloadArtwork) {
         musicArtwork.setTag(R.id.music_artwork_request_data, artworkData)
-        musicArtwork.load(artworkData)
+        musicArtwork.load(artworkData) {
+            if (artworkUrl != null) cacheSizedArtwork("music")
+        }
     }
 }
 
