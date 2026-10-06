@@ -6,6 +6,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import coil3.load
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 
 fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
@@ -45,7 +46,7 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
     } else {
         musicArtwork.setPadding(0, 0, 0, 0)
         musicArtwork.imageTintList = null
-        musicArtwork.load(artworkUrl)
+        musicArtwork.load(artworkUrl) { cacheSizedArtwork("music") }
     }
 }
 

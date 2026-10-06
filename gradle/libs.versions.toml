@@ -1,4 +1,6 @@
 [versions]
+junit = "4.13.2"
+robolectric = "4.16"
 agp = "9.3.1"
 kotlin = "2.4.10"
 ksp = "2.3.11"
@@ -25,6 +27,9 @@ uiautomator = "2.3.0"
 spotless = "8.9.0"
 
 [libraries]
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }

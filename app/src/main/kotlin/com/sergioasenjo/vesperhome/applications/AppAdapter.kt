@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.asImage
 import coil3.load
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ItemAppBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -251,6 +252,14 @@ class AppAdapter(
             binding.root.isActivated = moving
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
             binding.artwork.load(app.customBannerFile ?: app.artworkFile ?: app.artwork) {
+                if (app.customBannerFile != null) {
+                    cacheSizedArtwork("custom-banner:${app.packageName}:${app.user}:${app.customBannerRevision}")
+                } else if (app.artworkFile != null) {
+                    cacheSizedArtwork(
+                        "app-banner:${app.packageName}:${app.user}:${app.artworkVersion}",
+                        app.packageName
+                    )
+                }
                 app.customBannerRevision?.let { revision ->
                     memoryCacheKey("custom-banner:${app.packageName}:$revision")
                 }

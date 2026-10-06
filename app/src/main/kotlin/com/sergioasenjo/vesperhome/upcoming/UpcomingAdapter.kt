@@ -16,6 +16,7 @@ import coil3.load
 import coil3.request.error
 import coil3.request.placeholder
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ItemUpcomingMediaBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
@@ -113,6 +114,7 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
             }
             binding.artwork.imageTintList = null
             binding.artwork.load(item.imageUrl) {
+                cacheSizedArtwork("upcoming")
                 placeholder(R.drawable.ic_upcoming)
                 error(R.drawable.ic_upcoming)
             }
