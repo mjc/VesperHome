@@ -36,7 +36,7 @@ class UpcomingMovieIdentityTest {
                 RuntimeEnvironment.getApplication(),
                 UpcomingServerConfig("", "", "https://radarr.test", "key")
             )
-            val item = UpcomingRepository(client, Json { ignoreUnknownKeys = true }, preferences)
+            val item = UpcomingRepository(client, Json { ignoreUnknownKeys = true }, preferences.config)
                 .upcoming(Instant.parse("2026-10-05T12:00:00Z").toEpochMilli()).single()
             assertEquals(expectedYear, item.productionYear)
             assertEquals(UpcomingMediaType.DIGITAL, item.type)

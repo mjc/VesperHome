@@ -20,7 +20,7 @@ class MusicVisibilityBackupTest {
             emptyList()
         )
         val encoded = Json.encodeToString(snapshot.toDocument(createdAt = 1L))
-        assertTrue(encoded.contains("\"showMusic\":false"))
+        assertTrue(encoded.contains("\"showJellyfinMusic\":false"))
         assertFalse(encoded.contains("\"showMusic\""))
         val restored = Json.decodeFromString<BackupDocument>(encoded).toSnapshot()
         assertFalse(restored.settings.showMusic)
