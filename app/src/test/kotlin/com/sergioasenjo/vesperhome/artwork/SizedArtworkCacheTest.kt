@@ -14,6 +14,7 @@ import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import coil3.asImage
 import coil3.intercept.Interceptor
+import coil3.memory.MemoryCache
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.ImageResult
@@ -47,6 +48,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -312,11 +314,16 @@ class SizedArtworkCacheTest {
             val first = realLoader.execute(request) as SuccessResult
             assertEquals(200, first.image.width)
             assertEquals(100, first.image.height)
+            assertNotNull(first.memoryCacheKey)
+            assertNotNull(realLoader.memoryCache!![first.memoryCacheKey!!])
             idle(cache)
+            assertNull(realLoader.memoryCache!![first.memoryCacheKey!!])
+            assertFalse((first.image as coil3.BitmapImage).bitmap.isRecycled)
             val prepared = realLoader.execute(request) as SuccessResult
             assertNotEquals(source, prepared.request.data)
             assertEquals(200, prepared.image.width)
             assertEquals(100, prepared.image.height)
+            assertEquals(setOf(prepared.memoryCacheKey), realLoader.memoryCache!!.keys)
         } finally {
             controller.pause().stop().destroy()
             realLoader.shutdown()
@@ -384,8 +391,17 @@ class SizedArtworkCacheTest {
                 unavailable,
                 now = { testScheduler.currentTime }
             ).also { caches += it }
-            assertEquals(source, cache.intercept(Chain(request())).request.data)
+            val key = MemoryCache.Key("original-artwork", mapOf("geometry" to "200x160"))
+            delegate.memoryCache!![key] = MemoryCache.Value(bitmap.asImage())
+            val original = cache.intercept(
+                Chain(request(), action = {
+                    SuccessResult(bitmap.asImage(), it, memoryCacheKey = key)
+                })
+            )
+            assertEquals(source, original.request.data)
             idle(cache)
+            assertNotNull(delegate.memoryCache!![key])
+            assertFalse(bitmap.isRecycled)
             assertEquals(source, cache.intercept(Chain(request())).request.data)
         } finally {
             unavailable.delete()

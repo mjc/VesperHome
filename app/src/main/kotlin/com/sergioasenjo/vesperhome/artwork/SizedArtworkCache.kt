@@ -20,6 +20,7 @@ import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.imageLoader
 import coil3.intercept.Interceptor
+import coil3.memory.MemoryCache
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.ImageResult
@@ -74,7 +75,8 @@ class SizedArtworkCache(
         val width: Int,
         val height: Int,
         val scale: Scale,
-        val loader: ImageLoader
+        val loader: ImageLoader,
+        val memoryCacheKey: MemoryCache.Key?
     )
     private val activity = MutableStateFlow(Activity(false, 0))
     private val pending = linkedMapOf<String, Work>()
@@ -160,7 +162,16 @@ class SizedArtworkCache(
         if (result is SuccessResult) {
             synchronized(pending) {
                 if (pending.size >= MAX_PENDING && key !in pending) pending.remove(pending.keys.first())
-                pending[key] = Work(key, source, artwork, width, height, request.scale, context.imageLoader)
+                pending[key] = Work(
+                    key,
+                    source,
+                    artwork,
+                    width,
+                    height,
+                    request.scale,
+                    context.imageLoader,
+                    result.memoryCacheKey
+                )
             }
             wakeups.trySend(Unit)
         }
@@ -195,6 +206,7 @@ class SizedArtworkCache(
     private suspend fun prepare(work: Work) = withContext(ioDispatcher) {
         diskCache.openSnapshot(work.key)?.let {
             it.close()
+            work.memoryCacheKey?.let { key -> work.loader.memoryCache?.remove(key) }
             return@withContext
         }
         val platformArtwork = work.artwork.packageName?.let { packageName ->
@@ -234,9 +246,12 @@ class SizedArtworkCache(
                 editor.abort()
                 throw error
             }
+            // Future bindings use the prepared variant. Drop the duplicate original from Coil's cache,
+            // without recycling pixels that a visible ImageView may still hold.
+            work.memoryCacheKey?.let { key -> work.loader.memoryCache?.remove(key) }
         } finally {
-            // The decoded input may belong to Coil's memory cache. Only recycle our output.
-            bitmap.recycle()
+            // An exact-size input can be written directly and may still be displayed or cached by Coil.
+            if (bitmap !== image) bitmap.recycle()
         }
     }
 
@@ -250,6 +265,7 @@ class SizedArtworkCache(
         }
         val outputWidth = if (scale == Scale.FIT) (sourceWidth * factor).roundToInt().coerceIn(1, width) else width
         val outputHeight = if (scale == Scale.FIT) (sourceHeight * factor).roundToInt().coerceIn(1, height) else height
+        if (drawable == null && image?.width == outputWidth && image.height == outputHeight) return image
         val bitmap = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
         try {
             val canvas = Canvas(bitmap)
