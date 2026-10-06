@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -199,6 +200,14 @@ class AppAdapter(
         private var outlineAnimator: ValueAnimator? = null
         private var edgeAnimator: ObjectAnimator? = null
         private val cardBackground = GradientDrawable()
+        private val cardOutline = GradientDrawable()
+        private val outlineView = object : View(binding.root.context) {
+            // A single stroke can modulate its opacity directly, without an offscreen layer.
+            override fun hasOverlappingRendering() = false
+        }.apply {
+            background = cardOutline
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
 
         init {
             binding.root.setOnClickListener { app?.let(onAppClick) }
@@ -240,7 +249,16 @@ class AppAdapter(
                 view.isSelected = focused
                 updateFocusAppearance(focused)
             }
+            val radius = dp(BANNER_CORNER_RADIUS_DP).toFloat()
+            cardBackground.cornerRadius = radius
+            cardOutline.cornerRadius = radius
+            cardOutline.setColor(Color.TRANSPARENT)
             binding.artworkFrame.background = cardBackground
+            binding.artworkFrame.addView(
+                outlineView,
+                0,
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            )
             binding.artworkFrame.clipToOutline = true
         }
 
@@ -289,7 +307,7 @@ class AppAdapter(
         private fun updateFocusAppearance(focused: Boolean) {
             outlineAnimator?.cancel()
             outlineAnimator = null
-            updateBackground(focused, OUTLINE_FULL_ALPHA)
+            updateBackground(focused)
 
             val scale = if (focused) FOCUSED_SCALE else 1f
             binding.root.animate().cancel()
@@ -305,13 +323,18 @@ class AppAdapter(
                     duration = OUTLINE_ANIMATION_MS
                     repeatCount = ValueAnimator.INFINITE
                     repeatMode = ValueAnimator.REVERSE
-                    addUpdateListener { animator -> updateBackground(focused = true, animator.animatedValue as Int) }
+                    addUpdateListener { animator ->
+                        val alpha = animator.animatedValue as Int
+                        // Match GradientDrawable's integer modulation of the opaque stroke.
+                        val strokeAlpha = (OUTLINE_FULL_ALPHA * (alpha + (alpha shr 7))) shr 8
+                        outlineView.alpha = strokeAlpha.toFloat() / OUTLINE_FULL_ALPHA
+                    }
                     start()
                 }
             }
         }
 
-        private fun updateBackground(focused: Boolean, outlineAlpha: Int) {
+        private fun updateBackground(focused: Boolean) {
             val palette = appearance.palette
             val fillColor = if (focused || moving) palette.focusedSurface else Color.TRANSPARENT
             val strokeColor: Int
@@ -323,7 +346,7 @@ class AppAdapter(
                 }
 
                 focused && appearance.showFocusOutline -> {
-                    strokeColor = palette.focus.withAlpha(outlineAlpha)
+                    strokeColor = palette.focus
                     strokeWidth = dp(FOCUS_STROKE_WIDTH_DP)
                 }
 
@@ -332,16 +355,12 @@ class AppAdapter(
                     strokeWidth = 0
                 }
             }
-            cardBackground.apply {
-                cornerRadius = dp(BANNER_CORNER_RADIUS_DP).toFloat()
-                setColor(fillColor)
-                setStroke(strokeWidth, strokeColor)
-            }
+            cardBackground.setColor(fillColor)
+            outlineView.alpha = 1f
+            cardOutline.setStroke(strokeWidth, strokeColor)
         }
 
         private fun dp(value: Int): Int = (value * binding.root.resources.displayMetrics.density).toInt()
-
-        private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 
         private companion object {
             const val FOCUSED_SCALE = 1.1f
