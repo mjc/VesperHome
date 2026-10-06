@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface ApplicationRepository {
     fun observeApplications(): Flow<List<LauncherApp>>
@@ -47,6 +49,7 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
     private val defaultArtwork = packageManager.defaultActivityIcon
     private val artworkVersions = ConcurrentHashMap<String, Long>()
     private val snapshotCache = ApplicationSnapshotCache(context)
+    private val refreshMutex = Mutex()
 
     @Volatile
     private var memorySnapshot: List<LauncherApp>? = null
@@ -82,23 +85,29 @@ class PlatformApplicationRepository(context: Context) : ApplicationRepository {
         .transform { request ->
             var renderedSnapshot = false
             if (request.initial) {
-                val cachedApps = memorySnapshot ?: snapshotCache.load().also { cached ->
-                    if (cached.isNotEmpty()) memorySnapshot = cached
+                val cachedApps = refreshMutex.withLock {
+                    memorySnapshot ?: snapshotCache.load().also { cached ->
+                        if (cached.isNotEmpty()) memorySnapshot = cached
+                    }
                 }
                 if (cachedApps.isNotEmpty()) {
                     emit(cachedApps)
                     renderedSnapshot = true
                 }
             }
-            request.changedPackages.forEach { packageName ->
-                snapshotCache.invalidateArtwork(packageName)
-                artworkVersions[packageName] = (artworkVersions[packageName] ?: 0L) + 1L
-            }
             if (renderedSnapshot) delay(BACKGROUND_REFRESH_DELAY_MS)
-            val freshApps = loadApplications()
-            memorySnapshot = freshApps
+            // Each collector shares these files and versions. Keep the entire refresh atomic.
+            val freshApps = refreshMutex.withLock {
+                request.changedPackages.forEach { packageName ->
+                    snapshotCache.invalidateArtwork(packageName)
+                    artworkVersions[packageName] = (artworkVersions[packageName] ?: 0L) + 1L
+                }
+                loadApplications().also { apps ->
+                    snapshotCache.save(apps)
+                    memorySnapshot = apps
+                }
+            }
             emit(freshApps)
-            snapshotCache.save(freshApps)
         }
         .flowOn(Dispatchers.IO)
 
