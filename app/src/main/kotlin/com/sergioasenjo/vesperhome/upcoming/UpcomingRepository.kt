@@ -1,5 +1,6 @@
 package com.sergioasenjo.vesperhome.upcoming
 
+import com.sergioasenjo.vesperhome.http.executeBody
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -186,10 +187,7 @@ class UpcomingRepository(
             .apply { query.forEach { (name, value) -> addQueryParameter(name, value) } }
             .build()
         val request = Request.Builder().url(url).header(API_KEY_HEADER, apiKey).build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Calendar request failed with ${response.code}")
-            json.decodeFromString<T>(response.body.string())
-        }
+        json.decodeFromString<T>(client.executeBody(request))
     }
 
     fun normalizeUrl(value: String): String = value.trim().trimEnd('/').let { url ->
