@@ -113,9 +113,16 @@ class BlockingLauncherApps : ShadowLauncherApps() {
     }
 
     @Implementation
+    @Synchronized
     public override fun registerCallback(callback: LauncherApps.Callback, handler: Handler?) {
         super.registerCallback(callback, handler)
         registered.countDown()
+    }
+
+    @Implementation
+    @Synchronized
+    public override fun unregisterCallback(callback: LauncherApps.Callback) {
+        super.unregisterCallback(callback)
     }
 
     companion object {
