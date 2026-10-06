@@ -1,5 +1,6 @@
 package com.sergioasenjo.vesperhome.benchmark
 
+import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
@@ -24,6 +25,11 @@ class StartupBenchmark {
     @Test
     fun coldStartupFullCompilation() {
         measureStartup(StartupMode.COLD, CompilationMode.Full())
+    }
+
+    @Test
+    fun coldStartupBaselineProfile() {
+        measureStartup(StartupMode.COLD, CompilationMode.Partial(BaselineProfileMode.Require))
     }
 
     @Test

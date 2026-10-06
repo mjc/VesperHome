@@ -46,6 +46,7 @@ android {
         targetSdk = 36
         versionCode = releaseVersionCode ?: 1
         versionName = releaseVersionName ?: "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SONARR_URL", "\"\"")
         buildConfigField("String", "SONARR_API_KEY", "\"\"")
         buildConfigField("String", "RADARR_URL", "\"\"")
@@ -72,6 +73,27 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
+        create("profile") {
+            initWith(getByName("benchmark"))
+            applicationIdSuffix = ".profile"
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+        create("instrumented") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".instrumented"
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            matchingFallbacks += listOf("release")
+        }
+    }
+
+    testBuildType = "instrumented"
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 
     buildFeatures {
@@ -103,6 +125,12 @@ tasks.named("check") {
 }
 
 dependencies {
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+
     implementation(project(":plugin-api"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.ktx)

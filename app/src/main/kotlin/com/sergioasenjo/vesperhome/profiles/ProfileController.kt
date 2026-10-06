@@ -24,14 +24,17 @@ class ProfileController(
 ) {
     private var state = ProfileState()
     private var busy = false
-    private val panel = ProfilePanel(
-        activity,
-        onCreate = { showNameDialog(R.string.create_profile, ::createProfile) },
-        onToggleComingNext = ::toggleComingNext,
-        onToggleJellyfinMusic = ::toggleJellyfinMusic,
-        onSelected = ::showActions,
-        onDismissed = onDismissed
-    )
+    private val panelDelegate = lazy {
+        ProfilePanel(
+            activity,
+            onCreate = { showNameDialog(R.string.create_profile, ::createProfile) },
+            onToggleComingNext = ::toggleComingNext,
+            onToggleJellyfinMusic = ::toggleJellyfinMusic,
+            onSelected = ::showActions,
+            onDismissed = onDismissed
+        )
+    }
+    private val panel by panelDelegate
 
     fun show() {
         panel.show(state, currentSettings(), busy = true, currentAppearance())
@@ -40,11 +43,11 @@ class ProfileController(
 
     fun render(settings: LauncherSettings, appearance: LauncherAppearance) {
         state = repository.state.value
-        if (panel.isShowing) panel.render(state, settings, busy, appearance)
+        if (panelDelegate.isInitialized() && panel.isShowing) panel.render(state, settings, busy, appearance)
     }
 
     fun release() {
-        panel.release()
+        if (panelDelegate.isInitialized()) panel.release()
     }
 
     private fun createProfile(name: String) {

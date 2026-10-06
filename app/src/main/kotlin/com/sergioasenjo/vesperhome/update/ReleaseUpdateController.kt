@@ -16,7 +16,8 @@ class ReleaseUpdateController(
     private var update: ReleaseUpdate? = null
     private var loading = false
     private var failed = false
-    private val panel = ReleaseUpdatePanel(activity, ::check, onDismissed)
+    private val panelDelegate = lazy { ReleaseUpdatePanel(activity, ::check, onDismissed) }
+    private val panel by panelDelegate
 
     fun show() {
         panel.show(update, loading = false, failed = false, currentAppearance())
@@ -24,11 +25,11 @@ class ReleaseUpdateController(
     }
 
     fun renderAppearance() {
-        if (panel.isShowing) panel.render(update, loading, failed, currentAppearance())
+        render()
     }
 
     fun release() {
-        panel.release()
+        if (panelDelegate.isInitialized()) panel.release()
     }
 
     private fun check() {
@@ -51,6 +52,8 @@ class ReleaseUpdateController(
     }
 
     private fun render() {
-        if (panel.isShowing) panel.render(update, loading, failed, currentAppearance())
+        if (panelDelegate.isInitialized() && panel.isShowing) {
+            panel.render(update, loading, failed, currentAppearance())
+        }
     }
 }

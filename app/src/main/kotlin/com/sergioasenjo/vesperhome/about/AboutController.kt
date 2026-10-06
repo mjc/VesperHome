@@ -18,19 +18,24 @@ class AboutController(
     private val currentAppearance: () -> LauncherAppearance,
     onDismissed: () -> Unit
 ) {
-    private val panel = AboutPanel(
-        activity,
-        onOpenSource = ::openSourceRepository,
-        onOpenAdbGuide = ::showAdbGuide,
-        onDismissed = onDismissed
-    )
+    private val panelDelegate = lazy {
+        AboutPanel(
+            activity,
+            onOpenSource = ::openSourceRepository,
+            onOpenAdbGuide = ::showAdbGuide,
+            onDismissed = onDismissed
+        )
+    }
+    private val panel by panelDelegate
 
     fun show() {
         panel.show(diagnosticsRepository.snapshot(), currentAppearance())
     }
 
     fun refresh() {
-        if (panel.isShowing) panel.render(diagnosticsRepository.snapshot(), currentAppearance())
+        if (panelDelegate.isInitialized() && panel.isShowing) {
+            panel.render(diagnosticsRepository.snapshot(), currentAppearance())
+        }
     }
 
     fun renderAppearance() {
@@ -38,7 +43,7 @@ class AboutController(
     }
 
     fun release() {
-        panel.release()
+        if (panelDelegate.isInitialized()) panel.release()
     }
 
     private fun openSourceRepository() {

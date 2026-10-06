@@ -1,0 +1,12 @@
+# Source-selected startup and D-pad paths; replace with captured rules after device profiling.
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherActivity;->onCreate(**)**
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherActivity;->initializeLauncher(**)**
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherActivity;->dispatchKeyEvent(**)**
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherStateRenderer;->render(**)**
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherContentRenderer;->**(**)**
+HSPLcom/sergioasenjo/vesperhome/launcher/LauncherViewModel**->**(**)**
+HSPLcom/sergioasenjo/vesperhome/applications/AppAdapter**->**(**)**
+HSPLcom/sergioasenjo/vesperhome/applications/PlatformApplicationRepository**->**(**)**
+HSPLcom/sergioasenjo/vesperhome/applications/ApplicationSnapshotCache**->**(**)**
+HPLcom/sergioasenjo/vesperhome/settings/LauncherSettingsPanel;->**(**)**
+HPLcom/sergioasenjo/vesperhome/launcher/LauncherSettingsHost;->show(**)**
