@@ -16,7 +16,7 @@
     <string name="layout_profiles_description">Each profile keeps its own layout, app order, appearance, wallpaper, screensaver settings, and home sections.</string>
     <string name="create_profile">Create profile from current layout</string>
     <string name="profile_show_coming_next_value">Show Coming Next: %1$s</string>
-    <string name="profile_show_jellyfin_music_value">Show Jellyfin Music: %1$s</string>
+    <string name="profile_show_jellyfin_music_value">Show music: %1$s</string>
     <string name="active_profile">Active profile</string>
     <string name="select_profile_actions">Press Select for profile actions</string>
     <string name="profile_name">Profile name</string>

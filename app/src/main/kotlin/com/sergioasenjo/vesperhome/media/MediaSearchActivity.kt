@@ -132,8 +132,8 @@ class MediaSearchActivity : AppCompatActivity() {
         }
         val container = (application as VesperHomeApplication).container
         jellyfinItemLauncher.open {
-            val credentials = container.jellyfinPreferencesRepository.credentials.first() ?: return@open null
-            container.jellyfinApiRepository.itemIdByProvider(
+            val credentials = container.musicPreferencesRepository.credentials.first() ?: return@open null
+            container.musicApiRepository.itemIdByProvider(
                 credentials,
                 if (item.provider == MediaProvider.SONARR) "tvdb" else "tmdb",
                 item.externalId,

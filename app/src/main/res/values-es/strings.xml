@@ -259,7 +259,7 @@
     <string name="jellyfin_normalization_track">Pista</string>
     <string name="jellyfin_normalization_album">Álbum</string>
     <string name="media_services_setup">Servicios multimedia</string>
-    <string name="media_services_setup_description">Conecta la reproducción de Jellyfin y configura los calendarios de Sonarr y Radarr que aparecen en la pantalla de inicio.</string>
+    <string name="media_services_setup_description">Elige Plex o Jellyfin para música y próximos estrenos, y configura los calendarios de Sonarr y Radarr de la pantalla de inicio.</string>
     <string name="connected_services">Servicios</string>
     <string name="media_services_hint">Selecciona un servicio y pulsa derecha para editar su conexión.</string>
     <string name="playback_integration">Reproducción</string>
@@ -267,6 +267,14 @@
     <string name="sonarr_setup_description">Añade al launcher los próximos episodios del calendario de Sonarr.</string>
     <string name="radarr_setup_description">Añade estrenos de cine, digitales y físicos desde Radarr.</string>
     <string name="server_url">URL del servidor</string>
+    <string name="plex">Plex</string>
+    <string name="plex_setup_description">Abre los títulos de Próximamente en tus bibliotecas de Plex. Inicia sesión y selecciona tus servidores en la aplicación Plex TV.</string>
+    <string name="use_plex_coming_next">Usar Plex para Próximamente</string>
+    <string name="use_jellyfin_coming_next">Usar Jellyfin para Próximamente</string>
+    <string name="open_plex">Abrir Plex</string>
+    <string name="plex_selected">Próximamente se abre en Plex.</string>
+    <string name="jellyfin_selected">Próximamente se abre en Jellyfin.</string>
+    <string name="plex_available">Plex está instalado. Selecciónalo para abrir los títulos de Próximamente.</string>
     <string name="jellyfin">Jellyfin</string>
     <string name="sonarr">Sonarr</string>
     <string name="radarr">Radarr</string>
@@ -294,20 +302,20 @@
     <string name="connect_to_jellyfin_server">Conectar a %1$s en %2$s</string>
     <string name="connect_jellyfin_url">URL de conexión</string>
     <string name="jellyfin_server_url_hint">https://jellyfin.example.com</string>
-    <string name="jellyfin_music_load_failed">No se pudo cargar música desde Jellyfin.</string>
+    <string name="jellyfin_music_load_failed">No se pudo cargar la música del servidor seleccionado.</string>
     <string name="jellyfin_no_servers_found">No se encontraron servidores Jellyfin en esta red.</string>
     <string name="jellyfin_discovery_failed">La búsqueda de Jellyfin falló. Comprueba que el televisor y el servidor usan la misma red.</string>
     <string name="jellyfin_quick_connect_expired">Quick Connect ha caducado. Inicia otra búsqueda para solicitar un código nuevo.</string>
     <string name="jellyfin_quick_connect_failed">Quick Connect falló o está desactivado en este servidor Jellyfin.</string>
     <string name="jellyfin_url_unreachable">No se pudo acceder a la URL del servidor Jellyfin.</string>
-    <string name="jellyfin_library">Biblioteca de Jellyfin</string>
+    <string name="jellyfin_library">Biblioteca musical</string>
     <string name="choose_music">Elegir música</string>
     <string name="choose_music_description">Reproduce canciones al azar o elige una lista o álbum para escuchar sus pistas en orden.</string>
     <string name="jellyfin_collection_loading">Cargando listas y álbumes…</string>
     <string name="jellyfin_collection_empty">Esta selección no contiene pistas de audio.</string>
-    <string name="jellyfin_no_music_collections">Este usuario de Jellyfin no tiene listas ni álbumes disponibles.</string>
-    <string name="jellyfin_collection_load_failed">No se pudieron cargar las listas y los álbumes de Jellyfin.</string>
-    <string name="jellyfin_collection_play_failed">No se pudo reproducir esta selección de Jellyfin.</string>
+    <string name="jellyfin_no_music_collections">No hay listas ni álbumes disponibles para este usuario.</string>
+    <string name="jellyfin_collection_load_failed">No se pudieron cargar las listas y los álbumes.</string>
+    <string name="jellyfin_collection_play_failed">No se pudo reproducir esta selección.</string>
     <string name="music_picker_hint">Cruceta para explorar  |  OK para reproducir  |  Atrás para cerrar</string>
     <string name="music_queue_hint">Cruceta para explorar  |  OK para reproducir la pista  |  Atrás para cerrar</string>
     <string name="now_playing">Sonando</string>
@@ -327,6 +335,9 @@
     <string name="physical_release">Físico</string>
     <string name="movie">Película</string>
     <string name="upcoming_open_jellyfin">%1$s, %2$s, %3$s. Abrir en Jellyfin.</string>
+    <string name="upcoming_open_plex">%1$s, %2$s, %3$s. Abrir en Plex.</string>
+    <string name="upcoming_plex_item_unavailable">Este título no se encontró en tus bibliotecas de Plex.</string>
+    <string name="upcoming_plex_app_unavailable">No se pudo abrir la aplicación Plex.</string>
     <string name="upcoming_jellyfin_item_unavailable">Este título no se encontró en el servidor Jellyfin conectado.</string>
     <string name="upcoming_jellyfin_app_unavailable">No se pudo abrir la aplicación Jellyfin TV.</string>
     <string name="retry">Reintentar</string>
@@ -352,4 +363,14 @@
         <item quantity="one">1 entrada</item>
         <item quantity="other">%d entradas</item>
     </plurals>
+    <string name="plex_music">Música de Plex</string>
+    <string name="plex_server_url_hint">http://plex.example.com:32400</string>
+    <string name="plex_access_token">Token de acceso de Plex</string>
+    <string name="connect_plex_music">Conectar música</string>
+    <string name="use_plex_music">Usar Plex para música</string>
+    <string name="use_jellyfin_music">Usar Jellyfin para música</string>
+    <string name="music_selected">Seleccionado para música</string>
+    <string name="plex_music_setup_description">Conecta tu Plex Media Server con su URL y token de acceso para explorar álbumes y listas aquí.</string>
+    <string name="plex_music_connecting">Conectando a Plex…</string>
+    <string name="plex_music_connection_failed">No se pudo conectar a Plex. Comprueba la URL del servidor y el token de acceso.</string>
 </resources>

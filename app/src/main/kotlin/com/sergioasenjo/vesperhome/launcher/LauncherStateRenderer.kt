@@ -9,7 +9,7 @@ import com.sergioasenjo.vesperhome.databinding.ActivityLauncherBinding
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 import com.sergioasenjo.vesperhome.inputs.TvInputController
 import com.sergioasenjo.vesperhome.livetv.LiveTvController
-import com.sergioasenjo.vesperhome.music.JellyfinMusicController
+import com.sergioasenjo.vesperhome.music.MusicController
 import com.sergioasenjo.vesperhome.notifications.NotificationController
 import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.screensaver.ScreensaverController
@@ -37,7 +37,7 @@ internal class LauncherStateRenderer(
     private val profileController: ProfileController,
     private val releaseUpdateController: ReleaseUpdateController,
     private val currentSettingsPanel: () -> LauncherSettingsPanel?,
-    private val currentMusicController: () -> JellyfinMusicController?,
+    private val currentMusicController: () -> MusicController?,
     private val currentLiveTvController: () -> LiveTvController?,
     private val showSettingsPanel: (LauncherUiState, LauncherSettingsPanelPage) -> Unit,
     initialPageToRestore: LauncherSettingsPanelPage?
@@ -63,7 +63,7 @@ internal class LauncherStateRenderer(
         val homeAppearance = state.appearance.forWallpaper(state.wallpaper)
         currentMusicController()?.let { controller ->
             controller.setAppearance(homeAppearance)
-            controller.setSectionVisibility(state.showJellyfinMusic, state.showComingNext)
+            controller.setSectionVisibility(state.showMusic, state.showComingNext)
         }
         currentLiveTvController()?.setAppearance(homeAppearance)
         appearanceRenderer.render(homeAppearance)
@@ -101,5 +101,5 @@ internal fun LauncherUiState.toLauncherSettings(): LauncherSettings = LauncherSe
     screensaver = screensaver,
     brightness = brightness,
     showComingNext = showComingNext,
-    showJellyfinMusic = showJellyfinMusic
+    showMusic = showMusic
 )

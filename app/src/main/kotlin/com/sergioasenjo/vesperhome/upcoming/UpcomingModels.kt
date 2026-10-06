@@ -6,7 +6,8 @@ data class UpcomingServerConfig(
     val sonarrUrl: String,
     val sonarrApiKey: String,
     val radarrUrl: String,
-    val radarrApiKey: String
+    val radarrApiKey: String,
+    val player: UpcomingPlayer = UpcomingPlayer.AUTO
 ) {
     val sonarrConfigured: Boolean
         get() = sonarrUrl.isNotBlank() && sonarrApiKey.isNotBlank()
@@ -18,6 +19,12 @@ data class UpcomingServerConfig(
         get() = sonarrConfigured || radarrConfigured
 }
 
+enum class UpcomingPlayer {
+    AUTO,
+    PLEX,
+    JELLYFIN
+}
+
 data class UpcomingMediaItem(
     val id: String,
     val title: String,
@@ -25,7 +32,8 @@ data class UpcomingMediaItem(
     val startsAtMillis: Long,
     val imageUrl: String?,
     val type: UpcomingMediaType,
-    val providerId: UpcomingProviderId
+    val providerId: UpcomingProviderId,
+    val productionYear: Int? = null
 )
 
 data class UpcomingProviderId(val provider: UpcomingProvider, val value: Int)
@@ -66,5 +74,6 @@ data class RadarrMovie(
     val inCinemas: String? = null,
     val digitalRelease: String? = null,
     val physicalRelease: String? = null,
-    val images: List<CalendarImage> = emptyList()
+    val images: List<CalendarImage> = emptyList(),
+    val year: Int? = null
 )

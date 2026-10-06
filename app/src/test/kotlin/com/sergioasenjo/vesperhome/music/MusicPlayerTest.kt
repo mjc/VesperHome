@@ -26,22 +26,22 @@ import org.robolectric.annotation.Config
 @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
-class JellyfinPlayerTest {
+class MusicPlayerTest {
     private val application = RuntimeEnvironment.getApplication()
     private val shadowApplication = shadowOf(application)
-    private val tracks = listOf(JellyfinTrack("track", "Title", "Artist", null, "https://music.test/track", null))
+    private val tracks = listOf(MusicTrack("track", "Title", "Artist", null, "https://music.test/track", null))
 
     @Before
     fun configureServiceBinding() {
         shadowApplication.setComponentNameAndServiceForBindService(
-            ComponentName(application, JellyfinPlaybackService::class.java),
+            ComponentName(application, MusicPlaybackService::class.java),
             Binder()
         )
     }
 
     @Test
     fun idleLifecycleAndControlsDoNotBindThePlaybackService() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         player.onHostStarted()
         player.toggle()
         player.playPrevious()
@@ -53,12 +53,12 @@ class JellyfinPlayerTest {
         player.release()
         assertTrue(shadowApplication.boundServiceConnections.isEmpty())
         assertTrue(shadowApplication.unboundServiceConnections.isEmpty())
-        assertFalse(JellyfinPlaybackService.isRunning)
+        assertFalse(MusicPlaybackService.isRunning)
     }
 
     @Test
     fun firstPlayBindsOnceAndReleaseCancelsThePendingConnection() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         player.play(tracks)
         assertEquals(1, shadowApplication.boundServiceConnections.size)
         player.play(tracks)
@@ -73,7 +73,7 @@ class JellyfinPlayerTest {
 
     @Test
     fun playPauseRetriesTheSelectedQueueAfterConnectionFailure() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         val queue = tracks + tracks.first().copy(id = "second")
         shadowApplication.setThrowInBindService(SecurityException("Playback service unavailable"))
         player.play(queue)
@@ -92,7 +92,7 @@ class JellyfinPlayerTest {
 
     @Test
     fun hostStartResubmitsTheSelectedTrackAfterConnectionFailure() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         shadowApplication.setThrowInBindService(SecurityException("Playback service unavailable"))
         player.play(tracks)
         shadowOf(Looper.getMainLooper()).idle()
@@ -109,7 +109,7 @@ class JellyfinPlayerTest {
 
     @Test
     fun repeatedFailuresAndRetryClicksKeepOnlyTheLatestSelection() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         shadowApplication.setThrowInBindService(SecurityException("Playback service unavailable"))
         player.play(tracks)
         shadowOf(Looper.getMainLooper()).idle()
@@ -132,7 +132,7 @@ class JellyfinPlayerTest {
 
     @Test
     fun stoppingAfterFailureDiscardsTheRetryableTrack() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         shadowApplication.setThrowInBindService(SecurityException("Playback service unavailable"))
         player.play(tracks)
         shadowOf(Looper.getMainLooper()).idle()
@@ -150,7 +150,7 @@ class JellyfinPlayerTest {
 
     @Test
     fun releasingAnInFlightRetryIgnoresItsCallbackAndDiscardsTheOldTrack() {
-        val player = JellyfinPlayer(application, {}, {})
+        val player = MusicPlayer(application, {}, {})
         shadowApplication.setThrowInBindService(SecurityException("Playback service unavailable"))
         player.play(tracks)
         shadowOf(Looper.getMainLooper()).idle()
@@ -174,13 +174,13 @@ class JellyfinPlayerTest {
 
     @Test
     fun resumedAndRecreatedPlayersReconnectToAnExistingService() {
-        var restoredTrack: JellyfinTrack? = null
-        val player = JellyfinPlayer(application, {}, { restoredTrack = it })
-        val service = Robolectric.buildService(JellyfinPlaybackService::class.java).create()
+        var restoredTrack: MusicTrack? = null
+        val player = MusicPlayer(application, {}, { restoredTrack = it })
+        val service = Robolectric.buildService(MusicPlaybackService::class.java).create()
         try {
             val playbackService = service.get()
             shadowApplication.setComponentNameAndServiceForBindService(
-                ComponentName(application, JellyfinPlaybackService::class.java),
+                ComponentName(application, MusicPlaybackService::class.java),
                 playbackService.onBind(Intent(MediaSessionService.SERVICE_INTERFACE))
             )
             val session = playbackService.onGetSession(
@@ -202,14 +202,14 @@ class JellyfinPlayerTest {
                     ).build()
                 )
             )
-            assertTrue(JellyfinPlaybackService.isRunning)
+            assertTrue(MusicPlaybackService.isRunning)
             player.onHostStarted()
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals(1, shadowApplication.boundServiceConnections.size)
             assertEquals("restored", restoredTrack?.id)
             assertEquals("Restored title", restoredTrack?.title)
-            var recreatedTrack: JellyfinTrack? = null
-            val recreated = JellyfinPlayer(application, {}, { recreatedTrack = it })
+            var recreatedTrack: MusicTrack? = null
+            val recreated = MusicPlayer(application, {}, { recreatedTrack = it })
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals(2, shadowApplication.boundServiceConnections.size)
             assertEquals("restored", recreatedTrack?.id)
@@ -223,15 +223,15 @@ class JellyfinPlayerTest {
         } finally {
             service.destroy()
         }
-        assertFalse(JellyfinPlaybackService.isRunning)
+        assertFalse(MusicPlaybackService.isRunning)
     }
 
     private fun withPlaybackSession(block: (MediaSession) -> Unit) {
-        val service = Robolectric.buildService(JellyfinPlaybackService::class.java).create()
+        val service = Robolectric.buildService(MusicPlaybackService::class.java).create()
         try {
             val playbackService = service.get()
             shadowApplication.setComponentNameAndServiceForBindService(
-                ComponentName(application, JellyfinPlaybackService::class.java),
+                ComponentName(application, MusicPlaybackService::class.java),
                 playbackService.onBind(Intent(MediaSessionService.SERVICE_INTERFACE))
             )
             val session = playbackService.onGetSession(

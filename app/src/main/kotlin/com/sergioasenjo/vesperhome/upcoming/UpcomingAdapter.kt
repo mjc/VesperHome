@@ -28,7 +28,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
+class UpcomingAdapter(private var actionDescription: Int, private val onClick: (UpcomingMediaItem) -> Unit) :
     ListAdapter<UpcomingMediaItem, UpcomingAdapter.UpcomingViewHolder>(DiffCallback) {
     private var appearance = LauncherAppearance()
     private var recyclerView: RecyclerView? = null
@@ -56,12 +56,12 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: UpcomingViewHolder, position: Int) {
-        holder.bind(getItem(position), appearance)
+        holder.bind(getItem(position), appearance, actionDescription)
     }
 
     override fun onBindViewHolder(holder: UpcomingViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.contains(DATE_LABEL_PAYLOAD)) {
-            holder.bindDateLabel(getItem(position))
+            holder.bindDateLabel(getItem(position), actionDescription)
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
@@ -80,6 +80,12 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
 
     fun refreshDateLabels() {
         notifyItemRangeChanged(0, itemCount, DATE_LABEL_PAYLOAD)
+    }
+
+    fun setActionDescription(actionDescription: Int) {
+        if (this.actionDescription == actionDescription) return
+        this.actionDescription = actionDescription
+        refreshDateLabels()
     }
 
     class UpcomingViewHolder(
@@ -102,7 +108,7 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
             binding.root.setOnFocusChangeListener { _, focused -> updateFocus(focused) }
         }
 
-        fun bind(item: UpcomingMediaItem, appearance: LauncherAppearance) {
+        fun bind(item: UpcomingMediaItem, appearance: LauncherAppearance, actionDescription: Int) {
             val reloadArtwork = this.item == null || this.item?.imageUrl != item.imageUrl ||
                 (item.imageUrl != null && binding.artwork.result is ErrorResult)
             this.item = item
@@ -125,14 +131,14 @@ class UpcomingAdapter(private val onClick: (UpcomingMediaItem) -> Unit) :
                     error(R.drawable.ic_upcoming)
                 }
             }
-            bindDateLabel(item)
+            bindDateLabel(item, actionDescription)
             updateFocus(binding.root.hasFocus())
         }
 
-        fun bindDateLabel(item: UpcomingMediaItem) {
+        fun bindDateLabel(item: UpcomingMediaItem, actionDescription: Int) {
             binding.whenText.text = formatWhen(binding.root.context, item)
             binding.root.contentDescription = binding.root.context.getString(
-                R.string.upcoming_open_jellyfin,
+                actionDescription,
                 binding.whenText.text,
                 item.title,
                 binding.detail.text

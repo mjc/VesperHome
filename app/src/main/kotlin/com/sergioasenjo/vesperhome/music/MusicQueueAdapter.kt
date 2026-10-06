@@ -10,15 +10,15 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.sergioasenjo.vesperhome.R
-import com.sergioasenjo.vesperhome.databinding.ItemJellyfinQueueTrackBinding
+import com.sergioasenjo.vesperhome.databinding.ItemMusicQueueTrackBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import java.util.Locale
 
-internal data class JellyfinQueueTrackUi(val track: JellyfinTrack, val current: Boolean, val playing: Boolean)
+internal data class MusicQueueTrackUi(val track: MusicTrack, val current: Boolean, val playing: Boolean)
 
-internal class JellyfinQueueAdapter(private val onTrackClick: (JellyfinTrack) -> Unit) :
-    ListAdapter<JellyfinQueueTrackUi, JellyfinQueueAdapter.TrackViewHolder>(DiffCallback) {
+internal class MusicQueueAdapter(private val onTrackClick: (MusicTrack) -> Unit) :
+    ListAdapter<MusicQueueTrackUi, MusicQueueAdapter.TrackViewHolder>(DiffCallback) {
     private var appearance = LauncherAppearance()
     private var recyclerView: RecyclerView? = null
 
@@ -29,7 +29,7 @@ internal class JellyfinQueueAdapter(private val onTrackClick: (JellyfinTrack) ->
     override fun getItemId(position: Int): Long = getItem(position).track.id.hashCode().toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder = TrackViewHolder(
-        ItemJellyfinQueueTrackBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+        ItemMusicQueueTrackBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         onTrackClick,
         { event, source -> recyclerView?.handleContainedHorizontalFocus(event, source, columns = 1) ?: true }
     )
@@ -55,12 +55,12 @@ internal class JellyfinQueueAdapter(private val onTrackClick: (JellyfinTrack) ->
     }
 
     class TrackViewHolder(
-        private val binding: ItemJellyfinQueueTrackBinding,
-        onTrackClick: (JellyfinTrack) -> Unit,
+        private val binding: ItemMusicQueueTrackBinding,
+        onTrackClick: (MusicTrack) -> Unit,
         onHorizontalFocusKey: (KeyEvent, View) -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private val background = GradientDrawable()
-        private var item: JellyfinQueueTrackUi? = null
+        private var item: MusicQueueTrackUi? = null
         private var appearance = LauncherAppearance()
 
         init {
@@ -70,7 +70,7 @@ internal class JellyfinQueueAdapter(private val onTrackClick: (JellyfinTrack) ->
             binding.root.setOnFocusChangeListener { _, focused -> updateFocus(focused) }
         }
 
-        fun bind(item: JellyfinQueueTrackUi, position: Int, appearance: LauncherAppearance) {
+        fun bind(item: MusicQueueTrackUi, position: Int, appearance: LauncherAppearance) {
             this.item = item
             this.appearance = appearance
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
@@ -165,11 +165,11 @@ internal class JellyfinQueueAdapter(private val onTrackClick: (JellyfinTrack) ->
         private fun Int.withAlpha(alpha: Int): Int = (this and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
     }
 
-    private object DiffCallback : DiffUtil.ItemCallback<JellyfinQueueTrackUi>() {
-        override fun areItemsTheSame(oldItem: JellyfinQueueTrackUi, newItem: JellyfinQueueTrackUi): Boolean =
+    private object DiffCallback : DiffUtil.ItemCallback<MusicQueueTrackUi>() {
+        override fun areItemsTheSame(oldItem: MusicQueueTrackUi, newItem: MusicQueueTrackUi): Boolean =
             oldItem.track.id == newItem.track.id
 
-        override fun areContentsTheSame(oldItem: JellyfinQueueTrackUi, newItem: JellyfinQueueTrackUi): Boolean =
+        override fun areContentsTheSame(oldItem: MusicQueueTrackUi, newItem: MusicQueueTrackUi): Boolean =
             oldItem == newItem
     }
 }

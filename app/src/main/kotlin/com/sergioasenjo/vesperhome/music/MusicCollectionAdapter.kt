@@ -14,20 +14,20 @@ import coil3.load
 import coil3.request.error
 import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
-import com.sergioasenjo.vesperhome.databinding.ItemJellyfinCollectionBinding
+import com.sergioasenjo.vesperhome.databinding.ItemMusicCollectionBinding
 import com.sergioasenjo.vesperhome.launcher.handleContainedHorizontalFocus
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
-sealed interface JellyfinPickerItem {
-    data object Random : JellyfinPickerItem
+sealed interface MusicPickerItem {
+    data object Random : MusicPickerItem
 
-    data class Collection(val collection: JellyfinMusicCollection) : JellyfinPickerItem
+    data class Collection(val collection: MusicCollection) : MusicPickerItem
 }
 
-class JellyfinCollectionAdapter(
-    private val onCollectionClick: (JellyfinMusicCollection) -> Unit,
+class MusicCollectionAdapter(
+    private val onCollectionClick: (MusicCollection) -> Unit,
     private val onRandomClick: () -> Unit
-) : ListAdapter<JellyfinPickerItem, JellyfinCollectionAdapter.CollectionViewHolder>(DiffCallback) {
+) : ListAdapter<MusicPickerItem, MusicCollectionAdapter.CollectionViewHolder>(DiffCallback) {
     private var appearance = LauncherAppearance()
     private var recyclerView: RecyclerView? = null
 
@@ -36,12 +36,12 @@ class JellyfinCollectionAdapter(
     }
 
     override fun getItemId(position: Int): Long = when (val item = getItem(position)) {
-        JellyfinPickerItem.Random -> Long.MIN_VALUE
-        is JellyfinPickerItem.Collection -> item.collection.id.hashCode().toLong()
+        MusicPickerItem.Random -> Long.MIN_VALUE
+        is MusicPickerItem.Collection -> item.collection.id.hashCode().toLong()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionViewHolder = CollectionViewHolder(
-        ItemJellyfinCollectionBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+        ItemMusicCollectionBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         onCollectionClick,
         onRandomClick,
         { event, source -> recyclerView?.handleContainedHorizontalFocus(event, source, GRID_COLUMNS) ?: true }
@@ -73,13 +73,13 @@ class JellyfinCollectionAdapter(
     }
 
     class CollectionViewHolder(
-        private val binding: ItemJellyfinCollectionBinding,
-        private val onCollectionClick: (JellyfinMusicCollection) -> Unit,
+        private val binding: ItemMusicCollectionBinding,
+        private val onCollectionClick: (MusicCollection) -> Unit,
         private val onRandomClick: () -> Unit,
         onHorizontalFocusKey: (KeyEvent, View) -> Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
         private val artworkBackground = GradientDrawable()
-        private var item: JellyfinPickerItem? = null
+        private var item: MusicPickerItem? = null
         private var appearance = LauncherAppearance()
 
         init {
@@ -87,8 +87,8 @@ class JellyfinCollectionAdapter(
             binding.artworkFrame.clipToOutline = true
             binding.root.setOnClickListener {
                 when (val selectedItem = item) {
-                    JellyfinPickerItem.Random -> onRandomClick()
-                    is JellyfinPickerItem.Collection -> onCollectionClick(selectedItem.collection)
+                    MusicPickerItem.Random -> onRandomClick()
+                    is MusicPickerItem.Collection -> onCollectionClick(selectedItem.collection)
                     null -> Unit
                 }
             }
@@ -96,12 +96,12 @@ class JellyfinCollectionAdapter(
             binding.root.setOnFocusChangeListener { _, focused -> updateFocus(focused) }
         }
 
-        fun bind(item: JellyfinPickerItem, appearance: LauncherAppearance) {
+        fun bind(item: MusicPickerItem, appearance: LauncherAppearance) {
             this.item = item
             this.appearance = appearance
             binding.root.isSoundEffectsEnabled = appearance.keyClickSounds
-            val collection = (item as? JellyfinPickerItem.Collection)?.collection
-            val isRandom = item == JellyfinPickerItem.Random
+            val collection = (item as? MusicPickerItem.Collection)?.collection
+            val isRandom = item == MusicPickerItem.Random
             binding.name.text = collection?.name ?: binding.root.context.getString(R.string.random_songs)
             binding.name.setTextColor(appearance.palette.primaryText)
             binding.count.text = if (collection == null) {
@@ -117,7 +117,7 @@ class JellyfinCollectionAdapter(
             binding.type.text = binding.root.context.getString(
                 when {
                     isRandom -> R.string.all_music
-                    collection?.type == JellyfinCollectionType.PLAYLIST -> R.string.playlist
+                    collection?.type == MusicCollectionType.PLAYLIST -> R.string.playlist
                     else -> R.string.album
                 }
             )
@@ -177,17 +177,17 @@ class JellyfinCollectionAdapter(
         }
     }
 
-    private object DiffCallback : DiffUtil.ItemCallback<JellyfinPickerItem>() {
-        override fun areItemsTheSame(oldItem: JellyfinPickerItem, newItem: JellyfinPickerItem): Boolean = when {
-            oldItem == JellyfinPickerItem.Random && newItem == JellyfinPickerItem.Random -> true
+    private object DiffCallback : DiffUtil.ItemCallback<MusicPickerItem>() {
+        override fun areItemsTheSame(oldItem: MusicPickerItem, newItem: MusicPickerItem): Boolean = when {
+            oldItem == MusicPickerItem.Random && newItem == MusicPickerItem.Random -> true
 
-            oldItem is JellyfinPickerItem.Collection && newItem is JellyfinPickerItem.Collection ->
+            oldItem is MusicPickerItem.Collection && newItem is MusicPickerItem.Collection ->
                 oldItem.collection.id == newItem.collection.id
 
             else -> false
         }
 
-        override fun areContentsTheSame(oldItem: JellyfinPickerItem, newItem: JellyfinPickerItem): Boolean =
+        override fun areContentsTheSame(oldItem: MusicPickerItem, newItem: MusicPickerItem): Boolean =
             oldItem == newItem
     }
 

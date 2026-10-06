@@ -8,18 +8,18 @@ import android.view.View
 import android.view.WindowManager
 import androidx.recyclerview.widget.GridLayoutManager
 import com.sergioasenjo.vesperhome.R
-import com.sergioasenjo.vesperhome.databinding.DialogJellyfinCollectionsBinding
+import com.sergioasenjo.vesperhome.databinding.DialogMusicCollectionsBinding
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 
-class JellyfinCollectionDialog(
+class MusicCollectionDialog(
     private val context: Context,
-    onCollectionSelected: (JellyfinMusicCollection) -> Unit,
+    onCollectionSelected: (MusicCollection) -> Unit,
     onRandomSelected: () -> Unit,
     onRetry: () -> Unit,
     private val onDismissed: () -> Unit
 ) {
-    private val binding = DialogJellyfinCollectionsBinding.inflate(android.view.LayoutInflater.from(context))
-    private val adapter = JellyfinCollectionAdapter(
+    private val binding = DialogMusicCollectionsBinding.inflate(android.view.LayoutInflater.from(context))
+    private val adapter = MusicCollectionAdapter(
         onCollectionClick = { collection ->
             dialog.dismiss()
             onCollectionSelected(collection)
@@ -30,7 +30,7 @@ class JellyfinCollectionDialog(
         }
     )
     private var appearance = LauncherAppearance()
-    private var state = JellyfinCollectionPickerState()
+    private var state = MusicCollectionPickerState()
     private val dialog = Dialog(context, R.style.Theme_VesperHome_SettingsPanel).apply {
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
@@ -50,13 +50,13 @@ class JellyfinCollectionDialog(
         binding.retry.setOnClickListener { onRetry() }
     }
 
-    fun show(state: JellyfinCollectionPickerState, appearance: LauncherAppearance) {
+    fun show(state: MusicCollectionPickerState, appearance: LauncherAppearance) {
         this.appearance = appearance
         render(state)
         if (!dialog.isShowing) dialog.show()
     }
 
-    fun render(state: JellyfinCollectionPickerState) {
+    fun render(state: MusicCollectionPickerState) {
         this.state = state
         val showCollections = !state.loading && state.errorRes == null
         binding.collections.visibility = if (showCollections) View.VISIBLE else View.GONE
@@ -72,7 +72,7 @@ class JellyfinCollectionDialog(
             }
         )
         val pickerItems = if (showCollections) {
-            listOf(JellyfinPickerItem.Random) + state.collections.map { JellyfinPickerItem.Collection(it) }
+            listOf(MusicPickerItem.Random) + state.collections.map { MusicPickerItem.Collection(it) }
         } else {
             emptyList()
         }

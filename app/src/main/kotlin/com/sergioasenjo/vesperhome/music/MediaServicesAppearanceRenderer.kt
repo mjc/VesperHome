@@ -12,14 +12,14 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.button.MaterialButton
-import com.sergioasenjo.vesperhome.databinding.ActivityJellyfinSetupBinding
+import com.sergioasenjo.vesperhome.databinding.ActivityMediaServicesSetupBinding
 import com.sergioasenjo.vesperhome.launcher.forWallpaper
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import com.sergioasenjo.vesperhome.settings.LauncherPalette
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperRenderer
 import com.sergioasenjo.vesperhome.wallpaper.WallpaperState
 
-class MediaServicesAppearanceRenderer(private val binding: ActivityJellyfinSetupBinding) {
+class MediaServicesAppearanceRenderer(private val binding: ActivityMediaServicesSetupBinding) {
     private val wallpaperRenderer = WallpaperRenderer(binding.root, binding.wallpaper)
 
     fun render(appearance: LauncherAppearance, wallpaper: WallpaperState): LauncherAppearance {
@@ -27,10 +27,12 @@ class MediaServicesAppearanceRenderer(private val binding: ActivityJellyfinSetup
         val homeAppearance = appearance.forWallpaper(wallpaper)
         val palette = homeAppearance.palette
         applyWorkspace(binding.jellyfinPage.root, palette)
+        applyWorkspace(binding.plexPage.root, palette)
         applyWorkspace(binding.sonarrPage, palette)
         applyWorkspace(binding.radarrPage, palette)
         binding.content.forEachDescendant { view -> applyView(view, palette) }
         applyNavigation(binding.showJellyfin, palette)
+        applyNavigation(binding.showPlex, palette)
         applyNavigation(binding.showSonarr, palette)
         applyNavigation(binding.showRadarr, palette)
         binding.content.setSoundEffectsEnabledRecursively(homeAppearance.keyClickSounds)

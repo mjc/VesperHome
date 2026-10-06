@@ -7,7 +7,7 @@ import com.sergioasenjo.vesperhome.accessibility.HomeButtonFixController
 import com.sergioasenjo.vesperhome.applications.HiddenAppsActivity
 import com.sergioasenjo.vesperhome.backup.BackupController
 import com.sergioasenjo.vesperhome.categories.CategoryManagementActivity
-import com.sergioasenjo.vesperhome.music.JellyfinSetupActivity
+import com.sergioasenjo.vesperhome.music.MediaServicesSetupActivity
 import com.sergioasenjo.vesperhome.profiles.ProfileController
 import com.sergioasenjo.vesperhome.security.PinController
 import com.sergioasenjo.vesperhome.security.PinProtectedArea
@@ -58,7 +58,7 @@ class LauncherSettingsActionController(
             LauncherSettingsAction.SETUP_MEDIA_SERVICES -> pinController.authorize(
                 PinProtectedArea.MEDIA_INTEGRATIONS
             ) {
-                activity.open(JellyfinSetupActivity::class.java)
+                activity.open(MediaServicesSetupActivity::class.java)
             }
         }
     }

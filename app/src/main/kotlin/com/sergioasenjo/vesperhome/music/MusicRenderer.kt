@@ -11,7 +11,7 @@ import com.sergioasenjo.vesperhome.R
 import com.sergioasenjo.vesperhome.artwork.cacheSizedArtwork
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
 
-fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: JellyfinMusicUiState) {
+fun ViewLauncherContentBinding.renderMusic(context: Context, state: MusicUiState) {
     val configured = state.serverName != null
     musicLibrary.visibility = if (configured) View.VISIBLE else View.GONE
     musicPlayPause.visibility = if (configured) View.VISIBLE else View.GONE
@@ -26,7 +26,17 @@ fun ViewLauncherContentBinding.renderJellyfinMusic(context: Context, state: Jell
     musicLoading.visibility = if (state.loading) View.VISIBLE else View.GONE
     musicPlayPause.setIconResource(if (state.playing) R.drawable.ic_pause else R.drawable.ic_play)
     musicPlayPause.contentDescription = context.getString(if (state.playing) R.string.pause else R.string.play)
-    musicTitle.text = state.track?.title ?: context.getString(R.string.jellyfin_music)
+    musicTitle.text =
+        state.track?.title
+            ?: context.getString(
+                if (state.provider ==
+                    MusicProvider.PLEX
+                ) {
+                    R.string.plex_music
+                } else {
+                    R.string.jellyfin_music
+                }
+            )
     musicArtist.text = when {
         state.errorRes != null -> context.getString(state.errorRes)
 

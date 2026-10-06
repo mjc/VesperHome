@@ -19,9 +19,9 @@ import com.sergioasenjo.vesperhome.applications.LauncherApp
 import com.sergioasenjo.vesperhome.categories.CategoryMembershipAdapter
 import com.sergioasenjo.vesperhome.categories.CategoryMembershipItem
 import com.sergioasenjo.vesperhome.databinding.ViewLauncherContentBinding
-import com.sergioasenjo.vesperhome.music.JellyfinMusicUiState
-import com.sergioasenjo.vesperhome.music.JellyfinTrack
-import com.sergioasenjo.vesperhome.music.renderJellyfinMusic
+import com.sergioasenjo.vesperhome.music.MusicTrack
+import com.sergioasenjo.vesperhome.music.MusicUiState
+import com.sergioasenjo.vesperhome.music.renderMusic
 import com.sergioasenjo.vesperhome.settings.LauncherAppearance
 import com.sergioasenjo.vesperhome.settings.LauncherTheme
 import com.sergioasenjo.vesperhome.upcoming.UpcomingAdapter
@@ -33,6 +33,7 @@ import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -146,7 +147,7 @@ class ArtworkRequestTest {
 
     @Test
     fun upcomingStyleAndMetadataUpdatesKeepArtworkButNewUrlAndRecyclingReload() {
-        val adapter = UpcomingAdapter {}
+        val adapter = UpcomingAdapter(R.string.upcoming_open_jellyfin) {}
         val holder = adapter.onCreateViewHolder(parent, 0)
         val item = UpcomingMediaItem(
             "movie",
@@ -158,14 +159,17 @@ class ArtworkRequestTest {
             UpcomingProviderId(UpcomingProvider.TMDB, 1)
         )
         repeat(10) { index ->
-            holder.bind(item.copy(title = "Title $index"), appearance.copy(theme = LauncherTheme.LIGHT))
+            val action = if (index % 2 == 0) R.string.upcoming_open_plex else R.string.upcoming_open_jellyfin
+            holder.bind(item.copy(title = "Title $index"), appearance.copy(theme = LauncherTheme.LIGHT), action)
+            val playerLabel = if (index % 2 == 0) "Plex" else "Jellyfin"
+            assertTrue(holder.itemView.contentDescription.toString().contains(playerLabel))
         }
         assertEquals(1, requests.size)
         val changed = item.copy(imageUrl = "https://example.invalid/b.png")
-        holder.bind(changed, appearance)
+        holder.bind(changed, appearance, R.string.upcoming_open_plex)
         assertEquals(2, requests.size)
         holder.recycle()
-        holder.bind(changed, appearance)
+        holder.bind(changed, appearance, R.string.upcoming_open_plex)
         assertEquals(changed.imageUrl, requests.last().data)
         assertEquals(3, requests.count { it.data is String })
     }
@@ -173,21 +177,21 @@ class ArtworkRequestTest {
     @Test
     fun musicPlaybackUpdatesKeepArtworkAndAlbumAndPlaceholderTransitionsReload() {
         val binding = ViewLauncherContentBinding.inflate(LayoutInflater.from(activity))
-        repeat(10) { binding.renderJellyfinMusic(activity, JellyfinMusicUiState(loading = it % 2 == 0)) }
+        repeat(10) { binding.renderMusic(activity, MusicUiState(loading = it % 2 == 0)) }
         assertEquals(1, requests.size)
         assertEquals(R.drawable.ic_music, requests.last().data)
-        val track = JellyfinTrack("1", "Song", "Artist", "Album", "stream", "https://example.invalid/a.png")
-        val state = JellyfinMusicUiState(serverName = "Server", track = track)
-        binding.renderJellyfinMusic(activity, state)
-        repeat(10) { binding.renderJellyfinMusic(activity, state.copy(playing = it % 2 == 0, loading = true)) }
+        val track = MusicTrack("1", "Song", "Artist", "Album", "stream", "https://example.invalid/a.png")
+        val state = MusicUiState(serverName = "Server", track = track)
+        binding.renderMusic(activity, state)
+        repeat(10) { binding.renderMusic(activity, state.copy(playing = it % 2 == 0, loading = true)) }
         assertEquals(2, requests.size)
         assertEquals("Song", binding.musicTitle.text.toString())
-        binding.renderJellyfinMusic(
+        binding.renderMusic(
             activity,
             state.copy(track = track.copy(artworkUrl = "https://example.invalid/b.png"))
         )
         assertEquals(3, requests.size)
-        binding.renderJellyfinMusic(activity, state.copy(track = null))
+        binding.renderMusic(activity, state.copy(track = null))
         assertEquals(4, requests.size)
         assertEquals(R.drawable.ic_music, requests.last().data)
     }

@@ -14,16 +14,16 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
-class JellyfinPlayer(
+class MusicPlayer(
     context: Context,
     private val onPlayingChanged: (Boolean) -> Unit,
-    private val onTrackChanged: (JellyfinTrack) -> Unit
+    private val onTrackChanged: (MusicTrack) -> Unit
 ) {
     private val applicationContext = context.applicationContext
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var pendingAction: ((MediaController) -> Unit)? = null
-    private var pendingTracks: List<JellyfinTrack>? = null
+    private var pendingTracks: List<MusicTrack>? = null
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             onPlayingChanged(isPlaying)
@@ -39,14 +39,14 @@ class JellyfinPlayer(
     }
 
     fun onHostStarted() {
-        if (JellyfinPlaybackService.isRunning) connect()
+        if (MusicPlaybackService.isRunning) connect()
     }
 
     private fun connect() {
         if (controller?.isConnected == false) releaseConnection()
         if (controllerFuture != null) return
         val token =
-            SessionToken(applicationContext, ComponentName(applicationContext, JellyfinPlaybackService::class.java))
+            SessionToken(applicationContext, ComponentName(applicationContext, MusicPlaybackService::class.java))
         val future = MediaController.Builder(applicationContext, token).buildAsync()
         controllerFuture = future
         future.addListener(
@@ -71,7 +71,7 @@ class JellyfinPlayer(
         )
     }
 
-    fun play(tracks: List<JellyfinTrack>) {
+    fun play(tracks: List<MusicTrack>) {
         if (tracks.isEmpty()) return
         pendingTracks = tracks.toList()
         pendingAction = null
@@ -139,7 +139,7 @@ class JellyfinPlayer(
         controller?.let(action) ?: run { pendingAction = action }
     }
 
-    private fun JellyfinTrack.toMediaItem(): MediaItem = MediaItem.Builder()
+    private fun MusicTrack.toMediaItem(): MediaItem = MediaItem.Builder()
         .setMediaId(id)
         .setUri(streamUrl)
         .setMediaMetadata(
@@ -150,25 +150,25 @@ class JellyfinPlayer(
                 .setArtworkUri(artworkUrl?.let(Uri::parse))
                 .setExtras(
                     Bundle().apply {
-                        durationMillis?.let { putLong(JellyfinPlaybackMetadata.DURATION_MS, it) }
-                        trackGainDb?.let { putDouble(JellyfinPlaybackMetadata.TRACK_GAIN_DB, it) }
-                        albumGainDb?.let { putDouble(JellyfinPlaybackMetadata.ALBUM_GAIN_DB, it) }
+                        durationMillis?.let { putLong(MusicPlaybackMetadata.DURATION_MS, it) }
+                        trackGainDb?.let { putDouble(MusicPlaybackMetadata.TRACK_GAIN_DB, it) }
+                        albumGainDb?.let { putDouble(MusicPlaybackMetadata.ALBUM_GAIN_DB, it) }
                     }
                 )
                 .build()
         )
         .build()
 
-    private fun MediaItem.toTrack(): JellyfinTrack = JellyfinTrack(
+    private fun MediaItem.toTrack(): MusicTrack = MusicTrack(
         id = mediaId,
         title = mediaMetadata.title?.toString().orEmpty(),
         artist = mediaMetadata.artist?.toString().orEmpty(),
         album = mediaMetadata.albumTitle?.toString(),
         streamUrl = localConfiguration?.uri.toString(),
         artworkUrl = mediaMetadata.artworkUri?.toString(),
-        durationMillis = mediaMetadata.extras?.long(JellyfinPlaybackMetadata.DURATION_MS),
-        trackGainDb = mediaMetadata.extras?.gain(JellyfinPlaybackMetadata.TRACK_GAIN_DB),
-        albumGainDb = mediaMetadata.extras?.gain(JellyfinPlaybackMetadata.ALBUM_GAIN_DB)
+        durationMillis = mediaMetadata.extras?.long(MusicPlaybackMetadata.DURATION_MS),
+        trackGainDb = mediaMetadata.extras?.gain(MusicPlaybackMetadata.TRACK_GAIN_DB),
+        albumGainDb = mediaMetadata.extras?.gain(MusicPlaybackMetadata.ALBUM_GAIN_DB)
     )
 
     private fun Bundle.gain(key: String): Double? = getDouble(key).takeIf { containsKey(key) }

@@ -2,7 +2,7 @@ package com.sergioasenjo.vesperhome.launcher
 
 import androidx.lifecycle.ViewModelProvider
 import com.sergioasenjo.vesperhome.VesperHomeApplication
-import com.sergioasenjo.vesperhome.music.JellyfinMusicViewModel
+import com.sergioasenjo.vesperhome.music.MusicViewModel
 
 internal fun launcherViewModelFactory(application: VesperHomeApplication): ViewModelProvider.Factory {
     val container = application.container
@@ -15,12 +15,12 @@ internal fun launcherViewModelFactory(application: VesperHomeApplication): ViewM
     )
 }
 
-internal fun jellyfinMusicViewModelFactory(application: VesperHomeApplication): ViewModelProvider.Factory {
+internal fun musicViewModelFactory(application: VesperHomeApplication): ViewModelProvider.Factory {
     val container = application.container
-    return JellyfinMusicViewModel.factory(
+    return MusicViewModel.factory(
         application,
-        { container.jellyfinApiRepository },
-        container.jellyfinPreferencesRepository,
+        { container.musicApiRepository },
+        container.musicPreferencesRepository,
         container.dreamStateTracker
     )
 }

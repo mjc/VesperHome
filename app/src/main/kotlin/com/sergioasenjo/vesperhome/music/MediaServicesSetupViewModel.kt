@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sergioasenjo.vesperhome.R
+import com.sergioasenjo.vesperhome.upcoming.UpcomingPlayer
 import com.sergioasenjo.vesperhome.upcoming.UpcomingPreferencesRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingRepository
 import com.sergioasenjo.vesperhome.upcoming.UpcomingServerConfig
@@ -16,13 +17,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class JellyfinSetupUiState(
+data class MediaServicesSetupUiState(
     val servers: List<JellyfinServer> = emptyList(),
     val discovering: Boolean = false,
     val pairing: Boolean = false,
     val quickConnectCode: String? = null,
     val connectedServerName: String? = null,
-    val normalizationMode: JellyfinNormalizationMode = JellyfinNormalizationMode.OFF,
+    val plexServerName: String? = null,
+    val musicProvider: MusicProvider = MusicProvider.JELLYFIN,
+    val connectingPlex: Boolean = false,
+    val plexErrorRes: Int? = null,
+    val normalizationMode: MusicNormalizationMode = MusicNormalizationMode.OFF,
     val errorRes: Int? = null,
     val serviceConfig: UpcomingServerConfig? = null,
     val savingSonarr: Boolean = false,
@@ -31,18 +36,29 @@ data class JellyfinSetupUiState(
     val radarrStatusRes: Int? = null
 )
 
-class JellyfinSetupViewModel(
+class MediaServicesSetupViewModel(
     private val discoveryRepository: JellyfinDiscoveryRepository,
-    private val apiRepository: JellyfinApiRepository,
-    private val preferencesRepository: JellyfinPreferencesRepository,
+    private val apiRepository: MusicApiRepository,
+    private val preferencesRepository: MusicPreferencesRepository,
     private val upcomingRepository: UpcomingRepository,
     private val upcomingPreferencesRepository: UpcomingPreferencesRepository
 ) : ViewModel() {
-    private val mutableUiState = MutableStateFlow(JellyfinSetupUiState())
+    private val mutableUiState = MutableStateFlow(MediaServicesSetupUiState())
     val uiState = mutableUiState.asStateFlow()
     private var pairingJob: Job? = null
+    private var plexConnectionJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            preferencesRepository.plexCredentials.collect { credentials ->
+                mutableUiState.value = mutableUiState.value.copy(plexServerName = credentials?.serverName)
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepository.musicProvider.collect { provider ->
+                mutableUiState.value = mutableUiState.value.copy(musicProvider = provider)
+            }
+        }
         viewModelScope.launch {
             preferencesRepository.credentials.collect { credentials ->
                 mutableUiState.value = mutableUiState.value.copy(
@@ -168,8 +184,41 @@ class JellyfinSetupViewModel(
         }
     }
 
-    fun setNormalizationMode(mode: JellyfinNormalizationMode) {
+    fun connectPlex(address: String, token: String) {
+        plexConnectionJob?.cancel()
+        plexConnectionJob = viewModelScope.launch {
+            mutableUiState.value = mutableUiState.value.copy(connectingPlex = true, plexErrorRes = null)
+            try {
+                val credentials = apiRepository.resolvePlexServer(address, token)
+                preferencesRepository.savePlex(credentials)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                mutableUiState.value = mutableUiState.value.copy(plexErrorRes = R.string.plex_music_connection_failed)
+            } finally {
+                mutableUiState.value = mutableUiState.value.copy(connectingPlex = false)
+            }
+        }
+    }
+
+    fun disconnectPlex() {
+        plexConnectionJob?.cancel()
+        viewModelScope.launch {
+            preferencesRepository.clearPlex()
+            mutableUiState.value = mutableUiState.value.copy(plexErrorRes = null)
+        }
+    }
+
+    fun setMusicProvider(provider: MusicProvider) {
+        viewModelScope.launch { preferencesRepository.setMusicProvider(provider) }
+    }
+
+    fun setNormalizationMode(mode: MusicNormalizationMode) {
         viewModelScope.launch { preferencesRepository.setNormalizationMode(mode) }
+    }
+
+    fun setUpcomingPlayer(player: UpcomingPlayer) {
+        viewModelScope.launch { upcomingPreferencesRepository.setPlayer(player) }
     }
 
     fun saveSonarr(url: String, apiKey: String) {
@@ -240,13 +289,13 @@ class JellyfinSetupViewModel(
 
         fun factory(
             discoveryRepository: JellyfinDiscoveryRepository,
-            apiRepository: JellyfinApiRepository,
-            preferencesRepository: JellyfinPreferencesRepository,
+            apiRepository: MusicApiRepository,
+            preferencesRepository: MusicPreferencesRepository,
             upcomingRepository: UpcomingRepository,
             upcomingPreferencesRepository: UpcomingPreferencesRepository
         ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                JellyfinSetupViewModel(
+                MediaServicesSetupViewModel(
                     discoveryRepository,
                     apiRepository,
                     preferencesRepository,

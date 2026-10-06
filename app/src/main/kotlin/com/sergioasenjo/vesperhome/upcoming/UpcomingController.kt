@@ -13,9 +13,10 @@ class UpcomingController(
     context: Context,
     private val binding: ViewLauncherContentBinding,
     private val repository: UpcomingRepository,
+    actionDescription: Int,
     onItemSelected: (UpcomingMediaItem) -> Unit
 ) {
-    private val adapter = UpcomingAdapter(onItemSelected)
+    private val adapter = UpcomingAdapter(actionDescription, onItemSelected)
     private var appearance = LauncherAppearance()
     private var enabled = true
     private var items: List<UpcomingMediaItem> = emptyList()
@@ -59,6 +60,10 @@ class UpcomingController(
         binding.upcomingTitle.setTextColor(appearance.palette.primaryText)
         binding.upcomingCount.setTextColor(appearance.palette.focus)
         adapter.setAppearance(appearance)
+    }
+
+    fun setActionDescription(actionDescription: Int) {
+        adapter.setActionDescription(actionDescription)
     }
 
     private fun renderVisibility() {

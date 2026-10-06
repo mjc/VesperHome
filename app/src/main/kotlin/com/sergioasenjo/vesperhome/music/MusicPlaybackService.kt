@@ -1,5 +1,6 @@
 package com.sergioasenjo.vesperhome.music
 
+import android.os.Process
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -13,11 +14,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
-class JellyfinPlaybackService : MediaSessionService() {
+class MusicPlaybackService :
+    MediaSessionService(),
+    MediaSession.Callback {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val gainProcessor = JellyfinGainAudioProcessor()
+    private val gainProcessor = MusicGainAudioProcessor()
     private var mediaSession: MediaSession? = null
-    private var normalizationMode = JellyfinNormalizationMode.OFF
+    private var normalizationMode = MusicNormalizationMode.OFF
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             applyNormalization(mediaItem)
@@ -26,21 +29,34 @@ class JellyfinPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val player = ExoPlayer.Builder(this, JellyfinRenderersFactory(this, gainProcessor)).build().apply {
+        val player = ExoPlayer.Builder(this, MusicRenderersFactory(this, gainProcessor)).build().apply {
             setHandleAudioBecomingNoisy(true)
             addListener(playerListener)
         }
-        mediaSession = MediaSession.Builder(this, player).build()
+        mediaSession = MediaSession.Builder(this, player).setCallback(this).build()
         isRunning = true
         serviceScope.launch {
-            JellyfinPreferencesRepository(this@JellyfinPlaybackService).normalizationMode.collect { mode ->
+            MusicPreferencesRepository(this@MusicPlaybackService).normalizationMode.collect { mode ->
                 normalizationMode = mode
                 applyNormalization(player.currentMediaItem)
             }
         }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        mediaSession.takeIf { canConnect(controllerInfo) }
+
+    override fun onConnect(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo
+    ): MediaSession.ConnectionResult = if (canConnect(controller)) {
+        super<MediaSession.Callback>.onConnect(session, controller)
+    } else {
+        MediaSession.ConnectionResult.reject()
+    }
+
+    private fun canConnect(controller: MediaSession.ControllerInfo): Boolean =
+        controller.uid == Process.myUid() || controller.isTrusted
 
     override fun onDestroy() {
         isRunning = false
@@ -57,12 +73,12 @@ class JellyfinPlaybackService : MediaSessionService() {
     private fun applyNormalization(mediaItem: MediaItem?) {
         val extras = mediaItem?.mediaMetadata?.extras
         val gainDb = when (normalizationMode) {
-            JellyfinNormalizationMode.OFF -> null
+            MusicNormalizationMode.OFF -> null
 
-            JellyfinNormalizationMode.TRACK -> extras?.gain(JellyfinPlaybackMetadata.TRACK_GAIN_DB)
+            MusicNormalizationMode.TRACK -> extras?.gain(MusicPlaybackMetadata.TRACK_GAIN_DB)
 
-            JellyfinNormalizationMode.ALBUM -> extras?.gain(JellyfinPlaybackMetadata.ALBUM_GAIN_DB)
-                ?: extras?.gain(JellyfinPlaybackMetadata.TRACK_GAIN_DB)
+            MusicNormalizationMode.ALBUM -> extras?.gain(MusicPlaybackMetadata.ALBUM_GAIN_DB)
+                ?: extras?.gain(MusicPlaybackMetadata.TRACK_GAIN_DB)
         }
         gainProcessor.setGainDb(gainDb)
     }

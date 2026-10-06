@@ -16,7 +16,7 @@
     <string name="layout_profiles_description">Cada perfil conserva su diseño, orden de aplicaciones, apariencia, fondo, salvapantallas y secciones de inicio.</string>
     <string name="create_profile">Crear perfil desde el diseño actual</string>
     <string name="profile_show_coming_next_value">Mostrar Próximamente: %1$s</string>
-    <string name="profile_show_jellyfin_music_value">Mostrar Música de Jellyfin: %1$s</string>
+    <string name="profile_show_jellyfin_music_value">Mostrar música: %1$s</string>
     <string name="active_profile">Perfil activo</string>
     <string name="select_profile_actions">Pulsa Seleccionar para ver acciones</string>
     <string name="profile_name">Nombre del perfil</string>
